@@ -1,0 +1,770 @@
+<!-- templates/b/him/assign_nurse.html -->
+
+
+
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Assign Staff - HIM{% endblock %}
+
+{% block extra_css %}
+<style>
+    .table-responsive-custom {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .assign-form {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: nowrap;
+    }
+    .assign-form .staff-select {
+        min-width: 130px;
+        flex: 1;
+    }
+    .assign-form .btn-assign {
+        white-space: nowrap;
+    }
+    .assign-form .btn-assign:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+    .section-card {
+        border-left: 4px solid;
+        margin-bottom: 30px;
+    }
+    .section-card.nurse-section {
+        border-left-color: #065f46;
+    }
+    .section-card.physician-section {
+        border-left-color: #1e40af;
+    }
+    .section-card .card-header {
+        background: #f8fafc;
+    }
+    .section-card.nurse-section .card-header {
+        background: #f0fdf4;
+    }
+    .section-card.physician-section .card-header {
+        background: #eff6ff;
+    }
+    
+    /* Search box styles */
+    .search-box {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+        padding: 10px 15px;
+        background: #f8fafc;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+        margin-bottom: 15px;
+    }
+    .search-box .search-input {
+        flex: 1;
+        min-width: 200px;
+        padding: 8px 14px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 14px;
+        transition: border-color 0.2s;
+    }
+    .search-box .search-input:focus {
+        outline: none;
+        border-color: #065f46;
+        box-shadow: 0 0 0 3px rgba(6, 95, 70, 0.1);
+    }
+    .search-box .search-btn {
+        padding: 8px 20px;
+        border: none;
+        border-radius: 6px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+    }
+    .search-box .search-btn.btn-success {
+        background: #065f46;
+        color: white;
+    }
+    .search-box .search-btn.btn-success:hover {
+        background: #0d3b3a;
+    }
+    .search-box .search-btn.btn-secondary {
+        background: #e5e7eb;
+        color: #374151;
+    }
+    .search-box .search-btn.btn-secondary:hover {
+        background: #d1d5db;
+    }
+    .search-box .search-result-count {
+        color: #6b7280;
+        font-size: 14px;
+        margin-left: auto;
+    }
+    
+    /* Loading spinner */
+    .spinner-border-sm {
+        width: 1rem;
+        height: 1rem;
+        border-width: 0.15em;
+    }
+    
+    /* Toast notification container */
+    #toast-container {
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        z-index: 9999;
+        max-width: 400px;
+        min-width: 300px;
+    }
+    .toast-message {
+        padding: 12px 16px;
+        margin-bottom: 10px;
+        border-radius: 8px;
+        color: white;
+        font-weight: 500;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        animation: slideInRight 0.5s ease;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .toast-message.success {
+        background: #065f46;
+        border-left: 4px solid #10b981;
+    }
+    .toast-message.error {
+        background: #991b1b;
+        border-left: 4px solid #ef4444;
+    }
+    .toast-message.warning {
+        background: #92400e;
+        border-left: 4px solid #f59e0b;
+    }
+    .toast-message.info {
+        background: #1e40af;
+        border-left: 4px solid #3b82f6;
+    }
+    .toast-message .toast-close {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 1.2rem;
+        cursor: pointer;
+        padding: 0 4px;
+    }
+    .toast-message .toast-close:hover {
+        opacity: 0.8;
+    }
+    
+    /* Highlight matching rows */
+    .search-highlight {
+        background-color: #fef3c7 !important;
+    }
+    
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    @keyframes slideOutRight {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+    
+    @media (max-width: 767.98px) {
+        .table-responsive-custom table {
+            font-size: 0.75rem;
+        }
+        .table-responsive-custom .btn-sm {
+            font-size: 0.65rem;
+            padding: 0.15rem 0.4rem;
+        }
+        .table-responsive-custom select.form-select-sm {
+            font-size: 0.65rem;
+            padding: 0.15rem 0.4rem;
+        }
+        .section-card .card-body {
+            padding: 0.5rem;
+        }
+        .assign-form {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 4px;
+        }
+        .assign-form .staff-select {
+            min-width: 100px;
+            width: 100%;
+        }
+        #toast-container {
+            max-width: 90%;
+            min-width: auto;
+            right: 10px;
+            left: 10px;
+        }
+        .search-box {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .search-box .search-input {
+            min-width: auto;
+            width: 100%;
+        }
+        .search-box .search-result-count {
+            margin-left: 0;
+            text-align: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Toast Notification Container -->
+        <div id="toast-container"></div>
+
+        <!-- Nurse Assignments Section -->
+        <div class="card card-custom section-card nurse-section">
+            <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <h5 class="mb-0">
+                    <i class="fas fa-user-nurse text-success me-2"></i>
+                    Assign Nurse &amp; Physician
+                </h5>
+                <span class="badge bg-success" id="nurse-badge">{{ pending_nurse_assignments }} pending</span>
+            </div>
+            <div class="card-body p-0 p-md-3">
+                <!-- Search Box -->
+                <div class="search-box" id="searchBox">
+                    <input type="text" class="search-input" id="searchInput" placeholder="Search by Hospital No., Name, or Phone..." onkeyup="searchPatients(event)">
+                    <button class="search-btn btn-success" onclick="searchPatients()">
+                        <i class="fas fa-search me-1"></i>Search
+                    </button>
+                    <button class="search-btn btn-secondary" onclick="clearSearch()">
+                        <i class="fas fa-times me-1"></i>Clear
+                    </button>
+                    <span class="search-result-count" id="resultCount">
+                        Showing <span id="visibleCount">{{ unassigned_nurse_patients|length }}</span> of <span id="totalCount">{{ unassigned_nurse_patients|length }}</span> patients
+                    </span>
+                </div>
+
+                <div class="table-responsive-custom">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Hospital No.</th>
+                                <th>Patient Name</th>
+                                <th class="d-none d-sm-table-cell">Gender</th>
+                                <th class="d-none d-md-table-cell">Registered</th>
+                                <th colspan="2">Assign Staff</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="nurse-table-body">
+                            {% if unassigned_nurse_patients %}
+                                {% for patient in unassigned_nurse_patients %}
+                                    <tr id="nurse-row-{{ patient.id }}" class="patient-row" data-search="{{ patient.hospital_number|lower }} {{ patient.full_name|lower }} {{ patient.phone|lower }}">
+                                        <td><strong>{{ patient.hospital_number }}</strong></td>
+                                        <td class="patient-name">{{ patient.full_name|truncatechars:15 }}</td>
+                                        <td class="d-none d-sm-table-cell">{{ patient.gender }}</td>
+                                        <td class="d-none d-md-table-cell">{{ patient.created_at|date:"M d, Y" }}</td>
+                                        <td colspan="2">
+                                            <form class="assign-form" data-patient="{{ patient.id }}">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="patient_id" value="{{ patient.id }}">
+                                                
+                                                <select name="nurse_id" class="form-select form-select-sm staff-select">
+                                                    <option value="">Select Nurse</option>
+                                                    {% for nurse in nurses %}
+                                                        <option value="{{ nurse.id }}">
+                                                            {{ nurse.get_full_name|default:nurse.username }}
+                                                            ({{ nurse.userprofile.employee_id }})
+                                                        </option>
+                                                    {% empty %}
+                                                        <option value="" disabled>No nurses available</option>
+                                                    {% endfor %}
+                                                </select>
+                                                
+                                                <select name="physician_id" class="form-select form-select-sm staff-select">
+                                                    <option value="">Select Physician</option>
+                                                    {% for physician in physicians %}
+                                                        <option value="{{ physician.id }}">
+                                                            Dr. {{ physician.get_full_name|default:physician.username }}
+                                                            ({{ physician.userprofile.employee_id }})
+                                                        </option>
+                                                    {% empty %}
+                                                        <option value="" disabled>No physicians available</option>
+                                                    {% endfor %}
+                                                </select>
+                                                
+                                                <button type="button" class="btn btn-success btn-sm btn-assign" onclick="assignStaff(this, {{ patient.id }})">
+                                                    <i class="fas fa-check me-1"></i>Assign
+                                                </button>
+                                            </form>
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'b:patient_detail' patient.id %}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr id="no-nurse-patients">
+                                    <td colspan="7" class="text-center py-4">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        All patients have been assigned to nurses
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Physician Assignments Section (Patients that need physician only) -->
+        <div class="card card-custom section-card physician-section">
+            <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <h5 class="mb-0">
+                    <i class="fas fa-user-md text-primary me-2"></i>
+                    Assign Physician Only
+                    <small class="text-muted">(Nurse already assigned)</small>
+                </h5>
+                <span class="badge bg-primary" id="physician-badge">{{ pending_physician_assignments }} pending</span>
+            </div>
+            <div class="card-body p-0 p-md-3">
+                <!-- Search Box for Physician Section -->
+                <div class="search-box" id="searchBoxPhysician">
+                    <input type="text" class="search-input" id="searchInputPhysician" placeholder="Search by Hospital No., Name, or Phone..." onkeyup="searchPhysicianPatients(event)">
+                    <button class="search-btn btn-success" onclick="searchPhysicianPatients()">
+                        <i class="fas fa-search me-1"></i>Search
+                    </button>
+                    <button class="search-btn btn-secondary" onclick="clearPhysicianSearch()">
+                        <i class="fas fa-times me-1"></i>Clear
+                    </button>
+                    <span class="search-result-count" id="resultCountPhysician">
+                        Showing <span id="visibleCountPhysician">{{ unassigned_physician_patients|length }}</span> of <span id="totalCountPhysician">{{ unassigned_physician_patients|length }}</span> patients
+                    </span>
+                </div>
+
+                <div class="table-responsive-custom">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Hospital No.</th>
+                                <th>Patient Name</th>
+                                <th class="d-none d-sm-table-cell">Gender</th>
+                                <th class="d-none d-md-table-cell">Nursing Completed</th>
+                                <th>Assign Physician</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="physician-table-body">
+                            {% if unassigned_physician_patients %}
+                                {% for patient in unassigned_physician_patients %}
+                                    <tr id="physician-row-{{ patient.id }}" class="physician-row" data-search="{{ patient.hospital_number|lower }} {{ patient.full_name|lower }} {{ patient.phone|lower }}">
+                                        <td><strong>{{ patient.hospital_number }}</strong></td>
+                                        <td class="patient-name">{{ patient.full_name|truncatechars:15 }}</td>
+                                        <td class="d-none d-sm-table-cell">{{ patient.gender }}</td>
+                                        <td class="d-none d-md-table-cell">{{ patient.updated_at|date:"M d, Y" }}</td>
+                                        <td>
+                                            <form class="assign-physician-form" data-patient="{{ patient.id }}">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="patient_id" value="{{ patient.id }}">
+                                                <input type="hidden" name="nurse_id" value="">
+                                                
+                                                <select name="physician_id" class="form-select form-select-sm staff-select" required>
+                                                    <option value="">Select Physician</option>
+                                                    {% for physician in physicians %}
+                                                        <option value="{{ physician.id }}">
+                                                            Dr. {{ physician.get_full_name|default:physician.username }}
+                                                            ({{ physician.userprofile.employee_id }})
+                                                        </option>
+                                                    {% empty %}
+                                                        <option value="" disabled>No physicians available</option>
+                                                    {% endfor %}
+                                                </select>
+                                                
+                                                <button type="button" class="btn btn-primary btn-sm btn-assign" onclick="assignPhysician(this, {{ patient.id }})">
+                                                    <i class="fas fa-check me-1"></i>Assign
+                                                </button>
+                                            </form>
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'b:patient_detail' patient.id %}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr id="no-physician-patients">
+                                    <td colspan="6" class="text-center py-4">
+                                        <i class="fas fa-check-circle text-primary me-2"></i>
+                                        No pending physician-only assignments
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Get CSRF token from cookie
+function getCSRFToken() {
+    const name = 'csrftoken';
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Show toast notification
+function showToast(message, type = 'success') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast-message ${type}`;
+    
+    let icon = 'check-circle';
+    if (type === 'error') icon = 'exclamation-circle';
+    else if (type === 'warning') icon = 'exclamation-triangle';
+    else if (type === 'info') icon = 'info-circle';
+    
+    toast.innerHTML = `
+        <span><i class="fas fa-${icon} me-2"></i>${message}</span>
+        <button class="toast-close" onclick="this.parentElement.remove()">&times;</button>
+    `;
+    container.appendChild(toast);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (toast.parentNode) {
+            toast.style.animation = 'slideOutRight 0.5s ease';
+            setTimeout(() => toast.remove(), 500);
+        }
+    }, 5000);
+}
+
+// ============= SEARCH FUNCTIONS =============
+
+// Search patients in nurse section
+function searchPatients(event) {
+    if (event && event.key === 'Enter') {
+        event.preventDefault();
+    }
+    
+    const input = document.getElementById('searchInput');
+    const query = input.value.toLowerCase().trim();
+    const rows = document.querySelectorAll('#nurse-table-body .patient-row');
+    let visibleCount = 0;
+    
+    rows.forEach(row => {
+        const searchData = row.getAttribute('data-search') || '';
+        if (query === '' || searchData.includes(query)) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    
+    // Update count
+    document.getElementById('visibleCount').textContent = visibleCount;
+    document.getElementById('totalCount').textContent = rows.length;
+}
+
+// Search patients in physician section
+function searchPhysicianPatients(event) {
+    if (event && event.key === 'Enter') {
+        event.preventDefault();
+    }
+    
+    const input = document.getElementById('searchInputPhysician');
+    const query = input.value.toLowerCase().trim();
+    const rows = document.querySelectorAll('#physician-table-body .physician-row');
+    let visibleCount = 0;
+    
+    rows.forEach(row => {
+        const searchData = row.getAttribute('data-search') || '';
+        if (query === '' || searchData.includes(query)) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    
+    // Update count
+    document.getElementById('visibleCountPhysician').textContent = visibleCount;
+    document.getElementById('totalCountPhysician').textContent = rows.length;
+}
+
+// Clear search in nurse section
+function clearSearch() {
+    document.getElementById('searchInput').value = '';
+    const rows = document.querySelectorAll('#nurse-table-body .patient-row');
+    rows.forEach(row => row.style.display = '');
+    document.getElementById('visibleCount').textContent = rows.length;
+}
+
+// Clear search in physician section
+function clearPhysicianSearch() {
+    document.getElementById('searchInputPhysician').value = '';
+    const rows = document.querySelectorAll('#physician-table-body .physician-row');
+    rows.forEach(row => row.style.display = '');
+    document.getElementById('visibleCountPhysician').textContent = rows.length;
+}
+
+// ============= ASSIGN FUNCTIONS =============
+
+// Assign both nurse and physician
+function assignStaff(button, patientId) {
+    const form = button.closest('form');
+    const nurseSelect = form.querySelector('[name="nurse_id"]');
+    const physicianSelect = form.querySelector('[name="physician_id"]');
+    
+    // Check if at least one is selected
+    if (!nurseSelect.value && !physicianSelect.value) {
+        showToast('Please select at least a nurse or physician.', 'warning');
+        return;
+    }
+    
+    // Disable button and show loading
+    button.disabled = true;
+    button.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Assigning...';
+    
+    // Create form data
+    const formData = new FormData();
+    formData.append('patient_id', patientId);
+    formData.append('nurse_id', nurseSelect.value || '');
+    formData.append('physician_id', physicianSelect.value || '');
+    formData.append('csrfmiddlewaretoken', getCSRFToken());
+    
+    // Send AJAX request
+    fetch('{% url "b:assign_nurse" %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success message
+            showToast(data.message, 'success');
+            
+            // Show individual assignment notifications
+            if (data.notifications) {
+                data.notifications.forEach(notif => {
+                    showToast(`📋 ${notif.recipient}: ${notif.message}`, 'info');
+                });
+            }
+            
+            // Remove the row
+            const row = document.getElementById(`nurse-row-${patientId}`);
+            if (row) row.remove();
+            
+            // Update badge count
+            const badge = document.getElementById('nurse-badge');
+            if (badge && data.pending_nurse !== undefined) {
+                badge.textContent = `${data.pending_nurse} pending`;
+                if (data.pending_nurse === 0) {
+                    badge.textContent = '0 pending';
+                    // Show empty state if no rows left
+                    const tbody = document.getElementById('nurse-table-body');
+                    if (tbody.children.length === 0 || tbody.children[0] && tbody.children[0].id === 'no-nurse-patients') {
+                        // Already showing empty state
+                    } else if (tbody.querySelectorAll('.patient-row').length === 0) {
+                        tbody.innerHTML = `
+                            <tr id="no-nurse-patients">
+                                <td colspan="7" class="text-center py-4">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    All patients have been assigned to nurses
+                                </td>
+                            </tr>
+                        `;
+                    }
+                }
+            }
+            
+            // Update total count
+            const totalRows = document.querySelectorAll('#nurse-table-body .patient-row').length;
+            document.getElementById('totalCount').textContent = totalRows;
+            document.getElementById('visibleCount').textContent = totalRows;
+            
+            // Re-enable button
+            button.disabled = false;
+            button.innerHTML = '<i class="fas fa-check me-1"></i>Assign';
+        } else {
+            showToast(data.message || 'Error assigning staff.', 'error');
+            button.disabled = false;
+            button.innerHTML = '<i class="fas fa-check me-1"></i>Assign';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('An error occurred. Please try again.', 'error');
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-check me-1"></i>Assign';
+    });
+}
+
+// Assign physician only
+function assignPhysician(button, patientId) {
+    const form = button.closest('form');
+    const physicianSelect = form.querySelector('[name="physician_id"]');
+    
+    if (!physicianSelect.value) {
+        showToast('Please select a physician.', 'warning');
+        return;
+    }
+    
+    button.disabled = true;
+    button.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Assigning...';
+    
+    const formData = new FormData();
+    formData.append('patient_id', patientId);
+    formData.append('nurse_id', '');
+    formData.append('physician_id', physicianSelect.value);
+    formData.append('csrfmiddlewaretoken', getCSRFToken());
+    
+    fetch('{% url "b:assign_nurse" %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.message, 'success');
+            
+            if (data.notifications) {
+                data.notifications.forEach(notif => {
+                    showToast(`📋 ${notif.recipient}: ${notif.message}`, 'info');
+                });
+            }
+            
+            // Remove the row
+            const row = document.getElementById(`physician-row-${patientId}`);
+            if (row) row.remove();
+            
+            // Update badge
+            const badge = document.getElementById('physician-badge');
+            if (badge && data.pending_physician !== undefined) {
+                badge.textContent = `${data.pending_physician} pending`;
+                if (data.pending_physician === 0) {
+                    const tbody = document.getElementById('physician-table-body');
+                    if (tbody.querySelectorAll('.physician-row').length === 0) {
+                        tbody.innerHTML = `
+                            <tr id="no-physician-patients">
+                                <td colspan="6" class="text-center py-4">
+                                    <i class="fas fa-check-circle text-primary me-2"></i>
+                                    No pending physician-only assignments
+                                </td>
+                            </tr>
+                        `;
+                    }
+                }
+            }
+            
+            // Update total count
+            const totalRows = document.querySelectorAll('#physician-table-body .physician-row').length;
+            document.getElementById('totalCountPhysician').textContent = totalRows;
+            document.getElementById('visibleCountPhysician').textContent = totalRows;
+            
+            button.disabled = false;
+            button.innerHTML = '<i class="fas fa-check me-1"></i>Assign';
+        } else {
+            showToast(data.message || 'Error assigning physician.', 'error');
+            button.disabled = false;
+            button.innerHTML = '<i class="fas fa-check me-1"></i>Assign';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('An error occurred. Please try again.', 'error');
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-check me-1"></i>Assign';
+    });
+}
+
+// Refresh notification count in navbar
+function refreshNotificationCount() {
+    fetch('/api/notification-count/')
+        .then(response => response.json())
+        .then(data => {
+            const badge = document.querySelector('.notification-count');
+            if (badge) {
+                badge.textContent = data.count || 0;
+                badge.style.display = data.count > 0 ? 'inline' : 'none';
+            }
+        })
+        .catch(error => console.error('Error refreshing notification count:', error));
+}
+
+// Refresh notification count every 30 seconds
+setInterval(refreshNotificationCount, 30000);
+
+// Also refresh when page becomes visible again
+document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) {
+        refreshNotificationCount();
+    }
+});
+
+// Enter key support for search
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('keyup', function(e) {
+            if (e.key === 'Enter') {
+                searchPatients(e);
+            }
+        });
+    }
+    
+    const searchInputPhysician = document.getElementById('searchInputPhysician');
+    if (searchInputPhysician) {
+        searchInputPhysician.addEventListener('keyup', function(e) {
+            if (e.key === 'Enter') {
+                searchPhysicianPatients(e);
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
+

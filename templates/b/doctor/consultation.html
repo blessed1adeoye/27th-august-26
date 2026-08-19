@@ -1,0 +1,77 @@
+<!-- templates/b/doctor/consultation.html -->
+
+
+
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Medical Consultation{% endblock %}
+
+{% block content %}
+<div class="card card-custom">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-stethoscope text-success me-2"></i>
+            Medical Consultation - {{ patient.full_name }}
+            <span class="badge bg-secondary ms-2">{{ patient.hospital_number }}</span>
+        </h5>
+    </div>
+    <div class="card-body">
+        {% if nursing %}
+            <div class="alert alert-info">
+                <h6><i class="fas fa-user-nurse me-2"></i>Nursing Assessment Summary</h6>
+                <div class="row mt-2">
+                    <div class="col-md-3">
+                        <strong>BP:</strong> {{ nursing.blood_pressure_systolic }}/{{ nursing.blood_pressure_diastolic }} mmHg
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Pulse:</strong> {{ nursing.pulse_rate }} bpm
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Temp:</strong> {{ nursing.temperature|default:"—" }}°C
+                    </div>
+                    <div class="col-md-3">
+                        <strong>SpO2:</strong> {{ nursing.oxygen_saturation|default:"—" }}%
+                    </div>
+                </div>
+                {% if nursing.biohazard_risk %}
+                    <div class="mt-2">
+                        <strong>Biohazard Risk:</strong> {{ nursing.biohazard_risk }}
+                    </div>
+                {% endif %}
+            </div>
+        {% endif %}
+        
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="row">
+                <div class="col-md-12">
+                    {{ form.symptoms|as_crispy_field }}
+                    {{ form.diagnosis|as_crispy_field }}
+                    {{ form.treatment_plan|as_crispy_field }}
+                </div>
+            </div>
+            
+            <h6 class="text-success border-bottom pb-2 mt-3"><i class="fas fa-share-alt me-2"></i>Referrals</h6>
+            <div class="row">
+                <div class="col-md-3">{{ form.refer_to_pharmacy|as_crispy_field }}</div>
+                <div class="col-md-3">{{ form.refer_to_laboratory|as_crispy_field }}</div>
+                <div class="col-md-3">{{ form.refer_to_optician|as_crispy_field }}</div>
+                <div class="col-md-3">{{ form.refer_to_specialist|as_crispy_field }}</div>
+            </div>
+            
+            {{ form.referral_notes|as_crispy_field }}
+            
+            <div class="mt-4 d-flex justify-content-between">
+                <a href="{% url 'b:doctor_dashboard' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i> Back
+                </a>
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-save me-2"></i> Complete Consultation
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

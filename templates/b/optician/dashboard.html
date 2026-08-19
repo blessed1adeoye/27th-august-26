@@ -1,0 +1,96 @@
+<!-- templates/b/optician/dashboard.html -->
+
+
+
+{% extends 'base.html' %}
+
+{% block title %}Optician Dashboard{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="label"><i class="fas fa-eye me-2"></i>Pending Assessments</div>
+                    <div class="number">{{ pending_count }}</div>
+                </div>
+                <i class="fas fa-glasses fa-3x text-muted opacity-25"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="label"><i class="fas fa-check-circle me-2"></i>Completed Today</div>
+                    <div class="number">0</div>
+                </div>
+                <i class="fas fa-check-double fa-3x text-muted opacity-25"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="label"><i class="fas fa-user-plus me-2"></i>Walk-ins</div>
+                    <div class="number">0</div>
+                </div>
+                <i class="fas fa-user-plus fa-3x text-muted opacity-25"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card card-custom">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="fas fa-list text-success me-2"></i>Pending Optical Assessments</h5>
+        <a href="{% url 'optician_assessment_walkin' %}" class="btn btn-success btn-sm">
+            <i class="fas fa-user-plus me-1"></i> Walk-in Patient
+        </a>
+    </div>
+    <div class="card-body">
+        {% if assessments %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Patient</th>
+                            <th>Type</th>
+                            <th>Glasses Allocated</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for assessment in assessments %}
+                            <tr>
+                                <td>{{ assessment.patient.full_name }}</td>
+                                <td>
+                                    {% if assessment.is_walk_in %}
+                                        <span class="badge bg-info">Walk-in</span>
+                                    {% else %}
+                                        <span class="badge bg-primary">Referral</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ assessment.glasses_allocated }}</td>
+                                <td>
+                                    <a href="{% url 'optician_assessment' assessment.patient.id %}" class="btn btn-success btn-sm">
+                                        <i class="fas fa-eye me-1"></i>Assess
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-muted text-center my-4">
+                <i class="fas fa-check-circle text-success me-2"></i>
+                No pending optical assessments.
+            </p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

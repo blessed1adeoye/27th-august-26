@@ -1,0 +1,79 @@
+<!-- templates/b/doctor/dashboard.html -->
+
+
+
+{% extends 'base.html' %}
+
+{% block title %}Doctor Dashboard{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="label"><i class="fas fa-stethoscope me-2"></i>Pending Consultations</div>
+                    <div class="number">{{ pending_count }}</div>
+                </div>
+                <i class="fas fa-prescription fa-3x text-muted opacity-25"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="label"><i class="fas fa-user-md me-2"></i>Today's Patients</div>
+                    <div class="number">0</div>
+                </div>
+                <i class="fas fa-calendar-check fa-3x text-muted opacity-25"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card card-custom">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-list text-success me-2"></i>Patients Awaiting Consultation</h5>
+    </div>
+    <div class="card-body">
+        {% if patients %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Hospital No.</th>
+                            <th>Name</th>
+                            <th>Gender</th>
+                            <th>Age</th>
+                            <th>Phone</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for patient in patients %}
+                            <tr>
+                                <td><strong>{{ patient.hospital_number }}</strong></td>
+                                <td>{{ patient.full_name }}</td>
+                                <td>{{ patient.gender }}</td>
+                                <td>{{ patient.age_data.years }}y</td>
+                                <td>{{ patient.phone }}</td>
+                                <td>
+                                    <a href="{% url 'doctor_consultation' patient.id %}" class="btn btn-success btn-sm">
+                                        <i class="fas fa-prescription me-1"></i>Consult
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-muted text-center my-4">
+                <i class="fas fa-check-circle text-success me-2"></i>
+                No patients pending consultation.
+            </p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,866 @@
+<!-- templates/base.html -->
+
+
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}HIM - Health Information Management{% endblock %}</title>
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    
+    <style>
+        /* Global Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #f0f2f5;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* Top Navigation */
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+        .navbar-brand i {
+            color: #7dd3c7;
+        }
+        
+        .badge-paperless {
+            background: rgba(255, 255, 255, 0.15);
+            color: #e6f4ed;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+        }
+        
+        .role-badge {
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .role-badge.him { background: #dbeafe; color: #1e40af; }
+        .role-badge.nurse { background: #d1fae5; color: #065f46; }
+        .role-badge.physician { background: #fef3c7; color: #92400e; }
+        .role-badge.pharmacy { background: #e0e7ff; color: #3730a3; }
+        .role-badge.mls { background: #fce4ec; color: #9a1f3f; }
+        .role-badge.optician { background: #f3e8ff; color: #6d28d9; }
+        
+        /* Notification Badge */
+        .notification-badge {
+            position: relative;
+        }
+        .notification-badge .badge-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #dc3545;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 10px;
+            min-width: 18px;
+            text-align: center;
+        }
+        
+        /* Sidebar - Always Visible */
+        .sidebar {
+            min-height: calc(100vh - 56px);
+            background: white;
+            border-right: 1px solid #e5e7eb;
+            padding: 20px 0;
+            position: sticky;
+            top: 56px;
+            height: calc(100vh - 56px);
+            overflow-y: auto;
+            z-index: 100;
+        }
+        
+        .sidebar .nav-section-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: #9ca3af;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            padding: 8px 20px 4px;
+        }
+        
+        .sidebar .nav-link {
+            color: #374151;
+            padding: 10px 20px;
+            border-radius: 8px;
+            margin: 2px 10px;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+            position: relative;
+        }
+        
+        .sidebar .nav-link:hover {
+            background: #f3f4f6;
+            color: #065f46;
+        }
+        
+        .sidebar .nav-link.active {
+            background: #d1fae5;
+            color: #065f46;
+            font-weight: 600;
+        }
+        
+        .sidebar .nav-link.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 8px;
+            bottom: 8px;
+            width: 4px;
+            background: #065f46;
+            border-radius: 0 4px 4px 0;
+        }
+        
+        .sidebar .nav-link i {
+            width: 22px;
+            color: #6b7280;
+            font-size: 0.95rem;
+        }
+        
+        .sidebar .nav-link.active i {
+            color: #065f46;
+        }
+        
+        .sidebar .nav-link .badge-notification {
+            margin-left: auto;
+            background: #dc3545;
+            color: white;
+            border-radius: 50%;
+            padding: 1px 6px;
+            font-size: 10px;
+            min-width: 18px;
+            text-align: center;
+        }
+        
+        /* Main Content */
+        .main-content {
+            padding: 20px 24px;
+            background: #f8fafc;
+            min-height: calc(100vh - 56px);
+        }
+        
+        /* Mobile Sidebar */
+        .sidebar-mobile-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 1040;
+        }
+        .sidebar-mobile-overlay.active {
+            display: block;
+        }
+        
+        .sidebar-mobile {
+            position: fixed;
+            top: 0;
+            left: -280px;
+            height: 100%;
+            width: 280px;
+            background: white;
+            z-index: 1050;
+            overflow-y: auto;
+            transition: left 0.3s ease;
+            box-shadow: 2px 0 20px rgba(0,0,0,0.1);
+        }
+        .sidebar-mobile.active {
+            left: 0;
+        }
+        .sidebar-mobile .close-btn {
+            position: absolute;
+            right: 15px;
+            top: 15px;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #6b7280;
+        }
+        .sidebar-mobile .nav-link {
+            padding: 12px 20px;
+            color: #374151;
+        }
+        .sidebar-mobile .nav-link.active {
+            background: #d1fae5;
+            color: #065f46;
+            font-weight: 600;
+        }
+        .sidebar-mobile .nav-link i {
+            width: 22px;
+        }
+        
+        /* Notification Dropdown */
+        .notification-dropdown {
+            max-height: 400px;
+            overflow-y: auto;
+            min-width: 320px;
+        }
+        .notification-item {
+            padding: 10px 15px;
+            border-bottom: 1px solid #f3f4f6;
+            transition: background 0.2s;
+        }
+        .notification-item:hover {
+            background: #f9fafb;
+        }
+        .notification-item.unread {
+            background: #f0fdf4;
+        }
+        .notification-item .time {
+            font-size: 0.7rem;
+            color: #9ca3af;
+        }
+        
+        /* Notification Toast */
+        .notification-toast {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 9999;
+            max-width: 400px;
+            min-width: 300px;
+            animation: slideIn 0.5s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-left: 4px solid #17a2b8;
+            background: white;
+            border-radius: 8px;
+            padding: 15px 20px;
+        }
+        .notification-toast.success {
+            border-left-color: #28a745;
+        }
+        .notification-toast.warning {
+            border-left-color: #ffc107;
+        }
+        .notification-toast.danger {
+            border-left-color: #dc3545;
+        }
+        .notification-toast .toast-link {
+            color: #065f46;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .notification-toast .toast-link:hover {
+            text-decoration: underline;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+        
+        /* Responsive */
+        @media (max-width: 767.98px) {
+            .sidebar-desktop {
+                display: none !important;
+            }
+            .main-content {
+                padding: 12px 16px;
+            }
+            .navbar-brand {
+                font-size: 1rem;
+            }
+            .notification-toast {
+                max-width: 90%;
+                right: 10px;
+                left: 10px;
+                min-width: auto;
+            }
+        }
+        
+        @media (min-width: 768px) {
+            .sidebar-mobile,
+            .sidebar-mobile-overlay,
+            .hamburger-btn {
+                display: none !important;
+            }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark" style="background: linear-gradient(135deg, #0d3b3a, #1a5f59);">
+        <div class="container-fluid">
+            <!-- Hamburger for mobile -->
+            <button class="btn btn-link text-white p-0 me-2 hamburger-btn" onclick="toggleMobileSidebar()" style="display: none;">
+                <i class="fas fa-bars fs-4"></i>
+            </button>
+            
+            <a class="navbar-brand" href="{% url 'b:dashboard' %}">
+                <i class="fas fa-heartbeat me-2"></i>HIM
+            </a>
+            
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link {% if page == 'dashboard' %}active{% endif %}" href="{% url 'b:dashboard' %}">
+                            <i class="fas fa-chart-pie"></i> Dashboard
+                        </a>
+                    </li>
+                </ul>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge-paperless d-none d-md-inline">
+                        <i class="fas fa-leaf me-1"></i> zero paper
+                    </span>
+                    
+                    <!-- Notifications -->
+                    <div class="dropdown">
+                        <button class="btn btn-outline-light btn-sm position-relative" data-bs-toggle="dropdown" id="notificationBell">
+                            <i class="fas fa-bell"></i>
+                            {% if notification_count > 0 %}
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-count" style="font-size: 0.6rem;">
+                                    {{ notification_count }}
+                                </span>
+                            {% else %}
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-count" style="font-size: 0.6rem; display: none;">
+                                    0
+                                </span>
+                            {% endif %}
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-end notification-dropdown" id="notificationDropdown">
+                            <h6 class="dropdown-header">Notifications</h6>
+                            <div id="notificationList">
+                                {% if notifications %}
+                                    {% for notification in notifications %}
+                                        <div class="notification-item {% if not notification.is_read %}unread{% endif %}">
+                                            <div class="d-flex justify-content-between">
+                                                <span>{{ notification.message }}</span>
+                                                <small class="time">{{ notification.created_at|timesince }} ago</small>
+                                            </div>
+                                            {% if notification.link %}
+                                                <a href="{{ notification.link }}" class="small text-success">View</a>
+                                            {% endif %}
+                                        </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="dropdown-item text-muted text-center">No notifications</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="dropdown">
+                        <button class="btn btn-outline-light btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle me-1"></i>
+                            <span class="d-none d-sm-inline">{{ user.get_full_name|default:user.username }}</span>
+                            <span class="role-badge {{ role|lower }} ms-1 d-none d-md-inline">{{ role }}</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><span class="dropdown-item-text"><strong>Role:</strong> {{ role }}</span></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form method="post" action="{% url 'b:logout' %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="dropdown-item text-danger">
+                                        <i class="fas fa-sign-out-alt me-2"></i>Logout
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mobile Sidebar Overlay -->
+    <div class="sidebar-mobile-overlay" id="mobileOverlay" onclick="toggleMobileSidebar()"></div>
+    
+    <!-- Mobile Sidebar -->
+    <div class="sidebar-mobile" id="mobileSidebar">
+        <button class="close-btn" onclick="toggleMobileSidebar()"><i class="fas fa-times"></i></button>
+        <div class="p-3 pt-4">
+            <h6 class="text-muted">Navigation</h6>
+        </div>
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link {% if page == 'dashboard' %}active{% endif %}" href="{% url 'b:dashboard' %}">
+                    <i class="fas fa-chart-pie me-2"></i> Dashboard
+                </a>
+            </li>
+            
+            {% if role == 'HIM' %}
+                <!-- Patient Management -->
+                <li class="nav-item">
+                    <a class="nav-link {% if page == 'register' %}active{% endif %}" href="{% url 'b:patient_registration' %}">
+                        <i class="fas fa-user-plus me-2"></i> Register Patient
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if page == 'patients' %}active{% endif %}" href="{% url 'b:patient_list' %}">
+                        <i class="fas fa-folder-open me-2"></i> All Records
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if page == 'assign' %}active{% endif %}" href="{% url 'b:assign_nurse' %}">
+                        <i class="fas fa-user-md me-2"></i> Assign Staff
+                        {% if pending_assignments > 0 %}
+                            <span class="badge bg-danger ms-2">{{ pending_assignments }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+                
+                <!-- User Management -->
+                <li class="nav-item mt-2">
+                    <hr class="my-1">
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if page == 'user_list' %}active{% endif %}" href="{% url 'b:user_list' %}">
+                        <i class="fas fa-users me-2"></i> All Users
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if page == 'user_register' %}active{% endif %}" href="{% url 'b:user_registration' %}">
+                        <i class="fas fa-user-plus me-2"></i> Add User
+                    </a>
+                </li>
+                
+            {% elif role == 'NURSE' %}
+                <li class="nav-item">
+                    <a class="nav-link {% if page == 'nursing' %}active{% endif %}" href="{% url 'b:nursing_dashboard' %}">
+                        <i class="fas fa-clipboard-list me-2"></i> My Assessments
+                        {% if pending_count > 0 %}
+                            <span class="badge bg-danger ms-2">{{ pending_count }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+                
+            {% elif role == 'PHYSICIAN' %}
+                <li class="nav-item">
+                    <a class="nav-link {% if page == 'doctor' %}active{% endif %}" href="{% url 'b:doctor_dashboard' %}">
+                        <i class="fas fa-prescription me-2"></i> Consultations
+                        {% if pending_count > 0 %}
+                            <span class="badge bg-danger ms-2">{{ pending_count }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+                
+            {% elif role == 'PHARMACY' %}
+                <li class="nav-item">
+                    <a class="nav-link {% if page == 'pharmacy' %}active{% endif %}" href="{% url 'b:pharmacy_dashboard' %}">
+                        <i class="fas fa-pills me-2"></i> Dispensary
+                        {% if pending_count > 0 %}
+                            <span class="badge bg-danger ms-2">{{ pending_count }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+                
+            {% elif role == 'MLS' %}
+                <li class="nav-item">
+                    <a class="nav-link {% if page == 'lab' %}active{% endif %}" href="{% url 'b:laboratory_dashboard' %}">
+                        <i class="fas fa-vial me-2"></i> Lab Tests
+                        {% if pending_count > 0 %}
+                            <span class="badge bg-danger ms-2">{{ pending_count }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+                
+            {% elif role == 'OPTOMETRIST' %}
+                <li class="nav-item">
+                    <a class="nav-link {% if page == 'optician' %}active{% endif %}" href="{% url 'b:optician_dashboard' %}">
+                        <i class="fas fa-eye me-2"></i> Optical
+                        {% if pending_count > 0 %}
+                            <span class="badge bg-danger ms-2">{{ pending_count }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'b:optician_assessment_walkin' %}">
+                        <i class="fas fa-user-plus me-2"></i> Walk-in
+                    </a>
+                </li>
+            {% endif %}
+            
+            <hr>
+            <li class="nav-item">
+                <span class="nav-link text-muted small">
+                    <i class="fas fa-check-circle text-success me-1"></i>paperless since 2026
+                </span>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Messages -->
+    <div class="container-fluid mt-2 mt-md-3">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    <!-- Notification Toast Container -->
+    <div id="notificationToastContainer"></div>
+
+    <!-- Main Content -->
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Desktop Sidebar - ALWAYS VISIBLE -->
+            <nav class="col-md-2 d-none d-md-block sidebar sidebar-desktop">
+                <div class="position-sticky">
+                    <!-- Main Section -->
+                    <div class="nav-section-title">Main</div>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link {% if page == 'dashboard' %}active{% endif %}" href="{% url 'b:dashboard' %}">
+                                <i class="fas fa-chart-pie"></i> Dashboard
+                            </a>
+                        </li>
+                    </ul>
+                    
+                    <!-- HIM Role Sections -->
+                    {% if role == 'HIM' %}
+                        <!-- Patient Management -->
+                        <div class="nav-section-title mt-3">Patient Management</div>
+                        <ul class="nav flex-column">
+                            <li class="nav-item">
+                                <a class="nav-link {% if page == 'register' %}active{% endif %}" href="{% url 'b:patient_registration' %}">
+                                    <i class="fas fa-user-plus"></i> Register Patient
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if page == 'patients' %}active{% endif %}" href="{% url 'b:patient_list' %}">
+                                    <i class="fas fa-folder-open"></i> All Records
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if page == 'assign' %}active{% endif %}" href="{% url 'b:assign_nurse' %}">
+                                    <i class="fas fa-user-md"></i> Assign Staff
+                                    {% if pending_assignments > 0 %}
+                                        <span class="badge-notification">{{ pending_assignments }}</span>
+                                    {% endif %}
+                                </a>
+                            </li>
+                        </ul>
+                        
+                        <!-- User Management -->
+                        <div class="nav-section-title mt-3">User Management</div>
+                        <ul class="nav flex-column">
+                            <li class="nav-item">
+                                <a class="nav-link {% if page == 'user_list' %}active{% endif %}" href="{% url 'b:user_list' %}">
+                                    <i class="fas fa-users"></i> All Users
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if page == 'user_register' %}active{% endif %}" href="{% url 'b:user_registration' %}">
+                                    <i class="fas fa-user-plus"></i> Add User
+                                </a>
+                            </li>
+                        </ul>
+                    {% endif %}
+                    
+                    <!-- Nurse Role Sections -->
+                    {% if role == 'NURSE' %}
+                        <div class="nav-section-title mt-3">My Tasks</div>
+                        <ul class="nav flex-column">
+                            <li class="nav-item">
+                                <a class="nav-link {% if page == 'nursing' %}active{% endif %}" href="{% url 'b:nursing_dashboard' %}">
+                                    <i class="fas fa-clipboard-list"></i> My Assessments
+                                    {% if pending_count > 0 %}
+                                        <span class="badge-notification">{{ pending_count }}</span>
+                                    {% endif %}
+                                </a>
+                            </li>
+                        </ul>
+                    {% endif %}
+                    
+                    <!-- Physician Role Sections -->
+                    {% if role == 'PHYSICIAN' %}
+                        <div class="nav-section-title mt-3">Consultations</div>
+                        <ul class="nav flex-column">
+                            <li class="nav-item">
+                                <a class="nav-link {% if page == 'doctor' %}active{% endif %}" href="{% url 'b:doctor_dashboard' %}">
+                                    <i class="fas fa-prescription"></i> My Consultations
+                                    {% if pending_count > 0 %}
+                                        <span class="badge-notification">{{ pending_count }}</span>
+                                    {% endif %}
+                                </a>
+                            </li>
+                        </ul>
+                    {% endif %}
+                    
+                    <!-- Pharmacy Role Sections -->
+                    {% if role == 'PHARMACY' %}
+                        <div class="nav-section-title mt-3">Pharmacy</div>
+                        <ul class="nav flex-column">
+                            <li class="nav-item">
+                                <a class="nav-link {% if page == 'pharmacy' %}active{% endif %}" href="{% url 'b:pharmacy_dashboard' %}">
+                                    <i class="fas fa-pills"></i> Dispensary
+                                    {% if pending_count > 0 %}
+                                        <span class="badge-notification">{{ pending_count }}</span>
+                                    {% endif %}
+                                </a>
+                            </li>
+                        </ul>
+                    {% endif %}
+                    
+                    <!-- MLS Role Sections -->
+                    {% if role == 'MLS' %}
+                        <div class="nav-section-title mt-3">Laboratory</div>
+                        <ul class="nav flex-column">
+                            <li class="nav-item">
+                                <a class="nav-link {% if page == 'lab' %}active{% endif %}" href="{% url 'b:laboratory_dashboard' %}">
+                                    <i class="fas fa-vial"></i> Lab Tests
+                                    {% if pending_count > 0 %}
+                                        <span class="badge-notification">{{ pending_count }}</span>
+                                    {% endif %}
+                                </a>
+                            </li>
+                        </ul>
+                    {% endif %}
+                    
+                    <!-- Optometrist Role Sections -->
+                    {% if role == 'OPTOMETRIST' %}
+                        <div class="nav-section-title mt-3">Optical</div>
+                        <ul class="nav flex-column">
+                            <li class="nav-item">
+                                <a class="nav-link {% if page == 'optician' %}active{% endif %}" href="{% url 'b:optician_dashboard' %}">
+                                    <i class="fas fa-eye"></i> Optical Assessments
+                                    {% if pending_count > 0 %}
+                                        <span class="badge-notification">{{ pending_count }}</span>
+                                    {% endif %}
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'b:optician_assessment_walkin' %}">
+                                    <i class="fas fa-user-plus"></i> Walk-in Patient
+                                </a>
+                            </li>
+                        </ul>
+                    {% endif %}
+                    
+                    <!-- System Section (Always Visible) -->
+                    <div class="nav-section-title mt-3">System</div>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <span class="nav-link text-muted small">
+                                <i class="fas fa-check-circle text-success me-1"></i>paperless since 2026
+                            </span>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main Content Area -->
+            <main class="col-12 col-md-10 main-content">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Mobile sidebar toggle
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('mobileSidebar');
+            const overlay = document.getElementById('mobileOverlay');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+            document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
+        }
+        
+        // Show hamburger on mobile
+        function checkScreenSize() {
+            const hamburger = document.querySelector('.hamburger-btn');
+            if (window.innerWidth < 768) {
+                hamburger.style.display = 'block';
+            } else {
+                hamburger.style.display = 'none';
+                document.getElementById('mobileSidebar').classList.remove('active');
+                document.getElementById('mobileOverlay').classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        }
+        
+        window.addEventListener('resize', checkScreenSize);
+        window.addEventListener('load', checkScreenSize);
+        
+        // Auto-dismiss alerts after 5 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(function(alert) {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                });
+            }, 5000);
+            
+            // Initialize WebSocket connection
+            {% if user.is_authenticated %}
+                connectWebSocket();
+            {% endif %}
+        });
+
+        // ============================================
+        // WEBSOCKET NOTIFICATION SYSTEM
+        // ============================================
+        
+        let socket = null;
+        let reconnectAttempts = 0;
+        const MAX_RECONNECT_ATTEMPTS = 5;
+        
+        function connectWebSocket() {
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                return;
+            }
+            
+            const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+            const wsUrl = `${protocol}${window.location.host}/ws/notifications/`;
+            
+            try {
+                socket = new WebSocket(wsUrl);
+                
+                socket.onopen = function(e) {
+                    console.log('🔗 WebSocket connected');
+                    reconnectAttempts = 0;
+                };
+                
+                socket.onmessage = function(e) {
+                    try {
+                        const data = JSON.parse(e.data);
+                        console.log('📨 WebSocket message:', data);
+                        
+                        if (data.type === 'notification') {
+                            showNotificationToast(data.message, data.link);
+                            updateNotificationCount(1);
+                            addNotificationToList(data.message, data.link);
+                        } else if (data.type === 'assignment_update') {
+                            const message = `📋 ${data.role} assigned to ${data.patient_name}`;
+                            showNotificationToast(message, '#');
+                            updateNotificationCount(1);
+                        }
+                    } catch (error) {
+                        console.error('Error parsing WebSocket message:', error);
+                    }
+                };
+                
+                socket.onclose = function(e) {
+                    console.log('🔌 WebSocket disconnected');
+                    attemptReconnect();
+                };
+                
+                socket.onerror = function(e) {
+                    console.error('❌ WebSocket error:', e);
+                    socket.close();
+                };
+                
+            } catch (error) {
+                console.error('WebSocket connection failed:', error);
+                attemptReconnect();
+            }
+        }
+        
+        function attemptReconnect() {
+            if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+                reconnectAttempts++;
+                const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
+                console.log(`🔄 Reconnecting in ${delay/1000}s (attempt ${reconnectAttempts})`);
+                setTimeout(connectWebSocket, delay);
+            } else {
+                console.log('❌ Max reconnect attempts reached. Please refresh the page.');
+            }
+        }
+        
+        // Show notification toast
+        function showNotificationToast(message, link) {
+            const container = document.getElementById('notificationToastContainer');
+            if (!container) return;
+            
+            const toast = document.createElement('div');
+            toast.className = 'notification-toast success';
+            toast.innerHTML = `
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <i class="fas fa-bell text-info me-2"></i>
+                        <span>${message}</span>
+                        ${link ? `<br><a href="${link}" class="toast-link mt-1 d-inline-block">View Details →</a>` : ''}
+                    </div>
+                    <button type="button" class="btn-close btn-close-sm" onclick="this.closest('.notification-toast').remove()"></button>
+                </div>
+            `;
+            container.appendChild(toast);
+            
+            // Auto remove after 8 seconds
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.style.animation = 'slideOut 0.5s ease';
+                    setTimeout(() => toast.remove(), 500);
+                }
+            }, 8000);
+        }
+        
+        // Update notification count
+        function updateNotificationCount(increment = 0) {
+            const badge = document.querySelector('.notification-count');
+            if (badge) {
+                let current = parseInt(badge.textContent) || 0;
+                current += increment;
+                badge.textContent = current;
+                badge.style.display = current > 0 ? 'inline' : 'none';
+            }
+        }
+        
+        // Add notification to dropdown list
+        function addNotificationToList(message, link) {
+            const list = document.getElementById('notificationList');
+            if (!list) return;
+            
+            // Remove "No notifications" message if present
+            const emptyMsg = list.querySelector('.text-muted.text-center');
+            if (emptyMsg) emptyMsg.remove();
+            
+            const item = document.createElement('div');
+            item.className = 'notification-item unread';
+            const time = new Date().toLocaleTimeString();
+            item.innerHTML = `
+                <div class="d-flex justify-content-between">
+                    <span>${message}</span>
+                    <small class="time">just now</small>
+                </div>
+                ${link ? `<a href="${link}" class="small text-success">View</a>` : ''}
+            `;
+            list.prepend(item);
+            
+            // Limit to 20 items
+            while (list.children.length > 20) {
+                list.removeChild(list.lastChild);
+            }
+        }
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

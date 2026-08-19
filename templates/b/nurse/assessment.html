@@ -1,0 +1,59 @@
+<!-- templates/b/nurse/assessment.html -->
+
+
+
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Nursing Assessment{% endblock %}
+
+{% block content %}
+<div class="card card-custom">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-user-nurse text-success me-2"></i>
+            Nursing Assessment - {{ patient.full_name }}
+            <span class="badge bg-secondary ms-2">{{ patient.hospital_number }}</span>
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            Complete the vital signs and biohazard assessment for <strong>{{ patient.full_name }}</strong>
+        </div>
+        
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="text-success border-bottom pb-2"><i class="fas fa-heartbeat me-2"></i>Vital Signs</h6>
+                    <div class="row">
+                        <div class="col-md-6">{{ form.blood_pressure_systolic|as_crispy_field }}</div>
+                        <div class="col-md-6">{{ form.blood_pressure_diastolic|as_crispy_field }}</div>
+                    </div>
+                    {{ form.pulse_rate|as_crispy_field }}
+                    {{ form.temperature|as_crispy_field }}
+                    {{ form.respiratory_rate|as_crispy_field }}
+                    {{ form.oxygen_saturation|as_crispy_field }}
+                </div>
+                <div class="col-md-6">
+                    <h6 class="text-success border-bottom pb-2"><i class="fas fa-biohazard me-2"></i>Biohazard Assessment</h6>
+                    {{ form.biohazard_risk|as_crispy_field }}
+                    {{ form.isolation_required|as_crispy_field }}
+                    {{ form.notes|as_crispy_field }}
+                </div>
+            </div>
+            
+            <div class="mt-4 d-flex justify-content-between">
+                <a href="{% url 'b:nursing_dashboard' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i> Back
+                </a>
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-save me-2"></i> Complete Assessment
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

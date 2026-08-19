@@ -1,0 +1,313 @@
+<!-- templates/b/him/patient_registration.html -->
+
+
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Register Patient - HIM{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-section {
+        display: none;
+        animation: fadeIn 0.3s ease;
+    }
+    .form-section.active {
+        display: block;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .step-indicator {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 30px;
+        position: relative;
+        padding: 0 20px;
+    }
+    .step-indicator::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 40px;
+        right: 40px;
+        height: 2px;
+        background: #dee2e6;
+        transform: translateY(-50%);
+        z-index: 0;
+    }
+    .step {
+        background: white;
+        border: 2px solid #dee2e6;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: #6c757d;
+        position: relative;
+        z-index: 1;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    .step.active {
+        border-color: #065f46;
+        background: #065f46;
+        color: white;
+    }
+    .step.completed {
+        border-color: #10b981;
+        background: #10b981;
+        color: white;
+    }
+    .step-label {
+        position: absolute;
+        top: 45px;
+        font-size: 11px;
+        white-space: nowrap;
+        color: #6c757d;
+    }
+    .age-display {
+        min-height: 38px;
+        padding: 10px 12px;
+        border-radius: 0.375rem;
+        background-color: #f8f9fa;
+        border: 1px solid #ced4da;
+        color: #065f46;
+        font-weight: 500;
+        width: 100%;
+    }
+    .age-display.loading {
+        color: #6c757d;
+        background-color: #e9ecef;
+    }
+    .age-display.error {
+        color: #dc3545;
+        border-color: #dc3545;
+    }
+    @media (max-width: 576px) {
+        .step-indicator {
+            padding: 0 10px;
+        }
+        .step {
+            width: 32px;
+            height: 32px;
+            font-size: 0.8rem;
+        }
+        .step-label {
+            font-size: 9px;
+            top: 38px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card card-custom">
+    <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <h5 class="mb-0"><i class="fas fa-user-plus text-success me-2"></i>Patient Registration</h5>
+        <span class="badge bg-info">Step 1 of 3</span>
+    </div>
+    <div class="card-body">
+        <!-- Step Indicator -->
+        <div class="step-indicator">
+            <div class="step active" data-step="1">1<span class="step-label">Personal</span></div>
+            <div class="step" data-step="2">2<span class="step-label">Contact</span></div>
+            <div class="step" data-step="3">3<span class="step-label">Address</span></div>
+        </div>
+
+        <form method="post" id="registrationForm" novalidate>
+            {% csrf_token %}
+            
+            <!-- Step 1: Personal Information -->
+            <div id="section-1" class="form-section active">
+                <h6 class="text-success mb-3"><i class="fas fa-user me-2"></i>Personal Information</h6>
+                <div class="row">
+                    <div class="col-md-6">{{ form.hospital_number|as_crispy_field }}</div>
+                    <div class="col-md-6">{{ form.last_name|as_crispy_field }}</div>
+                    <div class="col-md-6">{{ form.first_name|as_crispy_field }}</div>
+                    <div class="col-md-6">{{ form.middle_name|as_crispy_field }}</div>
+                    <div class="col-md-4">{{ form.date_of_birth|as_crispy_field }}</div>
+                    <div class="col-md-4">
+                        <label class="form-label">Age <small class="text-muted">(auto-calculated)</small></label>
+                        <div class="age-display" id="age-display">—</div>
+                    </div>
+                    <div class="col-md-4">{{ form.gender|as_crispy_field }}</div>
+                </div>
+                <div class="mt-4">
+                    <button type="button" class="btn btn-success next-step" data-next="2">
+                        Next <i class="fas fa-arrow-right ms-2"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 2: Contact Information -->
+            <div id="section-2" class="form-section">
+                <h6 class="text-success mb-3"><i class="fas fa-phone me-2"></i>Contact Information</h6>
+                <div class="row">
+                    <div class="col-md-6">{{ form.phone|as_crispy_field }}</div>
+                    <div class="col-md-6">{{ form.email|as_crispy_field }}</div>
+                </div>
+                <div class="mt-4 d-flex justify-content-between">
+                    <button type="button" class="btn btn-secondary prev-step" data-prev="1">
+                        <i class="fas fa-arrow-left me-2"></i> Previous
+                    </button>
+                    <button type="button" class="btn btn-success next-step" data-next="3">
+                        Next <i class="fas fa-arrow-right ms-2"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 3: Address -->
+            <div id="section-3" class="form-section">
+                <h6 class="text-success mb-3"><i class="fas fa-map-marker-alt me-2"></i>Address Information</h6>
+                <div class="row">
+                    <div class="col-md-12">{{ form.address|as_crispy_field }}</div>
+                </div>
+                
+                <!-- Assignment Option -->
+                <div class="alert alert-info mt-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    After registration, you can assign this patient to a nurse for assessment.
+                </div>
+                
+                <div class="mt-4 d-flex justify-content-between">
+                    <button type="button" class="btn btn-secondary prev-step" data-prev="2">
+                        <i class="fas fa-arrow-left me-2"></i> Previous
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save me-2"></i> Register Patient
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Age calculation
+    const dobField = document.getElementById('id_date_of_birth');
+    const ageDisplay = document.getElementById('age-display');
+    
+    if (dobField && ageDisplay) {
+        dobField.addEventListener('change', function() {
+            const dob = this.value;
+            
+            if (dob) {
+                // Show loading state
+                ageDisplay.textContent = 'Calculating...';
+                ageDisplay.className = 'age-display loading';
+                
+                // Make AJAX request using fetch
+                fetch(`/api/age/?dob=${dob}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success && data.age) {
+                            ageDisplay.textContent = data.age;
+                            ageDisplay.className = 'age-display';
+                        } else {
+                            ageDisplay.textContent = 'Error: ' + (data.error || 'Invalid date');
+                            ageDisplay.className = 'age-display error';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        ageDisplay.textContent = 'Error calculating age';
+                        ageDisplay.className = 'age-display error';
+                    });
+            } else {
+                ageDisplay.textContent = '—';
+                ageDisplay.className = 'age-display';
+            }
+        });
+        
+        // Auto-trigger age calculation if DOB is pre-filled
+        if (dobField.value) {
+            dobField.dispatchEvent(new Event('change'));
+        }
+    }
+
+    // Step navigation
+    let currentStep = 1;
+    const totalSteps = 3;
+    
+    function showStep(step) {
+        // Hide all sections
+        document.querySelectorAll('.form-section').forEach(el => {
+            el.classList.remove('active');
+        });
+        
+        // Show selected section
+        const section = document.getElementById(`section-${step}`);
+        if (section) {
+            section.classList.add('active');
+        }
+        
+        // Update step indicators
+        document.querySelectorAll('.step').forEach(el => {
+            el.classList.remove('active', 'completed');
+        });
+        
+        for (let i = 1; i <= totalSteps; i++) {
+            const stepEl = document.querySelector(`.step[data-step="${i}"]`);
+            if (stepEl) {
+                if (i === step) {
+                    stepEl.classList.add('active');
+                } else if (i < step) {
+                    stepEl.classList.add('completed');
+                }
+            }
+        }
+        
+        currentStep = step;
+        
+        // Update badge
+        const badge = document.querySelector('.card-header .badge');
+        if (badge) {
+            badge.textContent = `Step ${step} of ${totalSteps}`;
+        }
+    }
+    
+    // Next step buttons
+    document.querySelectorAll('.next-step').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const next = parseInt(this.dataset.next);
+            if (next <= totalSteps) {
+                showStep(next);
+            }
+        });
+    });
+    
+    // Previous step buttons
+    document.querySelectorAll('.prev-step').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const prev = parseInt(this.dataset.prev);
+            if (prev >= 1) {
+                showStep(prev);
+            }
+        });
+    });
+    
+    // Click on step indicators
+    document.querySelectorAll('.step').forEach(el => {
+        el.addEventListener('click', function() {
+            const step = parseInt(this.dataset.step);
+            if (step <= currentStep || this.classList.contains('completed')) {
+                showStep(step);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

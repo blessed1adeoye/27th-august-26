@@ -1,0 +1,81 @@
+<!-- templates/b/home.html -->
+
+
+
+{% extends 'auth_base.html' %}
+{% load static %}
+
+{% block title %}Welcome - HIM{% endblock %}
+
+{% block content %}
+<div class="text-center">
+    <i class="fas fa-heartbeat logo"></i>
+    <h1 class="brand mt-2">Health Information Management</h1>
+    <p class="subtitle">Crest FM Medical Outreach · Paperless System</p>
+    
+    <hr>
+    
+    <div class="row g-2 mt-3">
+        <div class="col-6 col-md-4">
+            <div class="p-2 border rounded-3 bg-light">
+                <i class="fas fa-user-md text-success" style="font-size: 1.5rem;"></i>
+                <div class="small fw-bold">HIM</div>
+                <small class="text-muted">Registration</small>
+            </div>
+        </div>
+        <div class="col-6 col-md-4">
+            <div class="p-2 border rounded-3 bg-light">
+                <i class="fas fa-user-nurse text-info" style="font-size: 1.5rem;"></i>
+                <div class="small fw-bold">Nurse</div>
+                <small class="text-muted">Vitals</small>
+            </div>
+        </div>
+        <div class="col-6 col-md-4">
+            <div class="p-2 border rounded-3 bg-light">
+                <i class="fas fa-stethoscope text-warning" style="font-size: 1.5rem;"></i>
+                <div class="small fw-bold">Doctor</div>
+                <small class="text-muted">Consultation</small>
+            </div>
+        </div>
+        <div class="col-6 col-md-4">
+            <div class="p-2 border rounded-3 bg-light">
+                <i class="fas fa-pills text-primary" style="font-size: 1.5rem;"></i>
+                <div class="small fw-bold">Pharmacy</div>
+                <small class="text-muted">Dispensing</small>
+            </div>
+        </div>
+        <div class="col-6 col-md-4">
+            <div class="p-2 border rounded-3 bg-light">
+                <i class="fas fa-microscope text-danger" style="font-size: 1.5rem;"></i>
+                <div class="small fw-bold">Laboratory</div>
+                <small class="text-muted">Testing</small>
+            </div>
+        </div>
+        <div class="col-6 col-md-4">
+            <div class="p-2 border rounded-3 bg-light">
+                <i class="fas fa-eye" style="font-size: 1.5rem; color: #7c3aed;"></i>
+                <div class="small fw-bold">Optician</div>
+                <small class="text-muted">Optical</small>
+            </div>
+        </div>
+    </div>
+    
+    <hr>
+    
+    <div class="mt-3">
+        {% if user.is_authenticated %}
+            <a href="{% url 'b:dashboard' %}" class="btn btn-success btn-lg w-100">
+                <i class="fas fa-tachometer-alt me-2"></i>Go to Dashboard
+            </a>
+        {% else %}
+            <a href="{% url 'b:login' %}" class="btn btn-success btn-lg w-100">
+                <i class="fas fa-sign-in-alt me-2"></i>Login
+            </a>
+        {% endif %}
+    </div>
+    
+    <p class="text-muted small mt-3">
+        <i class="fas fa-leaf text-success me-1"></i> Completely paperless · All data stored securely
+    </p>
+</div>
+{% endblock %}

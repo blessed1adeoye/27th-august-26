@@ -1,0 +1,63 @@
+<!-- templates/b/him/patient_list.html -->
+
+
+
+{% extends 'base.html' %}
+
+{% block title %}Patient Records - HIM{% endblock %}
+
+{% block content %}
+<div class="card card-custom">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="fas fa-folder-open text-success me-2"></i>Patient Records</h5>
+        <div>
+            <span class="badge bg-primary me-2">{{ total }} patients</span>
+            <a href="{% url 'b:patient_registration' %}" class="btn btn-success btn-sm">
+                <i class="fas fa-user-plus me-1"></i> Register
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if patients %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Hospital No.</th>
+                            <th>Full Name</th>
+                            <th>Gender</th>
+                            <th>Phone</th>
+                            <th>Stage</th>
+                            <th>Registered</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for patient in patients %}
+                            <tr>
+                                <td><strong>{{ patient.hospital_number }}</strong></td>
+                                <td>{{ patient.full_name }}</td>
+                                <td>{{ patient.gender }}</td>
+                                <td>{{ patient.phone }}</td>
+                                <td>
+                                    <span class="badge {% if patient.current_stage == 'REGISTERED' %}bg-secondary{% elif patient.current_stage == 'NURSING' %}bg-info{% elif patient.current_stage == 'DOCTOR' %}bg-warning{% elif patient.current_stage == 'PHARMACY' %}bg-primary{% elif patient.current_stage == 'LABORATORY' %}bg-danger{% elif patient.current_stage == 'OPTICIAN' %}bg-purple{% else %}bg-success{% endif %}">
+                                        {{ patient.get_current_stage_display }}
+                                    </span>
+                                </td>
+                                <td>{{ patient.created_at|date:"M d, Y" }}</td>
+                                <td>
+                                    <a href="{% url 'b:patient_detail' patient.id %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-muted text-center my-4">No patients registered yet.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

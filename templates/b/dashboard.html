@@ -1,0 +1,416 @@
+<!-- templates/b/dashboard.html -->
+{% extends 'base.html' %}
+{% load static %}
+{% block extra_css %}
+<style>
+    .stat-card-responsive {
+        transition: all 0.3s ease;
+    }
+    .stat-card-responsive:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .table-responsive-custom {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    @media (max-width: 767.98px) {
+        .stat-card-responsive .card-body {
+            padding: 0.75rem;
+        }
+        .stat-card-responsive h2 {
+            font-size: 1.3rem;
+        }
+        .stat-card-responsive h6 {
+            font-size: 0.7rem;
+        }
+        .stat-card-responsive .opacity-75 {
+            font-size: 0.65rem;
+        }
+        .table-responsive-custom table {
+            font-size: 0.75rem;
+        }
+        .table-responsive-custom .btn-sm {
+            font-size: 0.65rem;
+            padding: 0.15rem 0.4rem;
+        }
+    }
+    
+    @media (max-width: 575.98px) {
+        .stat-grid .col-6 {
+            padding-right: 0.25rem;
+            padding-left: 0.25rem;
+        }
+        .stat-card-responsive .card-body {
+            padding: 0.6rem;
+        }
+        .stat-card-responsive h2 {
+            font-size: 1.1rem;
+            margin-bottom: 0 !important;
+        }
+        .stat-card-responsive h6 {
+            font-size: 0.6rem;
+            margin-bottom: 0.25rem !important;
+        }
+        .stat-card-responsive .opacity-75 {
+            font-size: 0.55rem;
+        }
+        .table-responsive-custom table {
+            font-size: 0.7rem;
+        }
+        .table-responsive-custom td, 
+        .table-responsive-custom th {
+            padding: 0.3rem 0.4rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3 g-md-4">
+    {% if role == 'HIM' %}
+        <!-- HIM Dashboard -->
+        <div class="stat-grid col-12">
+            <div class="row g-2 g-md-3">
+                <div class="col-6 col-md-3">
+                    <div class="card stat-card-responsive text-white bg-success h-100">
+                        <div class="card-body">
+                            <h6 class="mb-1"><i class="fas fa-users me-1"></i>Total</h6>
+                            <h2 class="mb-0">{{ total_patients|default:0 }}</h2>
+                            <small class="opacity-75">Patients</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card stat-card-responsive text-white bg-primary h-100">
+                        <div class="card-body">
+                            <h6 class="mb-1"><i class="fas fa-calendar-day me-1"></i>Today</h6>
+                            <h2 class="mb-0">{{ today_patients|default:0 }}</h2>
+                            <small class="opacity-75">New patients</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card stat-card-responsive text-white bg-warning h-100">
+                        <div class="card-body">
+                            <h6 class="mb-1"><i class="fas fa-user-md me-1"></i>Nursing</h6>
+                            <h2 class="mb-0">{{ pending_nursing|default:0 }}</h2>
+                            <small class="opacity-75">Pending</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card stat-card-responsive text-white bg-info h-100">
+                        <div class="card-body">
+                            <h6 class="mb-1"><i class="fas fa-stethoscope me-1"></i>Doctor</h6>
+                            <h2 class="mb-0">{{ pending_doctor|default:0 }}</h2>
+                            <small class="opacity-75">Pending</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Workflow Summary -->
+        <div class="col-12 mt-3 mt-md-4">
+            <h5 class="mb-2 mb-md-3"><i class="fas fa-chart-line me-2"></i>Workflow Summary</h5>
+            <div class="row workflow-summary g-2 g-md-3">
+                <div class="col-4 col-md-3">
+                    <div class="card text-center h-100">
+                        <div class="card-body p-2 p-md-3">
+                            <h6 class="mb-1">Pharmacy</h6>
+                            <h3 class="mb-0">{{ pending_pharmacy|default:0 }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-4 col-md-3">
+                    <div class="card text-center h-100">
+                        <div class="card-body p-2 p-md-3">
+                            <h6 class="mb-1">Laboratory</h6>
+                            <h3 class="mb-0">{{ pending_lab|default:0 }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-4 col-md-3">
+                    <div class="card text-center h-100">
+                        <div class="card-body p-2 p-md-3">
+                            <h6 class="mb-1">Optician</h6>
+                            <h3 class="mb-0">{{ pending_optician|default:0 }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+    {% elif role == 'NURSE' %}
+        <!-- Nurse Dashboard -->
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <h5 class="mb-0"><i class="fas fa-user-nurse me-2 text-success"></i>Nursing Assessments</h5>
+                    <span class="badge bg-primary">{{ pending_count|default:0 }} pending</span>
+                </div>
+                <div class="card-body p-0 p-md-3">
+                    {% if patients %}
+                        <div class="table-responsive-custom">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Hospital No.</th>
+                                        <th>Name</th>
+                                        <th class="d-none d-sm-table-cell">Gender</th>
+                                        <th class="d-none d-md-table-cell">Age</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for patient in patients %}
+                                        <tr>
+                                            <td><small>{{ patient.hospital_number }}</small></td>
+                                            <td>{{ patient.full_name|truncatechars:15 }}</td>
+                                            <td class="d-none d-sm-table-cell">{{ patient.gender }}</td>
+                                            <td class="d-none d-md-table-cell">{{ patient.age_data.years }}y</td>
+                                            <td>
+                                                <a href="{% url 'b:nursing_assessment' patient.id %}" class="btn btn-sm btn-success">
+                                                    <i class="fas fa-clipboard-list me-1"></i>Assess
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted text-center my-4 py-3">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            No patients pending nursing assessment.
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+    {% elif role == 'PHYSICIAN' %}
+        <!-- Doctor Dashboard -->
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <h5 class="mb-0"><i class="fas fa-stethoscope me-2 text-success"></i>Consultations</h5>
+                    <span class="badge bg-primary">{{ pending_count|default:0 }} pending</span>
+                </div>
+                <div class="card-body p-0 p-md-3">
+                    {% if patients %}
+                        <div class="table-responsive-custom">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Hospital No.</th>
+                                        <th>Name</th>
+                                        <th class="d-none d-sm-table-cell">Gender</th>
+                                        <th class="d-none d-md-table-cell">Age</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for patient in patients %}
+                                        <tr>
+                                            <td><small>{{ patient.hospital_number }}</small></td>
+                                            <td>{{ patient.full_name|truncatechars:15 }}</td>
+                                            <td class="d-none d-sm-table-cell">{{ patient.gender }}</td>
+                                            <td class="d-none d-md-table-cell">{{ patient.age_data.years }}y</td>
+                                            <td>
+                                                <a href="{% url 'b:doctor_consultation' patient.id %}" class="btn btn-sm btn-success">
+                                                    <i class="fas fa-prescription me-1"></i>Consult
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted text-center my-4 py-3">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            No patients pending consultation.
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+    {% elif role == 'PHARMACY' %}
+        <!-- Pharmacy Dashboard -->
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <h5 class="mb-0"><i class="fas fa-pills me-2 text-success"></i>Pharmacy Orders</h5>
+                    <span class="badge bg-primary">{{ pending_count|default:0 }} pending</span>
+                </div>
+                <div class="card-body p-0 p-md-3">
+                    {% if orders %}
+                        <div class="table-responsive-custom">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Patient</th>
+                                        <th class="d-none d-sm-table-cell">Drug</th>
+                                        <th class="d-none d-md-table-cell">Qty</th>
+                                        <th class="d-none d-lg-table-cell">Dosage</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for order in orders %}
+                                        <tr>
+                                            <td>{{ order.patient.full_name|truncatechars:12 }}</td>
+                                            <td class="d-none d-sm-table-cell">{{ order.drug_name|truncatechars:15 }}</td>
+                                            <td class="d-none d-md-table-cell">{{ order.quantity }}</td>
+                                            <td class="d-none d-lg-table-cell">{{ order.dosage|default:"—" }}</td>
+                                            <td>
+                                                <a href="{% url 'b:pharmacy_dispense' order.id %}" class="btn btn-sm btn-success">
+                                                    <i class="fas fa-check me-1"></i>Dispense
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted text-center my-4 py-3">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            No pending pharmacy orders.
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+    {% elif role == 'MLS' %}
+        <!-- Laboratory Dashboard -->
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <h5 class="mb-0"><i class="fas fa-microscope me-2 text-success"></i>Laboratory Tests</h5>
+                    <span class="badge bg-primary">{{ pending_count|default:0 }} pending</span>
+                </div>
+                <div class="card-body p-0 p-md-3">
+                    {% if tests %}
+                        <div class="table-responsive-custom">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Patient</th>
+                                        <th class="d-none d-sm-table-cell">Malaria</th>
+                                        <th class="d-none d-md-table-cell">RBS</th>
+                                        <th class="d-none d-lg-table-cell">HBsAg</th>
+                                        <th class="d-none d-lg-table-cell">HCV</th>
+                                        <th class="d-none d-xl-table-cell">HIV</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for test in tests %}
+                                        <tr>
+                                            <td>{{ test.patient.full_name|truncatechars:12 }}</td>
+                                            <td class="d-none d-sm-table-cell">
+                                                <span class="badge {% if test.malaria_parasite == 'POSITIVE' %}bg-danger{% elif test.malaria_parasite == 'NEGATIVE' %}bg-success{% else %}bg-warning{% endif %}">
+                                                    {{ test.malaria_parasite|default:"—" }}
+                                                </span>
+                                            </td>
+                                            <td class="d-none d-md-table-cell">{{ test.random_blood_sugar|default:"—" }}</td>
+                                            <td class="d-none d-lg-table-cell">
+                                                <span class="badge {% if test.hbsag == 'POSITIVE' %}bg-danger{% elif test.hbsag == 'NEGATIVE' %}bg-success{% else %}bg-warning{% endif %}">
+                                                    {{ test.hbsag|default:"—" }}
+                                                </span>
+                                            </td>
+                                            <td class="d-none d-lg-table-cell">
+                                                <span class="badge {% if test.hcv == 'POSITIVE' %}bg-danger{% elif test.hcv == 'NEGATIVE' %}bg-success{% else %}bg-warning{% endif %}">
+                                                    {{ test.hcv|default:"—" }}
+                                                </span>
+                                            </td>
+                                            <td class="d-none d-xl-table-cell">
+                                                <span class="badge {% if test.hiv == 'POSITIVE' %}bg-danger{% elif test.hiv == 'NEGATIVE' %}bg-success{% else %}bg-warning{% endif %}">
+                                                    {{ test.hiv|default:"—" }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <a href="{% url 'b:laboratory_test' test.id %}" class="btn btn-sm btn-success">
+                                                    <i class="fas fa-vial me-1"></i>Test
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted text-center my-4 py-3">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            No pending laboratory tests.
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+    {% elif role == 'OPTOMETRIST' %}
+        <!-- Optician Dashboard -->
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <h5 class="mb-0"><i class="fas fa-eye me-2 text-success"></i>Optical Assessments</h5>
+                    <div class="d-flex flex-wrap gap-2">
+                        <span class="badge bg-primary">{{ pending_count|default:0 }} pending</span>
+                        <a href="{% url 'b:optician_assessment_walkin' %}" class="btn btn-sm btn-outline-success">
+                            <i class="fas fa-user-plus me-1"></i>Walk-in
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body p-0 p-md-3">
+                    {% if assessments %}
+                        <div class="table-responsive-custom">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Patient</th>
+                                        <th class="d-none d-sm-table-cell">Type</th>
+                                        <th class="d-none d-md-table-cell">Glasses</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for assessment in assessments %}
+                                        <tr>
+                                            <td>{{ assessment.patient.full_name|truncatechars:12 }}</td>
+                                            <td class="d-none d-sm-table-cell">
+                                                {% if assessment.is_walk_in %}
+                                                    <span class="badge bg-info">Walk-in</span>
+                                                {% else %}
+                                                    <span class="badge bg-primary">Referral</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="d-none d-md-table-cell">{{ assessment.glasses_allocated|default:0 }}</td>
+                                            <td>
+                                                <a href="{% url 'b:optician_assessment' assessment.patient.id %}" class="btn btn-sm btn-success">
+                                                    <i class="fas fa-eye me-1"></i>Assess
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted text-center my-4 py-3">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            No pending optical assessments.
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

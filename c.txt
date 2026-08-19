@@ -1,0 +1,47 @@
+templates/
+├── base.html                           # Main base template with sidebar
+├── b/
+│   ├── home.html                       # Landing page
+│   ├── login.html                      # Login page
+│   ├── dashboard.html                  # Role-based dashboard
+│   ├── him/
+│   │   ├── patient_registration.html   # HIM registration form
+│   │   ├── patient_list.html          # HIM patient list
+│   │   └── patient_detail.html        # HIM patient detail
+│   ├── nurse/
+│   │   ├── dashboard.html             # Nurse dashboard
+│   │   └── assessment.html            # Nursing assessment form
+│   ├── doctor/
+│   │   ├── dashboard.html             # Doctor dashboard
+│   │   └── consultation.html          # Medical consultation form
+│   ├── pharmacy/
+│   │   ├── dashboard.html             # Pharmacy dashboard
+│   │   └── dispense.html              # Dispense medication form
+│   ├── lab/
+│   │   ├── dashboard.html             # Laboratory dashboard
+│   │   └── test.html                  # Lab test form
+│   └── optician/
+│       ├── dashboard.html             # Optician dashboard
+│       └── assessment.html            # Optical assessment form
+
+
+
+
+
+
+
+
+# Create migrations
+python manage.py makemigrations
+
+# Apply migrations
+python manage.py migrate
+
+# Create superuser
+python manage.py createsuperuser
+
+# Setup user groups
+python manage.py setup_groups
+
+# Run server
+python manage.py runserver

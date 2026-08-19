@@ -1,0 +1,57 @@
+<!-- templates/b/pharmacy/dispense.html -->
+
+
+
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Dispense Medication{% endblock %}
+
+{% block content %}
+<div class="card card-custom">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-pills text-success me-2"></i>
+            Dispense Medication - {{ order.patient.full_name }}
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <h6 class="text-muted">Patient Information</h6>
+                <p><strong>Name:</strong> {{ order.patient.full_name }}</p>
+                <p><strong>Hospital No:</strong> {{ order.patient.hospital_number }}</p>
+                <p><strong>Phone:</strong> {{ order.patient.phone }}</p>
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-muted">Prescription Details</h6>
+                <p><strong>Drug:</strong> {{ order.drug_name }}</p>
+                <p><strong>Quantity:</strong> {{ order.quantity }}</p>
+                <p><strong>Dosage:</strong> {{ order.dosage|default:"—" }}</p>
+                <p><strong>Frequency:</strong> {{ order.frequency|default:"—" }}</p>
+                <p><strong>Duration:</strong> {{ order.duration|default:"—" }}</p>
+                {% if order.instructions %}
+                    <p><strong>Instructions:</strong> {{ order.instructions }}</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <form method="post">
+            {% csrf_token %}
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Confirm dispensing of <strong>{{ order.quantity }}</strong> unit(s) of <strong>{{ order.drug_name }}</strong> to <strong>{{ order.patient.full_name }}</strong>
+            </div>
+            
+            <div class="mt-4 d-flex justify-content-between">
+                <a href="{% url 'pharmacy_dashboard' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i> Back
+                </a>
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-check-circle me-2"></i> Confirm Dispense
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

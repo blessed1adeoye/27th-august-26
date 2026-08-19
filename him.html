@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HIM · Paperless Registration</title>
+    <!-- Font Awesome 6 (free) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, system-ui, -apple-system, sans-serif;
+            background: #f4f7fb;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ---------- top bar ---------- */
+        .top-bar {
+            background: linear-gradient(135deg, #0d3b3a, #1a5f59);
+            color: white;
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 14px rgba(0, 20, 10, 0.25);
+            position: sticky;
+            top: 0;
+            z-index: 1050;
+            flex-wrap: wrap;
+            gap: 8px 16px;
+        }
+
+        .top-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .top-left h1 {
+            font-size: 22px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .top-left h1 i {
+            color: #7dd3c7;
+        }
+
+        .paperless-badge {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(4px);
+            padding: 5px 18px 5px 14px;
+            border-radius: 40px;
+            font-size: 13px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #e6f4ed;
+        }
+
+        .hamburger {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 26px;
+            cursor: pointer;
+            padding: 0 6px;
+            display: none;
+        }
+
+        /* ---------- main layout ---------- */
+        .main-wrapper {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* ===== FIRST SIDEBAR (Main Navigation) ===== */
+        .main-sidebar {
+            width: 230px;
+            background: white;
+            border-right: 1px solid #dce7e2;
+            overflow-y: auto;
+            padding: 20px 0 30px;
+            box-shadow: 2px 0 12px rgba(0, 0, 0, 0.02);
+            flex-shrink: 0;
+            z-index: 1030;
+        }
+
+        .main-sidebar .sidebar-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            width: 100%;
+            padding: 14px 24px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            text-align: left;
+            font-size: 15px;
+            font-weight: 500;
+            color: #1f3d31;
+            transition: all 0.15s;
+            border-left: 4px solid transparent;
+        }
+
+        .main-sidebar .sidebar-item i {
+            width: 22px;
+            font-size: 1.1rem;
+            color: #3d7260;
+        }
+
+        .main-sidebar .sidebar-item:hover {
+            background: #eef6f2;
+            color: #0b4d33;
+            padding-left: 28px;
+        }
+
+        .main-sidebar .sidebar-item.active {
+            background: #e1f0e9;
+            color: #0f3f2b;
+            border-left-color: #1a7a53;
+            font-weight: 600;
+        }
+
+        .main-sidebar .sidebar-item.active i {
+            color: #1a7a53;
+        }
+
+        .main-sidebar .sidebar-divider {
+            height: 1px;
+            background: #e0eae4;
+            margin: 12px 20px;
+        }
+
+        /* ===== SECOND SIDEBAR (Registration Steps) ===== */
+        .reg-sidebar {
+            width: 240px;
+            background: linear-gradient(180deg, #0d3b3a 0%, #1a5f59 100%);
+            overflow-y: auto;
+            padding: 24px 16px 30px;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .reg-sidebar .sidebar-header {
+            border-bottom: 2px solid #14b8a6;
+            padding-bottom: 16px;
+            margin-bottom: 24px;
+        }
+
+        .reg-sidebar .sidebar-header h5 {
+            font-size: 18px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .reg-sidebar .sidebar-header small {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 13px;
+            display: block;
+            margin-top: 4px;
+        }
+
+        .reg-sidebar .sidebar-nav {
+            list-style: none;
+            padding: 0;
+        }
+
+        .reg-sidebar .sidebar-nav li {
+            margin-bottom: 8px;
+        }
+
+        .reg-sidebar .sidebar-nav a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            width: 100%;
+            text-align: left;
+            font-size: 15px;
+        }
+
+        .reg-sidebar .sidebar-nav a:hover {
+            background: rgba(20, 184, 166, 0.2);
+            transform: translateX(4px);
+            color: #fff;
+        }
+
+        .reg-sidebar .sidebar-nav a.active {
+            background: linear-gradient(135deg, #14b8a6, #06b6d4);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3);
+        }
+
+        .status-icon {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ffc107;
+            opacity: 0;
+            transition: opacity 0.3s;
+            margin-left: auto;
+            flex-shrink: 0;
+        }
+
+        .reg-sidebar .sidebar-nav a.completed .status-icon {
+            opacity: 1;
+            background: #28a745;
+        }
+
+        .reg-sidebar .sidebar-nav a.current .status-icon {
+            opacity: 1;
+            background: #ffc107;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.3);
+                opacity: 0.7;
+            }
+        }
+
+        .reg-sidebar .progress-wrapper {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 20px;
+            margin-top: 20px;
+        }
+
+        .reg-sidebar .progress-wrapper .label {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.7);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .reg-sidebar .progress-track {
+            background: rgba(255, 255, 255, 0.2);
+            height: 8px;
+            border-radius: 10px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .reg-sidebar .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(135deg, #14b8a6, #06b6d4);
+            border-radius: 10px;
+            transition: width 0.4s ease;
+        }
+
+        /* content */
+        .content-area {
+            flex: 1;
+            background: #f8f9fa;
+            padding: 28px 32px;
+            overflow-y: auto;
+            min-height: calc(100vh - 70px);
+        }
+
+        /* card */
+        .card {
+            background: white;
+            border: none;
+            border-radius: 18px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
+            margin-bottom: 28px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #14b8a6, #06b6d4);
+            color: white;
+            padding: 16px 24px;
+            font-weight: 600;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-body {
+            padding: 24px;
+        }
+
+        .form-section {
+            display: none;
+            animation: fadeUp 0.35s ease;
+        }
+
+        .form-section.active-section {
+            display: block;
+        }
+
+        @keyframes fadeUp {
+            0% {
+                opacity: 0;
+                transform: translateY(16px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: #0d3b3a;
+            font-size: 14px;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .form-group label .required {
+            color: #dc3545;
+            margin-left: 2px;
+        }
+
+        .form-control,
+        .form-select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: 0.2s;
+            background: white;
+            font-family: inherit;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: #14b8a6;
+            box-shadow: 0 0 0 0.25rem rgba(20, 184, 166, 0.2);
+            outline: none;
+        }
+
+        .form-control.is-invalid,
+        .form-select.is-invalid {
+            border-color: #dc3545;
+        }
+
+        .form-control[readonly] {
+            background: #f0f4f3;
+            color: #1a4d3f;
+            font-weight: 500;
+        }
+
+        .age-display {
+            background: #eaf6f2;
+            padding: 10px 16px;
+            border-radius: 10px;
+            color: #0d3b3a;
+            font-weight: 600;
+            margin-top: 6px;
+            display: inline-block;
+            min-width: 180px;
+        }
+
+        /* navigation buttons */
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 24px;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 28px;
+            border: none;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #14b8a6, #06b6d4);
+            color: white;
+            box-shadow: 0 4px 12px rgba(20, 184, 166, 0.25);
+        }
+
+        .btn-primary:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 20px rgba(20, 184, 166, 0.3);
+        }
+
+        .btn-secondary {
+            background: #e9edf0;
+            color: #1f3d3a;
+        }
+
+        .btn-secondary:hover {
+            background: #dce2e6;
+        }
+
+        .btn-success {
+            background: #1a7a53;
+            color: white;
+            box-shadow: 0 4px 12px rgba(26, 122, 83, 0.25);
+        }
+
+        .btn-success:hover {
+            background: #136b45;
+            transform: scale(1.02);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .category-fields {
+            margin-top: 16px;
+            padding: 16px 0 0 0;
+            border-top: 2px dashed #e0eae4;
+        }
+
+        .category-fields .form-group {
+            margin-bottom: 14px;
+        }
+
+        /* mobile overlay */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.3);
+            z-index: 1040;
+            backdrop-filter: blur(2px);
+        }
+
+        .sidebar-overlay.active {
+            display: block;
+        }
+
+        /* mobile toggle button */
+        .sidebar-toggle-mobile {
+            display: none;
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 1060;
+            background: linear-gradient(135deg, #14b8a6, #06b6d4);
+            border: none;
+            border-radius: 50%;
+            width: 56px;
+            height: 56px;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(20, 184, 166, 0.4);
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* responsive */
+        @media (max-width: 1024px) {
+            .main-sidebar {
+                width: 200px;
+            }
+            .reg-sidebar {
+                width: 200px;
+            }
+        }
+
+        @media (max-width: 820px) {
+            .hamburger {
+                display: block;
+            }
+
+            .main-sidebar {
+                position: fixed;
+                left: -280px;
+                top: 70px;
+                height: calc(100vh - 70px);
+                width: 260px;
+                border-radius: 0 20px 20px 0;
+                transition: left 0.3s ease;
+                box-shadow: 4px 0 30px rgba(0, 0, 0, 0.1);
+                z-index: 1050;
+                background: white;
+            }
+            .main-sidebar.open {
+                left: 0;
+            }
+
+            .reg-sidebar {
+                display: none;
+            }
+
+            /* show reg sidebar as inline on mobile */
+            .reg-sidebar.mobile-show {
+                display: block;
+                width: 100%;
+                background: linear-gradient(180deg, #0d3b3a 0%, #1a5f59 100%);
+                border-radius: 0 0 20px 20px;
+                padding: 20px 16px;
+                margin-bottom: 20px;
+            }
+
+            .content-area {
+                padding: 16px 18px;
+            }
+
+            .sidebar-toggle-mobile {
+                display: flex;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .top-left h1 {
+                font-size: 18px;
+            }
+            .paperless-badge {
+                font-size: 11px;
+                padding: 3px 12px;
+            }
+            .card-body {
+                padding: 16px;
+            }
+            .btn {
+                padding: 10px 20px;
+                font-size: 13px;
+            }
+        }
+
+        /* alert messages */
+        .alert {
+            padding: 14px 20px;
+            border-radius: 14px;
+            margin-bottom: 20px;
+            display: none;
+            font-weight: 500;
+            border-left: 4px solid #14b8a6;
+        }
+
+        .alert.success {
+            background: #ddf0e6;
+            border-color: #1a7a53;
+            color: #0e4d33;
+        }
+
+        .alert.error {
+            background: #fce9e7;
+            border-color: #dc3545;
+            color: #a53a34;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="top-left">
+            <button class="hamburger" id="hamburgerBtn" onclick="toggleMainSidebar()"><i class="fas fa-bars"></i></button>
+            <h1><i class="fas fa-heartbeat"></i> HIM · outreach</h1>
+        </div>
+        <div class="paperless-badge">
+            <i class="fas fa-leaf"></i> zero paper
+            <i class="fas fa-sync-alt" style="margin-left: 4px; font-size: 12px;"></i>
+            <span style="background: rgba(255,255,255,0.1); padding: 0 12px; border-radius: 30px;">digital</span>
+        </div>
+    </div>
+
+    <!-- Sidebar Overlay (mobile) -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeAllSidebars()"></div>
+
+    <!-- Main -->
+    <div class="main-wrapper">
+
+        <!-- ===== FIRST SIDEBAR (Main Navigation - for Django base) ===== -->
+        <aside class="main-sidebar" id="mainSidebar">
+            <button class="sidebar-item active"><i class="fas fa-chart-pie"></i> Dashboard</button>
+            <button class="sidebar-item"><i class="fas fa-user-plus"></i> Register</button>
+            <button class="sidebar-item"><i class="fas fa-search"></i> Search</button>
+            <button class="sidebar-item"><i class="fas fa-folder-open"></i> Records</button>
+            <div class="sidebar-divider"></div>
+            <button class="sidebar-item"><i class="fas fa-users"></i> Team</button>
+            <button class="sidebar-item"><i class="fas fa-cog"></i> Settings</button>
+            <div class="sidebar-divider"></div>
+            <div style="padding: 12px 24px; font-size: 12px; color: #3b6b56; display: flex; gap: 6px; align-items: center;">
+                <i class="fas fa-check-circle" style="color: #1a7a53;"></i> paperless since 2026
+            </div>
+        </aside>
+
+        <!-- ===== SECOND SIDEBAR (Registration Steps) ===== -->
+        <aside class="reg-sidebar" id="regSidebar">
+            <div class="sidebar-header">
+                <h5><i class="fas fa-user-plus"></i> Patient Registration</h5>
+                <small>Fill patient details</small>
+            </div>
+            <ul class="sidebar-nav" id="sidebarNav">
+                <li><a class="active" data-section="personal"><i class="fas fa-user"></i> Personal Information <span class="status-icon"></span></a></li>
+                <li><a data-section="address"><i class="fas fa-map-marker-alt"></i> Address Information <span class="status-icon"></span></a></li>
+                <li><a data-section="nextofkin"><i class="fas fa-users"></i> Next of Kin <span class="status-icon"></span></a></li>
+                <li><a data-section="category"><i class="fas fa-tag"></i> Patient Category <span class="status-icon"></span></a></li>
+            </ul>
+            <div class="progress-wrapper">
+                <div class="label">
+                    <span>Completion</span>
+                    <span id="progressPercent">0%</span>
+                </div>
+                <div class="progress-track">
+                    <div class="progress-bar" id="progressBar" style="width:0%;"></div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Content -->
+        <main class="content-area" id="contentArea">
+            <!-- alert messages -->
+            <div class="alert success" id="successMsg"><i class="fas fa-check-circle"></i> Patient registered successfully!</div>
+            <div class="alert error" id="errorMsg"></div>
+
+            <form id="registrationForm" novalidate>
+                <!-- ===== PERSONAL ===== -->
+                <section id="section-personal" class="form-section active-section">
+                    <div class="card">
+                        <div class="card-header"><i class="fas fa-user"></i> 👤 Personal Information</div>
+                        <div class="card-body">
+                            <div class="row" style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                                <div class="form-group"><label>Hospital Number <span class="required">*</span></label><input type="text" id="hospitalNumber" class="form-control" required placeholder="e.g. HIM-001"></div>
+                                <div class="form-group"><label>Last Name <span class="required">*</span></label><input type="text" id="lastName" class="form-control" required></div>
+                                <div class="form-group"><label>First Name <span class="required">*</span></label><input type="text" id="firstName" class="form-control" required></div>
+                                <div class="form-group"><label>Middle Name</label><input type="text" id="middleName" class="form-control"></div>
+                                <div class="form-group"><label>Date of Birth <span class="required">*</span></label><input type="date" id="dob" class="form-control" required onchange="calculateAge()"></div>
+                                <div class="form-group">
+                                    <label>Age <span style="font-weight:400; color:#547a67; font-size:12px;">(Years, Months, Days)</span></label>
+                                    <div class="age-display" id="ageDisplay">—</div>
+                                </div>
+                                <div class="form-group"><label>Gender <span class="required">*</span></label>
+                                    <select id="gender" class="form-select" required><option value="">select</option><option>Male</option><option>Female</option><option>Other</option></select>
+                                </div>
+                                <div class="form-group"><label>Marital Status</label>
+                                    <select id="maritalStatus" class="form-select"><option value="">select</option><option>Single</option><option>Married</option><option>Divorced</option><option>Widowed</option></select>
+                                </div>
+                                <div class="form-group"><label>Occupation</label><input type="text" id="occupation" class="form-control" placeholder="e.g. Teacher"></div>
+                                <div class="form-group"><label>Ethnicity</label><input type="text" id="ethnicity" class="form-control" placeholder="e.g. Yoruba"></div>
+                                <div class="form-group"><label>Phone <span class="required">*</span></label><input type="tel" id="phone" class="form-control" required></div>
+                                <div class="form-group"><label>Email</label><input type="email" id="email" class="form-control"></div>
+                                <div class="form-group"><label>Religion</label><input type="text" id="religion" class="form-control" placeholder="e.g. Christian"></div>
+                                <div class="form-group"><label>Denomination</label><input type="text" id="denomination" class="form-control" placeholder="e.g. Catholic"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="nav-buttons">
+                        <span></span>
+                        <button type="button" class="btn btn-primary" id="nextPersonal"><i class="fas fa-arrow-right"></i> Next</button>
+                    </div>
+                </section>
+
+                <!-- ===== ADDRESS ===== -->
+                <section id="section-address" class="form-section">
+                    <div class="card">
+                        <div class="card-header"><i class="fas fa-map-marker-alt"></i> 🌍 Address Information</div>
+                        <div class="card-body">
+                            <div class="row" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px;">
+                                <div class="form-group"><label>Country <span class="required">*</span></label>
+                                    <select id="country" class="form-select" required onchange="loadStates()"><option value="">select</option><option value="NG">Nigeria</option><option value="GH">Ghana</option><option value="KE">Kenya</option><option value="ZA">South Africa</option></select>
+                                </div>
+                                <div class="form-group"><label>State <span class="required">*</span></label>
+                                    <select id="state" class="form-select" required onchange="loadCities()"><option value="">select</option></select>
+                                </div>
+                                <div class="form-group"><label>City <span class="required">*</span></label>
+                                    <select id="city" class="form-select" required><option value="">select</option></select>
+                                </div>
+                                <div class="form-group"><label>L.G.A of Origin</label><input type="text" id="lga" class="form-control" placeholder="e.g. Ikeja"></div>
+                                <div class="form-group" style="grid-column: span 2;"><label>Address <span class="required">*</span></label><textarea id="address" class="form-control" rows="2" required placeholder="Street, house number, landmark …"></textarea></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="nav-buttons">
+                        <button type="button" class="btn btn-secondary" id="prevAddress"><i class="fas fa-arrow-left"></i> Previous</button>
+                        <button type="button" class="btn btn-primary" id="nextAddress">Next <i class="fas fa-arrow-right"></i></button>
+                    </div>
+                </section>
+
+                <!-- ===== NEXT OF KIN ===== -->
+                <section id="section-nextofkin" class="form-section">
+                    <div class="card">
+                        <div class="card-header"><i class="fas fa-users"></i> 👪 Next of Kin</div>
+                        <div class="card-body">
+                            <div class="row" style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                                <div class="form-group"><label>Full Name <span class="required">*</span></label><input type="text" id="nokName" class="form-control" required></div>
+                                <div class="form-group"><label>Relationship <span class="required">*</span></label>
+                                    <select id="nokRelationship" class="form-select" required><option value="">select</option><option>Spouse</option><option>Child</option><option>Sibling</option><option>Parent</option><option>Other</option></select>
+                                </div>
+                                <div class="form-group"><label>Phone <span class="required">*</span></label><input type="tel" id="nokPhone" class="form-control" required></div>
+                                <div class="form-group" style="grid-column: span 2;"><label>Address</label><textarea id="nokAddress" class="form-control" rows="2" placeholder="Full address"></textarea></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="nav-buttons">
+                        <button type="button" class="btn btn-secondary" id="prevNok"><i class="fas fa-arrow-left"></i> Previous</button>
+                        <button type="button" class="btn btn-primary" id="nextNok">Next <i class="fas fa-arrow-right"></i></button>
+                    </div>
+                </section>
+
+                <!-- ===== CATEGORY ===== -->
+                <section id="section-category" class="form-section">
+                    <div class="card">
+                        <div class="card-header"><i class="fas fa-tag"></i> 🏷️ Patient Category</div>
+                        <div class="card-body">
+                            <div class="form-group"><label>Category <span class="required">*</span></label>
+                                <select id="category" class="form-select" required onchange="toggleCategoryFields()">
+                                    <option value="">select</option>
+                                    <option value="General">General</option>
+                                    <option value="Scheme">Scheme</option>
+                                    <option value="NHIS">NHIS</option>
+                                    <option value="Private">Private</option>
+                                </select>
+                            </div>
+
+                            <!-- Scheme fields -->
+                            <div id="schemeFields" class="category-fields" style="display:none;">
+                                <div class="row" style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                                    <div class="form-group"><label>Scheme Name <span class="required">*</span></label><input type="text" id="schemeName" class="form-control"></div>
+                                    <div class="form-group"><label>Scheme Number <span class="required">*</span></label><input type="text" id="schemeNumber" class="form-control"></div>
+                                    <div class="form-group"><label>Expiry Date</label><input type="date" id="schemeExpiry" class="form-control"></div>
+                                </div>
+                            </div>
+
+                            <!-- General fields -->
+                            <div id="generalFields" class="category-fields" style="display:none;">
+                                <div class="form-group"><label>Receipt Number <span class="required">*</span></label><input type="text" id="receiptNumber" class="form-control"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="nav-buttons">
+                        <button type="button" class="btn btn-secondary" id="prevCategory"><i class="fas fa-arrow-left"></i> Previous</button>
+                        <button type="submit" class="btn btn-success" id="submitBtn"><i class="fas fa-user-plus"></i> Register Patient</button>
+                    </div>
+                </section>
+            </form>
+        </main>
+    </div>
+
+    <!-- mobile toggle button -->
+    <button class="sidebar-toggle-mobile" id="mobileToggle" onclick="toggleMainSidebar()"><i class="fas fa-bars"></i></button>
+
+    <script>
+        (function() {
+            'use strict';
+
+            // ----- storage -----
+            const STORAGE_KEY = 'him_paperless_v3';
+            function getPatients() {
+                try {
+                    const raw = localStorage.getItem(STORAGE_KEY);
+                    return raw ? JSON.parse(raw) : [];
+                } catch { return []; }
+            }
+            function savePatients(arr) {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+            }
+
+            // ----- age calculation (Years, Months, Days) -----
+            function calculateAgeDetailed(dob) {
+                if (!dob) return null;
+                const today = new Date();
+                const birth = new Date(dob);
+
+                let years = today.getFullYear() - birth.getFullYear();
+                let months = today.getMonth() - birth.getMonth();
+                let days = today.getDate() - birth.getDate();
+
+                // Adjust for negative days
+                if (days < 0) {
+                    months--;
+                    const prevMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+                    days += prevMonth.getDate();
+                }
+
+                // Adjust for negative months
+                if (months < 0) {
+                    years--;
+                    months += 12;
+                }
+
+                return { years, months, days };
+            }
+
+            function formatAgeDetailed(dob) {
+                if (!dob) return '—';
+                const age = calculateAgeDetailed(dob);
+                if (!age) return '—';
+                const parts = [];
+                if (age.years > 0) parts.push(age.years + ' yr' + (age.years > 1 ? 's' : ''));
+                if (age.months > 0) parts.push(age.months + ' mo' + (age.months > 1 ? 's' : ''));
+                if (age.days > 0) parts.push(age.days + ' d' + (age.days > 1 ? 's' : ''));
+                if (parts.length === 0) return 'Newborn';
+                return parts.join(', ');
+            }
+
+            // ----- age calculation for display -----
+            window.calculateAge = function() {
+                const dob = document.getElementById('dob').value;
+                const display = document.getElementById('ageDisplay');
+                if (dob) {
+                    display.textContent = formatAgeDetailed(dob);
+                } else {
+                    display.textContent = '—';
+                }
+            };
+
+            // also used for patient record
+            function getAgeForRecord(dob) {
+                if (!dob) return null;
+                const age = calculateAgeDetailed(dob);
+                if (!age) return null;
+                return age.years + 'y ' + age.months + 'm ' + age.days + 'd';
+            }
+
+            // ----- sidebar / section navigation -----
+            const sections = ['personal', 'address', 'nextofkin', 'category'];
+            let currentSectionIndex = 0;
+
+            function getSectionId(name) { return 'section-' + name; }
+
+            function showSection(name) {
+                // hide all
+                document.querySelectorAll('.form-section').forEach(el => el.classList.remove('active-section'));
+                const target = document.getElementById(getSectionId(name));
+                if (target) target.classList.add('active-section');
+
+                // update nav
+                document.querySelectorAll('.reg-sidebar .sidebar-nav a').forEach(a => a.classList.remove('active'));
+                const navLink = document.querySelector(`.reg-sidebar .sidebar-nav a[data-section="${name}"]`);
+                if (navLink) navLink.classList.add('active');
+
+                const idx = sections.indexOf(name);
+                currentSectionIndex = idx;
+
+                // show/hide nav buttons
+                const isLast = idx === sections.length - 1;
+                const submitBtn = document.getElementById('submitBtn');
+                const nextBtns = document.querySelectorAll('[id^="next"]');
+                nextBtns.forEach(b => b.style.display = isLast ? 'none' : 'inline-flex');
+                if (submitBtn) submitBtn.style.display = isLast ? 'inline-flex' : 'none';
+
+                // prev buttons
+                const prevBtns = document.querySelectorAll('[id^="prev"]');
+                prevBtns.forEach(b => b.style.display = idx === 0 ? 'none' : 'inline-flex');
+
+                // mark current in sidebar
+                document.querySelectorAll('.reg-sidebar .sidebar-nav a').forEach(a => {
+                    a.classList.remove('current');
+                    if (a.dataset.section === name) a.classList.add('current');
+                });
+
+                closeAllSidebars();
+                updateProgress();
+            }
+
+            // ----- progress -----
+            function updateProgress() {
+                let completed = 0;
+                sections.forEach(s => {
+                    const link = document.querySelector(`.reg-sidebar .sidebar-nav a[data-section="${s}"]`);
+                    if (link && link.classList.contains('completed')) completed++;
+                });
+                const pct = Math.round((completed / sections.length) * 100);
+                document.getElementById('progressBar').style.width = pct + '%';
+                document.getElementById('progressPercent').textContent = pct + '%';
+            }
+
+            function markCompleted(sectionName) {
+                const link = document.querySelector(`.reg-sidebar .sidebar-nav a[data-section="${sectionName}"]`);
+                if (link && !link.classList.contains('completed')) {
+                    link.classList.add('completed');
+                    updateProgress();
+                }
+            }
+
+            // ----- validate section (required fields) -----
+            function validateSection(sectionName) {
+                const sectionId = getSectionId(sectionName);
+                const container = document.getElementById(sectionId);
+                const fields = container.querySelectorAll('.form-control, .form-select');
+                let valid = true;
+                fields.forEach(f => {
+                    f.classList.remove('is-invalid');
+                    if (f.hasAttribute('required') && !f.value.trim()) {
+                        f.classList.add('is-invalid');
+                        valid = false;
+                    }
+                });
+                if (valid) markCompleted(sectionName);
+                return valid;
+            }
+
+            // ----- navigation handlers -----
+            function goNext() {
+                const currentName = sections[currentSectionIndex];
+                if (validateSection(currentName)) {
+                    const nextIdx = currentSectionIndex + 1;
+                    if (nextIdx < sections.length) {
+                        showSection(sections[nextIdx]);
+                    }
+                } else {
+                    document.getElementById('errorMsg').textContent = '⚠️ Please fill all required fields in this section.';
+                    document.getElementById('errorMsg').style.display = 'block';
+                    setTimeout(() => document.getElementById('errorMsg').style.display = 'none', 3000);
+                }
+            }
+
+            function goPrev() {
+                const prevIdx = currentSectionIndex - 1;
+                if (prevIdx >= 0) showSection(sections[prevIdx]);
+            }
+
+            // attach next/prev
+            document.getElementById('nextPersonal').addEventListener('click', goNext);
+            document.getElementById('nextAddress').addEventListener('click', goNext);
+            document.getElementById('nextNok').addEventListener('click', goNext);
+            document.getElementById('prevAddress').addEventListener('click', goPrev);
+            document.getElementById('prevNok').addEventListener('click', goPrev);
+            document.getElementById('prevCategory').addEventListener('click', goPrev);
+
+            // sidebar nav clicks
+            document.querySelectorAll('.reg-sidebar .sidebar-nav a').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const target = this.dataset.section;
+                    const idx = sections.indexOf(target);
+                    // allow going back to any previous, but forward only if current section valid
+                    if (idx <= currentSectionIndex) {
+                        showSection(target);
+                    } else {
+                        if (validateSection(sections[currentSectionIndex])) {
+                            showSection(target);
+                        } else {
+                            document.getElementById('errorMsg').textContent =
+                                '⚠️ Please complete the current section first.';
+                            document.getElementById('errorMsg').style.display = 'block';
+                            setTimeout(() => document.getElementById('errorMsg').style.display = 'none', 3000);
+                        }
+                    }
+                });
+            });
+
+            // auto-complete fields → mark section completed when all required filled
+            function setupAutoComplete() {
+                sections.forEach(s => {
+                    const container = document.getElementById(getSectionId(s));
+                    const inputs = container.querySelectorAll('.form-control, .form-select');
+                    inputs.forEach(inp => {
+                        inp.addEventListener('change', function() {
+                            let allFilled = true;
+                            container.querySelectorAll('.form-control, .form-select').forEach(f => {
+                                if (f.hasAttribute('required') && !f.value.trim()) allFilled =
+                                false;
+                            });
+                            if (allFilled) markCompleted(s);
+                        });
+                        inp.addEventListener('keyup', function() {
+                            let allFilled = true;
+                            container.querySelectorAll('.form-control, .form-select').forEach(f => {
+                                if (f.hasAttribute('required') && !f.value.trim()) allFilled =
+                                false;
+                            });
+                            if (allFilled) markCompleted(s);
+                        });
+                    });
+                });
+            }
+
+            // ----- category toggle -----
+            function toggleCategoryFields() {
+                const cat = document.getElementById('category').value;
+                const schemeFields = document.getElementById('schemeFields');
+                const generalFields = document.getElementById('generalFields');
+                schemeFields.style.display = 'none';
+                generalFields.style.display = 'none';
+                // reset required
+                document.getElementById('schemeName').removeAttribute('required');
+                document.getElementById('schemeNumber').removeAttribute('required');
+                document.getElementById('receiptNumber').removeAttribute('required');
+
+                if (cat === 'Scheme' || cat === 'NHIS') {
+                    schemeFields.style.display = 'block';
+                    document.getElementById('schemeName').setAttribute('required', 'required');
+                    document.getElementById('schemeNumber').setAttribute('required', 'required');
+                } else if (cat === 'General' || cat === 'Private') {
+                    generalFields.style.display = 'block';
+                    document.getElementById('receiptNumber').setAttribute('required', 'required');
+                }
+            }
+            window.toggleCategoryFields = toggleCategoryFields;
+
+            // ----- country/state/city -----
+            const stateData = {
+                'NG': ['Lagos', 'Abuja', 'Rivers', 'Kano', 'Oyo'],
+                'GH': ['Greater Accra', 'Ashanti', 'Western', 'Eastern'],
+                'KE': ['Nairobi', 'Mombasa', 'Kisumu', 'Nakuru'],
+                'ZA': ['Gauteng', 'Western Cape', 'KwaZulu-Natal', 'Eastern Cape']
+            };
+            const cityData = {
+                'Lagos': ['Ikeja', 'Lekki', 'Victoria Island', 'Surulere'],
+                'Abuja': ['Garki', 'Wuse', 'Maitama', 'Kubwa'],
+                'Rivers': ['Port Harcourt', 'Obio/Akpor', 'Eleme'],
+                'Kano': ['Kano City', 'Nasarawa', 'Tarauni'],
+                'Oyo': ['Ibadan', 'Oyo', 'Ogbomosho'],
+                'Greater Accra': ['Accra', 'Tema', 'Ashaiman'],
+                'Ashanti': ['Kumasi', 'Obuasi', 'Bekwai'],
+                'Western': ['Sekondi-Takoradi', 'Shama', 'Tarkwa'],
+                'Eastern': ['Koforidua', 'Nkawkaw', 'Mpraeso'],
+                'Nairobi': ['Nairobi CBD', 'Kasarani', 'Lang\'ata'],
+                'Mombasa': ['Mombasa Island', 'Nyali', 'Likoni'],
+                'Kisumu': ['Kisumu Central', 'Nyando', 'Muhoroni'],
+                'Nakuru': ['Nakuru East', 'Nakuru West', 'Naivasha'],
+                'Gauteng': ['Johannesburg', 'Pretoria', 'Soweto'],
+                'Western Cape': ['Cape Town', 'Stellenbosch', 'Paarl'],
+                'KwaZulu-Natal': ['Durban', 'Pietermaritzburg', 'Richards Bay'],
+                'Eastern Cape': ['Port Elizabeth', 'East London', 'Mthatha']
+            };
+
+            window.loadStates = function() {
+                const country = document.getElementById('country').value;
+                const stateSel = document.getElementById('state');
+                stateSel.innerHTML = '<option value="">select</option>';
+                if (country && stateData[country]) {
+                    stateData[country].forEach(s => {
+                        const opt = document.createElement('option');
+                        opt.value = s;
+                        opt.textContent = s;
+                        stateSel.appendChild(opt);
+                    });
+                }
+                document.getElementById('city').innerHTML = '<option value="">select</option>';
+            };
+
+            window.loadCities = function() {
+                const state = document.getElementById('state').value;
+                const citySel = document.getElementById('city');
+                citySel.innerHTML = '<option value="">select</option>';
+                if (state && cityData[state]) {
+                    cityData[state].forEach(c => {
+                        const opt = document.createElement('option');
+                        opt.value = c;
+                        opt.textContent = c;
+                        citySel.appendChild(opt);
+                    });
+                }
+            };
+
+            // ----- form submission -----
+            document.getElementById('registrationForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                // validate all sections
+                let allValid = true;
+                sections.forEach(s => {
+                    if (!validateSection(s)) allValid = false;
+                });
+
+                // category validation
+                const cat = document.getElementById('category').value;
+                if (cat === 'Scheme' || cat === 'NHIS') {
+                    if (!document.getElementById('schemeName').value.trim() || !document.getElementById('schemeNumber')
+                        .value.trim()) {
+                        allValid = false;
+                        document.getElementById('errorMsg').textContent = '⚠️ Please fill Scheme Name and Number.';
+                        document.getElementById('errorMsg').style.display = 'block';
+                        setTimeout(() => document.getElementById('errorMsg').style.display = 'none', 3000);
+                        showSection('category');
+                        return;
+                    }
+                } else if (cat === 'General' || cat === 'Private') {
+                    if (!document.getElementById('receiptNumber').value.trim()) {
+                        allValid = false;
+                        document.getElementById('errorMsg').textContent = '⚠️ Please enter a Receipt Number.';
+                        document.getElementById('errorMsg').style.display = 'block';
+                        setTimeout(() => document.getElementById('errorMsg').style.display = 'none', 3000);
+                        showSection('category');
+                        return;
+                    }
+                } else if (!cat) {
+                    allValid = false;
+                    document.getElementById('errorMsg').textContent = '⚠️ Please select a Patient Category.';
+                    document.getElementById('errorMsg').style.display = 'block';
+                    setTimeout(() => document.getElementById('errorMsg').style.display = 'none', 3000);
+                    showSection('category');
+                    return;
+                }
+
+                if (!allValid) {
+                    document.getElementById('errorMsg').textContent = '⚠️ Please fill all required fields.';
+                    document.getElementById('errorMsg').style.display = 'block';
+                    setTimeout(() => document.getElementById('errorMsg').style.display = 'none', 3000);
+                    return;
+                }
+
+                // build patient object
+                const dob = document.getElementById('dob').value;
+                const age = getAgeForRecord(dob);
+
+                const patient = {
+                    id: 'P' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substring(2, 5)
+                        .toUpperCase(),
+                    hospitalNumber: document.getElementById('hospitalNumber').value.trim(),
+                    lastName: document.getElementById('lastName').value.trim(),
+                    firstName: document.getElementById('firstName').value.trim(),
+                    middleName: document.getElementById('middleName').value.trim(),
+                    dob: dob,
+                    age: age,
+                    gender: document.getElementById('gender').value,
+                    maritalStatus: document.getElementById('maritalStatus').value,
+                    occupation: document.getElementById('occupation').value.trim(),
+                    ethnicity: document.getElementById('ethnicity').value.trim(),
+                    phone: document.getElementById('phone').value.trim(),
+                    email: document.getElementById('email').value.trim(),
+                    religion: document.getElementById('religion').value.trim(),
+                    denomination: document.getElementById('denomination').value.trim(),
+                    country: document.getElementById('country').value,
+                    state: document.getElementById('state').value,
+                    city: document.getElementById('city').value,
+                    lga: document.getElementById('lga').value.trim(),
+                    address: document.getElementById('address').value.trim(),
+                    nokName: document.getElementById('nokName').value.trim(),
+                    nokRelationship: document.getElementById('nokRelationship').value,
+                    nokPhone: document.getElementById('nokPhone').value.trim(),
+                    nokAddress: document.getElementById('nokAddress').value.trim(),
+                    category: document.getElementById('category').value,
+                    schemeName: document.getElementById('schemeName').value.trim(),
+                    schemeNumber: document.getElementById('schemeNumber').value.trim(),
+                    schemeExpiry: document.getElementById('schemeExpiry').value,
+                    receiptNumber: document.getElementById('receiptNumber').value.trim(),
+                    registeredDate: new Date().toISOString()
+                };
+
+                const patients = getPatients();
+                patients.push(patient);
+                savePatients(patients);
+
+                document.getElementById('successMsg').style.display = 'block';
+                setTimeout(() => document.getElementById('successMsg').style.display = 'none', 3500);
+
+                // reset form
+                document.getElementById('registrationForm').reset();
+                document.getElementById('ageDisplay').textContent = '—';
+                document.getElementById('schemeFields').style.display = 'none';
+                document.getElementById('generalFields').style.display = 'none';
+                document.getElementById('state').innerHTML = '<option value="">select</option>';
+                document.getElementById('city').innerHTML = '<option value="">select</option>';
+
+                // reset completion
+                document.querySelectorAll('.reg-sidebar .sidebar-nav a').forEach(a => a.classList.remove('completed'));
+                updateProgress();
+                showSection('personal');
+
+                // scroll to top
+                document.getElementById('contentArea').scrollTop = 0;
+            });
+
+            // ----- sidebar toggle (mobile) -----
+            window.toggleMainSidebar = function() {
+                document.getElementById('mainSidebar').classList.toggle('open');
+                document.getElementById('sidebarOverlay').classList.toggle('active');
+                // On mobile, also show reg sidebar inline
+                if (window.innerWidth <= 820) {
+                    document.getElementById('regSidebar').classList.toggle('mobile-show');
+                }
+            };
+
+            window.closeAllSidebars = function() {
+                document.getElementById('mainSidebar').classList.remove('open');
+                document.getElementById('sidebarOverlay').classList.remove('active');
+                if (window.innerWidth <= 820) {
+                    document.getElementById('regSidebar').classList.remove('mobile-show');
+                }
+            };
+
+            // close on resize to desktop
+            window.addEventListener('resize', function() {
+                if (window.innerWidth > 820) {
+                    closeAllSidebars();
+                    document.getElementById('regSidebar').classList.remove('mobile-show');
+                } else {
+                    // ensure reg sidebar is hidden by default on mobile (only shown when toggled)
+                    if (!document.getElementById('regSidebar').classList.contains('mobile-show')) {
+                        // keep hidden
+                    }
+                }
+            });
+
+            // ----- init -----
+            showSection('personal');
+            setupAutoComplete();
+            toggleCategoryFields();
+            document.getElementById('errorMsg').style.display = 'none';
+            document.getElementById('successMsg').style.display = 'none';
+
+            // pre-fill demo states for country
+            loadStates();
+
+            // mark personal as current
+            document.querySelector(`.reg-sidebar .sidebar-nav a[data-section="personal"]`).classList.add('current');
+
+            // On mobile, hide reg sidebar by default
+            if (window.innerWidth <= 820) {
+                document.getElementById('regSidebar').classList.remove('mobile-show');
+            }
+        })();
+    </script>
+
+</body>
+</html>
