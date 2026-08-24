@@ -1,7 +1,6 @@
 <!-- templates/base.html -->
 
 
-
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
@@ -275,6 +274,215 @@
             to { transform: translateX(100%); opacity: 0; }
         }
         
+        /* ===== DOCTOR PATIENT SIDEBAR ===== */
+        .doctor-patient-sidebar {
+            width: 280px;
+            flex-shrink: 0;
+            background: white;
+            border-right: 1px solid #e5e7eb;
+            height: calc(100vh - 56px);
+            position: sticky;
+            top: 56px;
+            overflow-y: auto;
+            z-index: 99;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .doctor-patient-sidebar .sidebar-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #e5e7eb;
+            background: #f8fafc;
+            flex-shrink: 0;
+        }
+
+        .doctor-patient-sidebar .sidebar-header h6 {
+            margin: 0;
+            font-weight: 600;
+            color: #065f46;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .doctor-patient-sidebar .sidebar-header .badge-count {
+            background: #d1fae5;
+            color: #065f46;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+        }
+
+        .doctor-patient-sidebar .search-box {
+            padding: 10px 16px;
+            border-bottom: 1px solid #e5e7eb;
+            flex-shrink: 0;
+        }
+
+        .doctor-patient-sidebar .search-box input {
+            width: 100%;
+            padding: 6px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .doctor-patient-sidebar .search-box input:focus {
+            outline: none;
+            border-color: #065f46;
+            box-shadow: 0 0 0 2px rgba(6,95,70,0.1);
+        }
+
+        .doctor-patient-sidebar .patient-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 6px 0;
+        }
+
+        .doctor-patient-sidebar .patient-list::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .doctor-patient-sidebar .patient-list::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 2px;
+        }
+
+        .doctor-patient-sidebar .patient-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+            text-decoration: none;
+            color: #1f2937;
+        }
+
+        .doctor-patient-sidebar .patient-item:hover {
+            background: #f0fdf4;
+            border-left-color: #14b8a6;
+        }
+
+        .doctor-patient-sidebar .patient-item.active {
+            background: #d1fae5;
+            border-left-color: #065f46;
+        }
+
+        .doctor-patient-sidebar .patient-item .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+
+        .doctor-patient-sidebar .patient-item .avatar.male {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .doctor-patient-sidebar .patient-item .avatar.female {
+            background: #fce4ec;
+            color: #9a1f3f;
+        }
+
+        .doctor-patient-sidebar .patient-item .info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .doctor-patient-sidebar .patient-item .name {
+            font-weight: 500;
+            font-size: 13px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .doctor-patient-sidebar .patient-item .details {
+            font-size: 11px;
+            color: #6b7280;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .doctor-patient-sidebar .patient-item .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .doctor-patient-sidebar .patient-item .status-dot.pending {
+            background: #f59e0b;
+        }
+        .doctor-patient-sidebar .patient-item .status-dot.in-progress {
+            background: #3b82f6;
+        }
+        .doctor-patient-sidebar .patient-item .status-dot.completed {
+            background: #10b981;
+        }
+        .doctor-patient-sidebar .patient-item .status-dot.referred {
+            background: #ef4444;
+        }
+
+        .doctor-patient-sidebar .empty-state {
+            text-align: center;
+            padding: 30px 16px;
+            color: #6b7280;
+        }
+
+        .doctor-patient-sidebar .empty-state i {
+            font-size: 1.5rem;
+            opacity: 0.3;
+            margin-bottom: 6px;
+        }
+
+        .doctor-main-content {
+            padding: 20px 24px;
+            background: #f8fafc;
+            min-height: calc(100vh - 56px);
+            flex: 1;
+        }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            .doctor-patient-sidebar {
+                width: 240px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .doctor-patient-sidebar {
+                display: none !important;
+            }
+            
+            .doctor-patient-sidebar.mobile-show {
+                display: flex !important;
+                position: fixed;
+                top: 56px;
+                left: 0;
+                right: 0;
+                height: calc(100vh - 56px);
+                width: 100%;
+                z-index: 1050;
+                border-right: none;
+            }
+
+            .doctor-main-content {
+                padding: 12px 16px;
+            }
+        }
+        
         /* Responsive */
         @media (max-width: 767.98px) {
             .sidebar-desktop {
@@ -291,6 +499,9 @@
                 right: 10px;
                 left: 10px;
                 min-width: auto;
+            }
+            .notification-dropdown {
+                min-width: 280px;
             }
         }
         
@@ -314,7 +525,7 @@
             </button>
             
             <a class="navbar-brand" href="{% url 'b:dashboard' %}">
-                <i class="fas fa-heartbeat me-2"></i>HIM
+                <i class="fas fa-heartbeat me-2"></i>COREP OUTREACH
             </a>
             
             <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -328,6 +539,22 @@
                             <i class="fas fa-chart-pie"></i> Dashboard
                         </a>
                     </li>
+                    <!-- Doctor extra nav items -->
+                    {% if role == 'PHYSICIAN' %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if page == 'doctor' or page == 'doctor_consultation' %}active{% endif %}" href="{% url 'b:doctor_dashboard' %}">
+                                <i class="fas fa-stethoscope"></i> Consultations
+                                {% if pending_count > 0 %}
+                                    <span class="badge bg-danger ms-1">{{ pending_count }}</span>
+                                {% endif %}
+                            </a>
+                        </li>
+                        <li class="nav-item d-md-none">
+                            <button class="btn btn-outline-light btn-sm" onclick="toggleDoctorPatientSidebar()">
+                                <i class="fas fa-users me-1"></i> Patients
+                            </button>
+                        </li>
+                    {% endif %}
                 </ul>
                 <div class="d-flex align-items-center gap-2">
                     <span class="badge-paperless d-none d-md-inline">
@@ -338,33 +565,40 @@
                     <div class="dropdown">
                         <button class="btn btn-outline-light btn-sm position-relative" data-bs-toggle="dropdown" id="notificationBell">
                             <i class="fas fa-bell"></i>
-                            {% if notification_count > 0 %}
-                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-count" style="font-size: 0.6rem;">
-                                    {{ notification_count }}
-                                </span>
-                            {% else %}
-                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-count" style="font-size: 0.6rem; display: none;">
-                                    0
-                                </span>
-                            {% endif %}
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-count" style="font-size: 0.6rem;">
+                                {{ notification_count|default:0 }}
+                            </span>
                         </button>
                         <div class="dropdown-menu dropdown-menu-end notification-dropdown" id="notificationDropdown">
-                            <h6 class="dropdown-header">Notifications</h6>
+                            <h6 class="dropdown-header d-flex justify-content-between align-items-center">
+                                <span>Notifications</span>
+                                <button class="btn btn-sm btn-link text-success p-0" onclick="markAllNotificationsRead()" style="font-size: 11px; text-decoration: none;">
+                                    Mark all as read
+                                </button>
+                            </h6>
                             <div id="notificationList">
                                 {% if notifications %}
                                     {% for notification in notifications %}
-                                        <div class="notification-item {% if not notification.is_read %}unread{% endif %}">
+                                        <div class="notification-item {% if not notification.is_read %}unread{% endif %}" data-id="{{ notification.id }}">
                                             <div class="d-flex justify-content-between">
                                                 <span>{{ notification.message }}</span>
                                                 <small class="time">{{ notification.created_at|timesince }} ago</small>
                                             </div>
                                             {% if notification.link %}
-                                                <a href="{{ notification.link }}" class="small text-success">View</a>
+                                                {% with link=notification.link %}
+                                                    {% if '/pharmacy/order/' in link %}
+                                                        {% with patient_id=link|cut:'/pharmacy/order/'|cut:'/' %}
+                                                            <a href="{% url 'b:pharmacy_dispense_patient' patient_id %}" class="small text-success">View</a>
+                                                        {% endwith %}
+                                                    {% else %}
+                                                        <a href="{{ link }}" class="small text-success">View</a>
+                                                    {% endif %}
+                                                {% endwith %}
                                             {% endif %}
                                         </div>
                                     {% endfor %}
                                 {% else %}
-                                    <div class="dropdown-item text-muted text-center">No notifications</div>
+                                    <div class="dropdown-item text-muted text-center" id="noNotificationsMsg">No notifications</div>
                                 {% endif %}
                             </div>
                         </div>
@@ -410,8 +644,8 @@
                 </a>
             </li>
             
+            <!-- HIM Role -->
             {% if role == 'HIM' %}
-                <!-- Patient Management -->
                 <li class="nav-item">
                     <a class="nav-link {% if page == 'register' %}active{% endif %}" href="{% url 'b:patient_registration' %}">
                         <i class="fas fa-user-plus me-2"></i> Register Patient
@@ -430,8 +664,6 @@
                         {% endif %}
                     </a>
                 </li>
-                
-                <!-- User Management -->
                 <li class="nav-item mt-2">
                     <hr class="my-1">
                 </li>
@@ -445,50 +677,79 @@
                         <i class="fas fa-user-plus me-2"></i> Add User
                     </a>
                 </li>
-                
+            
+            <!-- Nurse Role -->
             {% elif role == 'NURSE' %}
                 <li class="nav-item">
-                    <a class="nav-link {% if page == 'nursing' %}active{% endif %}" href="{% url 'b:nursing_dashboard' %}">
+                    <a class="nav-link {% if page == 'nursing' or page == 'nursing_assessment' %}active{% endif %}" href="{% url 'b:nursing_dashboard' %}">
                         <i class="fas fa-clipboard-list me-2"></i> My Assessments
                         {% if pending_count > 0 %}
                             <span class="badge bg-danger ms-2">{{ pending_count }}</span>
                         {% endif %}
                     </a>
                 </li>
-                
+            
+            <!-- Physician Role -->
             {% elif role == 'PHYSICIAN' %}
                 <li class="nav-item">
-                    <a class="nav-link {% if page == 'doctor' %}active{% endif %}" href="{% url 'b:doctor_dashboard' %}">
-                        <i class="fas fa-prescription me-2"></i> Consultations
+                    <a class="nav-link {% if page == 'doctor' or page == 'doctor_consultation' %}active{% endif %}" href="{% url 'b:doctor_dashboard' %}">
+                        <i class="fas fa-stethoscope me-2"></i> Consultations
                         {% if pending_count > 0 %}
                             <span class="badge bg-danger ms-2">{{ pending_count }}</span>
                         {% endif %}
                     </a>
                 </li>
-                
+
+                <li class="nav-item">
+                    <a class="nav-link {% if page == 'doctor' or page == 'doctor_consultation' %}active{% endif %}" href="{% url 'b:doctor_dashboard' %}">
+                        <i class="fas fa-stethoscope me-2"></i> LAb Report
+                        {% if pending_count > 0 %}
+                            <span class="badge bg-danger ms-2">{{ pending_count }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+            
+            <!-- Pharmacy Role -->
             {% elif role == 'PHARMACY' %}
                 <li class="nav-item">
-                    <a class="nav-link {% if page == 'pharmacy' %}active{% endif %}" href="{% url 'b:pharmacy_dashboard' %}">
+                    <a class="nav-link {% if page == 'pharmacy' or page == 'pharmacy_dispense' %}active{% endif %}" href="{% url 'b:pharmacy_dashboard' %}">
                         <i class="fas fa-pills me-2"></i> Dispensary
                         {% if pending_count > 0 %}
-                            <span class="badge bg-danger ms-2">{{ pending_count }}</span>
+                            <span class="badge bg-danger ms-2 pharmacy-order-count" id="mobilePharmacyBadge">{{ pending_count }}</span>
+                        {% else %}
+                            <span class="badge bg-danger ms-2 pharmacy-order-count" id="mobilePharmacyBadge" style="display: none;">0</span>
                         {% endif %}
                     </a>
                 </li>
-                
+                <li class="nav-item">
+                    <a class="nav-link {% if page == 'pharmacy_drugs' %}active{% endif %}" href="{% url 'b:pharmacy_drug_list' %}">
+                        <i class="fas fa-capsules me-2"></i> Drug Inventory
+                        {% if low_stock_count > 0 %}
+                            <span class="badge bg-warning ms-2 text-dark">{{ low_stock_count }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if page == 'pharmacy_drug_add' %}active{% endif %}" href="{% url 'b:pharmacy_drug_add' %}">
+                        <i class="fas fa-plus-circle me-2"></i> Add Drug
+                    </a>
+                </li>
+            
+            <!-- MLS Role -->
             {% elif role == 'MLS' %}
                 <li class="nav-item">
-                    <a class="nav-link {% if page == 'lab' %}active{% endif %}" href="{% url 'b:laboratory_dashboard' %}">
+                    <a class="nav-link {% if page == 'lab' or page == 'lab_test' %}active{% endif %}" href="{% url 'b:laboratory_dashboard' %}">
                         <i class="fas fa-vial me-2"></i> Lab Tests
                         {% if pending_count > 0 %}
                             <span class="badge bg-danger ms-2">{{ pending_count }}</span>
                         {% endif %}
                     </a>
                 </li>
-                
+            
+            <!-- Optometrist Role -->
             {% elif role == 'OPTOMETRIST' %}
                 <li class="nav-item">
-                    <a class="nav-link {% if page == 'optician' %}active{% endif %}" href="{% url 'b:optician_dashboard' %}">
+                    <a class="nav-link {% if page == 'optician' or page == 'optician_assessment' %}active{% endif %}" href="{% url 'b:optician_dashboard' %}">
                         <i class="fas fa-eye me-2"></i> Optical
                         {% if pending_count > 0 %}
                             <span class="badge bg-danger ms-2">{{ pending_count }}</span>
@@ -496,7 +757,7 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'b:optician_assessment_walkin' %}">
+                    <a class="nav-link {% if page == 'optician_walkin' %}active{% endif %}" href="{% url 'b:optician_assessment_walkin' %}">
                         <i class="fas fa-user-plus me-2"></i> Walk-in
                     </a>
                 </li>
@@ -544,7 +805,6 @@
                     
                     <!-- HIM Role Sections -->
                     {% if role == 'HIM' %}
-                        <!-- Patient Management -->
                         <div class="nav-section-title mt-3">Patient Management</div>
                         <ul class="nav flex-column">
                             <li class="nav-item">
@@ -566,8 +826,6 @@
                                 </a>
                             </li>
                         </ul>
-                        
-                        <!-- User Management -->
                         <div class="nav-section-title mt-3">User Management</div>
                         <ul class="nav flex-column">
                             <li class="nav-item">
@@ -588,7 +846,7 @@
                         <div class="nav-section-title mt-3">My Tasks</div>
                         <ul class="nav flex-column">
                             <li class="nav-item">
-                                <a class="nav-link {% if page == 'nursing' %}active{% endif %}" href="{% url 'b:nursing_dashboard' %}">
+                                <a class="nav-link {% if page == 'nursing' or page == 'nursing_assessment' %}active{% endif %}" href="{% url 'b:nursing_dashboard' %}">
                                     <i class="fas fa-clipboard-list"></i> My Assessments
                                     {% if pending_count > 0 %}
                                         <span class="badge-notification">{{ pending_count }}</span>
@@ -603,8 +861,8 @@
                         <div class="nav-section-title mt-3">Consultations</div>
                         <ul class="nav flex-column">
                             <li class="nav-item">
-                                <a class="nav-link {% if page == 'doctor' %}active{% endif %}" href="{% url 'b:doctor_dashboard' %}">
-                                    <i class="fas fa-prescription"></i> My Consultations
+                                <a class="nav-link {% if page == 'doctor' or page == 'doctor_consultation' %}active{% endif %}" href="{% url 'b:doctor_dashboard' %}">
+                                    <i class="fas fa-stethoscope"></i> Consultations
                                     {% if pending_count > 0 %}
                                         <span class="badge-notification">{{ pending_count }}</span>
                                     {% endif %}
@@ -618,11 +876,26 @@
                         <div class="nav-section-title mt-3">Pharmacy</div>
                         <ul class="nav flex-column">
                             <li class="nav-item">
-                                <a class="nav-link {% if page == 'pharmacy' %}active{% endif %}" href="{% url 'b:pharmacy_dashboard' %}">
+                                <a class="nav-link {% if page == 'pharmacy' or page == 'pharmacy_dispense' %}active{% endif %}" href="{% url 'b:pharmacy_dashboard' %}">
                                     <i class="fas fa-pills"></i> Dispensary
                                     {% if pending_count > 0 %}
-                                        <span class="badge-notification">{{ pending_count }}</span>
+                                        <span class="badge-notification dispensary-badge" id="dispensaryBadge">{{ pending_count }}</span>
+                                    {% else %}
+                                        <span class="badge-notification dispensary-badge" id="dispensaryBadge" style="display: none;">0</span>
                                     {% endif %}
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if page == 'pharmacy_drugs' %}active{% endif %}" href="{% url 'b:pharmacy_drug_list' %}">
+                                    <i class="fas fa-capsules"></i> Drug Inventory
+                                    {% if low_stock_count > 0 %}
+                                        <span class="badge-notification" style="background: #f59e0b;">{{ low_stock_count }}</span>
+                                    {% endif %}
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if page == 'pharmacy_drug_add' %}active{% endif %}" href="{% url 'b:pharmacy_drug_add' %}">
+                                    <i class="fas fa-plus-circle"></i> Add Drug
                                 </a>
                             </li>
                         </ul>
@@ -633,7 +906,7 @@
                         <div class="nav-section-title mt-3">Laboratory</div>
                         <ul class="nav flex-column">
                             <li class="nav-item">
-                                <a class="nav-link {% if page == 'lab' %}active{% endif %}" href="{% url 'b:laboratory_dashboard' %}">
+                                <a class="nav-link {% if page == 'lab' or page == 'lab_test' %}active{% endif %}" href="{% url 'b:laboratory_dashboard' %}">
                                     <i class="fas fa-vial"></i> Lab Tests
                                     {% if pending_count > 0 %}
                                         <span class="badge-notification">{{ pending_count }}</span>
@@ -648,7 +921,7 @@
                         <div class="nav-section-title mt-3">Optical</div>
                         <ul class="nav flex-column">
                             <li class="nav-item">
-                                <a class="nav-link {% if page == 'optician' %}active{% endif %}" href="{% url 'b:optician_dashboard' %}">
+                                <a class="nav-link {% if page == 'optician' or page == 'optician_assessment' %}active{% endif %}" href="{% url 'b:optician_dashboard' %}">
                                     <i class="fas fa-eye"></i> Optical Assessments
                                     {% if pending_count > 0 %}
                                         <span class="badge-notification">{{ pending_count }}</span>
@@ -656,14 +929,14 @@
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="{% url 'b:optician_assessment_walkin' %}">
+                                <a class="nav-link {% if page == 'optician_walkin' %}active{% endif %}" href="{% url 'b:optician_assessment_walkin' %}">
                                     <i class="fas fa-user-plus"></i> Walk-in Patient
                                 </a>
                             </li>
                         </ul>
                     {% endif %}
                     
-                    <!-- System Section (Always Visible) -->
+                    <!-- System Section -->
                     <div class="nav-section-title mt-3">System</div>
                     <ul class="nav flex-column">
                         <li class="nav-item">
@@ -675,8 +948,48 @@
                 </div>
             </nav>
 
+            <!-- ===== DOCTOR PATIENT SIDEBAR (Only for PHYSICIAN role) ===== -->
+            {% if role == 'PHYSICIAN' %}
+                <div class="doctor-patient-sidebar" id="doctorPatientSidebar">
+                    <div class="sidebar-header">
+                        <h6>
+                            <span><i class="fas fa-users me-2"></i>My Patients</span>
+                            <span class="badge-count">{{ doctor_patients|length }}</span>
+                        </h6>
+                    </div>
+                    <div class="search-box">
+                        <input type="text" id="doctorPatientSearch" placeholder="Search patients..." oninput="filterDoctorPatients()">
+                    </div>
+                    <div class="patient-list" id="doctorPatientList">
+                        {% if doctor_patients %}
+                            {% for patient in doctor_patients %}
+                                <a href="{% url 'b:doctor_consultation' patient.id %}" class="patient-item" data-name="{{ patient.full_name|lower }}" data-hospital="{{ patient.hospital_number|lower }}" data-id="{{ patient.id }}">
+                                    <div class="avatar {% if patient.gender == 'MALE' %}male{% elif patient.gender == 'FEMALE' %}female{% endif %}">
+                                        {{ patient.first_name|first|upper }}{{ patient.last_name|first|upper }}
+                                    </div>
+                                    <div class="info">
+                                        <div class="name">{{ patient.full_name }}</div>
+                                        <div class="details">
+                                            <span>{{ patient.hospital_number }}</span>
+                                            <span>{{ patient.age_data.years }}y</span>
+                                        </div>
+                                    </div>
+                                    <span class="status-dot {% if patient.current_stage == 'NURSING' %}pending{% elif patient.current_stage == 'DOCTOR' %}in-progress{% elif patient.current_stage == 'COMPLETED' %}completed{% else %}referred{% endif %}"></span>
+                                </a>
+                            {% endfor %}
+                        {% else %}
+                            <div class="empty-state">
+                                <i class="fas fa-user-md"></i>
+                                <p>No patients assigned</p>
+                                <small class="text-muted">Patients will appear when assigned</small>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+
             <!-- Main Content Area -->
-            <main class="col-12 col-md-10 main-content">
+            <main class="{% if role == 'PHYSICIAN' %}col-md-10{% else %}col-12 col-md-10{% endif %} main-content doctor-main-content">
                 {% block content %}{% endblock %}
             </main>
         </div>
@@ -684,7 +997,10 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Mobile sidebar toggle
+        // ============================================
+        // MOBILE SIDEBAR TOGGLE
+        // ============================================
+        
         function toggleMobileSidebar() {
             const sidebar = document.getElementById('mobileSidebar');
             const overlay = document.getElementById('mobileOverlay');
@@ -693,7 +1009,6 @@
             document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
         }
         
-        // Show hamburger on mobile
         function checkScreenSize() {
             const hamburger = document.querySelector('.hamburger-btn');
             if (window.innerWidth < 768) {
@@ -703,13 +1018,47 @@
                 document.getElementById('mobileSidebar').classList.remove('active');
                 document.getElementById('mobileOverlay').classList.remove('active');
                 document.body.style.overflow = '';
+                document.getElementById('doctorPatientSidebar')?.classList.remove('mobile-show');
             }
         }
         
         window.addEventListener('resize', checkScreenSize);
         window.addEventListener('load', checkScreenSize);
+
+        // ============================================
+        // DOCTOR PATIENT SIDEBAR
+        // ============================================
         
-        // Auto-dismiss alerts after 5 seconds
+        function filterDoctorPatients() {
+            const query = document.getElementById('doctorPatientSearch').value.toLowerCase();
+            const items = document.querySelectorAll('#doctorPatientList .patient-item');
+            items.forEach(item => {
+                const name = item.dataset.name || '';
+                const hospital = item.dataset.hospital || '';
+                const matches = name.includes(query) || hospital.includes(query);
+                item.style.display = matches ? '' : 'none';
+            });
+        }
+
+        function toggleDoctorPatientSidebar() {
+            const sidebar = document.getElementById('doctorPatientSidebar');
+            sidebar.classList.toggle('mobile-show');
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPath = window.location.pathname;
+            const items = document.querySelectorAll('#doctorPatientList .patient-item');
+            items.forEach(item => {
+                if (item.getAttribute('href') === currentPath) {
+                    item.classList.add('active');
+                }
+            });
+        });
+
+        // ============================================
+        // AUTO-DISMISS ALERTS
+        // ============================================
+        
         document.addEventListener('DOMContentLoaded', function() {
             setTimeout(function() {
                 const alerts = document.querySelectorAll('.alert');
@@ -718,103 +1067,456 @@
                     bsAlert.close();
                 });
             }, 5000);
-            
-            // Initialize WebSocket connection
-            {% if user.is_authenticated %}
-                connectWebSocket();
-            {% endif %}
         });
 
         // ============================================
-        // WEBSOCKET NOTIFICATION SYSTEM
+        // GET CSRF TOKEN
         // ============================================
         
-        let socket = null;
-        let reconnectAttempts = 0;
-        const MAX_RECONNECT_ATTEMPTS = 5;
+        function getCSRFToken() {
+            const name = 'csrftoken';
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // ============================================
+        // MARK ALL NOTIFICATIONS AS READ
+        // ============================================
         
-        function connectWebSocket() {
-            if (socket && socket.readyState === WebSocket.OPEN) {
+        function markAllNotificationsRead() {
+            if (!confirm('Mark all notifications as read?')) return;
+            
+            const btn = document.querySelector('.dropdown-header .btn-link');
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = 'Loading...';
+            }
+            
+            fetch('/api/notifications/mark-all-read/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCSRFToken(),
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Reset everything
+                    lastNotificationCount = 0;
+                    updateNotificationBadge(0);
+                    clearNotificationList();
+                    showToast('✅ All notifications marked as read', 'success');
+                }
+            })
+            .catch(error => console.error('Error marking notifications as read:', error))
+            .finally(() => {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = 'Mark all as read';
+                }
+            });
+        }
+
+        // ============================================
+        // ADD NOTIFICATION TO LIST
+        // ============================================
+        
+        function addNotificationToList(message, link, notificationId) {
+            const list = document.getElementById('notificationList');
+            if (!list) return;
+            
+            const emptyMsg = list.querySelector('.text-muted.text-center');
+            if (emptyMsg) emptyMsg.remove();
+            
+            if (notificationId && list.querySelector(`[data-id="${notificationId}"]`)) {
                 return;
             }
             
-            const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
-            const wsUrl = `${protocol}${window.location.host}/ws/notifications/`;
+            const item = document.createElement('div');
+            item.className = 'notification-item unread';
+            item.dataset.id = notificationId || 'notif-' + Date.now();
+            const time = new Date().toLocaleTimeString();
             
-            try {
-                socket = new WebSocket(wsUrl);
-                
-                socket.onopen = function(e) {
-                    console.log('🔗 WebSocket connected');
-                    reconnectAttempts = 0;
-                };
-                
-                socket.onmessage = function(e) {
-                    try {
-                        const data = JSON.parse(e.data);
-                        console.log('📨 WebSocket message:', data);
-                        
-                        if (data.type === 'notification') {
-                            showNotificationToast(data.message, data.link);
-                            updateNotificationCount(1);
-                            addNotificationToList(data.message, data.link);
-                        } else if (data.type === 'assignment_update') {
-                            const message = `📋 ${data.role} assigned to ${data.patient_name}`;
-                            showNotificationToast(message, '#');
-                            updateNotificationCount(1);
-                        }
-                    } catch (error) {
-                        console.error('Error parsing WebSocket message:', error);
-                    }
-                };
-                
-                socket.onclose = function(e) {
-                    console.log('🔌 WebSocket disconnected');
-                    attemptReconnect();
-                };
-                
-                socket.onerror = function(e) {
-                    console.error('❌ WebSocket error:', e);
-                    socket.close();
-                };
-                
-            } catch (error) {
-                console.error('WebSocket connection failed:', error);
-                attemptReconnect();
+            let viewLink = link || '';
+            if (viewLink && viewLink.includes('/pharmacy/order/')) {
+                const patientId = viewLink.split('/')[3];
+                viewLink = `/pharmacy/dispense-patient/${patientId}/`;
+            }
+            
+            item.innerHTML = `
+                <div class="d-flex justify-content-between">
+                    <span>${message}</span>
+                    <small class="time">just now</small>
+                </div>
+                ${viewLink ? `<a href="${viewLink}" class="small text-success">View</a>` : ''}
+            `;
+            list.prepend(item);
+            
+            while (list.children.length > 20) {
+                list.removeChild(list.lastChild);
+            }
+            
+            const badge = document.querySelector('.notification-count');
+            if (badge) {
+                let current = parseInt(badge.textContent) || 0;
+                current += 1;
+                badge.textContent = current;
+                badge.style.display = current > 0 ? 'inline' : 'none';
+                lastNotificationCount = current;
             }
         }
-        
-        function attemptReconnect() {
-            if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-                reconnectAttempts++;
-                const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
-                console.log(`🔄 Reconnecting in ${delay/1000}s (attempt ${reconnectAttempts})`);
-                setTimeout(connectWebSocket, delay);
-            } else {
-                console.log('❌ Max reconnect attempts reached. Please refresh the page.');
+
+        function clearNotificationList() {
+            const list = document.getElementById('notificationList');
+            if (list) {
+                list.innerHTML = '<div class="dropdown-item text-muted text-center">No notifications</div>';
             }
         }
-        
-        // Show notification toast
-        function showNotificationToast(message, link) {
+
+        function showToast(message, type = 'info') {
             const container = document.getElementById('notificationToastContainer');
             if (!container) return;
             
             const toast = document.createElement('div');
-            toast.className = 'notification-toast success';
+            toast.className = `notification-toast ${type}`;
             toast.innerHTML = `
                 <div class="d-flex justify-content-between align-items-start">
                     <div>
-                        <i class="fas fa-bell text-info me-2"></i>
+                        <i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'} me-2"></i>
                         <span>${message}</span>
-                        ${link ? `<br><a href="${link}" class="toast-link mt-1 d-inline-block">View Details →</a>` : ''}
                     </div>
                     <button type="button" class="btn-close btn-close-sm" onclick="this.closest('.notification-toast').remove()"></button>
                 </div>
             `;
             container.appendChild(toast);
             
-            // Auto remove after 8 seconds
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.style.animation = 'slideOut 0.5s ease';
+                    setTimeout(() => toast.remove(), 500);
+                }
+            }, 5000);
+        }
+
+        // ============================================
+        // REFRESH NOTIFICATION BADGE
+        // ============================================
+        
+        function refreshNotificationBadge() {
+            fetch('/api/notification-count/')
+                .then(response => response.json())
+                .then(data => {
+                    const count = data.count || 0;
+                    lastNotificationCount = count;
+                    updateNotificationBadge(count);
+                    console.log('🔔 Notification badge refreshed to:', count);
+                })
+                .catch(error => console.error('Error refreshing badge:', error));
+        }
+
+        // ============================================
+        // HARD RESET NOTIFICATIONS
+        // ============================================
+        
+        function hardResetNotifications() {
+            console.log('💥 Hard resetting notifications...');
+            
+            fetch('/api/notifications/mark-all-read/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCSRFToken(),
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    lastNotificationCount = 0;
+                    updateNotificationBadge(0);
+                    clearNotificationList();
+                    showToast('✅ Notifications reset successfully!', 'success');
+                    console.log('✅ Hard reset successful!');
+                }
+            })
+            .catch(error => console.error('Error in hard reset:', error));
+        }
+
+        // ============================================
+        // REAL-TIME NOTIFICATION SYSTEM
+        // ============================================
+        
+        let lastNotificationCount = {{ notification_count|default:0 }};
+        let notificationPollingInterval = null;
+        let isNotificationPolling = false;
+        let hasInitialized = false;
+        let notificationSoundEnabled = true;
+        let notificationCheckCounter = 0;
+        
+        function initializeNotificationSystem() {
+            if (hasInitialized) return;
+            hasInitialized = true;
+            
+            console.log('🔔 Initializing notification system...');
+            console.log('🔔 Initial count from server:', lastNotificationCount);
+            
+            // Get fresh count from server
+            fetch('/api/notification-count/')
+                .then(response => response.json())
+                .then(data => {
+                    const count = data.count || 0;
+                    lastNotificationCount = count;
+                    updateNotificationBadge(count);
+                    console.log('🔔 Badge initialized to:', count);
+                })
+                .catch(error => console.error('Error getting initial notification count:', error));
+            
+            // If pharmacy role, get initial pharmacy count
+            {% if role == 'PHARMACY' %}
+            fetch('/api/pharmacy/pending-count/')
+                .then(response => response.json())
+                .then(data => {
+                    const count = data.count || 0;
+                    updatePharmacyBadge(count);
+                    console.log('💊 Initial pharmacy pending count:', count);
+                })
+                .catch(error => console.error('Error getting pharmacy count:', error));
+            {% endif %}
+            
+            // Start polling after 2 seconds
+            setTimeout(function() {
+                startNotificationPolling();
+            }, 2000);
+            
+            // Force refresh for pharmacy on load
+            {% if role == 'PHARMACY' %}
+            setTimeout(function() {
+                console.log('💊 Pharmacy: Refreshing notifications on load');
+                refreshNotificationBadge();
+            }, 1500);
+            {% endif %}
+        }
+        
+        function startNotificationPolling() {
+            if (notificationPollingInterval) {
+                clearInterval(notificationPollingInterval);
+            }
+            
+            notificationPollingInterval = setInterval(function() {
+                checkForNewNotifications();
+            }, 5000);
+            
+            console.log('📡 Notification polling started (every 5 seconds)');
+        }
+        
+        function checkForNewNotifications() {
+            if (isNotificationPolling) return;
+            isNotificationPolling = true;
+            notificationCheckCounter++;
+            
+            fetch('/api/notification-count/')
+                .then(response => response.json())
+                .then(data => {
+                    const currentCount = data.count || 0;
+                    console.log(`📊 Poll ${notificationCheckCounter}: Current: ${currentCount}, Last: ${lastNotificationCount}`);
+                    
+                    // ALWAYS update the badge
+                    updateNotificationBadge(currentCount);
+                    
+                    if (currentCount > lastNotificationCount) {
+                        // New notifications detected
+                        const newCount = currentCount - lastNotificationCount;
+                        console.log(`🔔 ${newCount} NEW notification(s) detected!`);
+                        
+                        fetch('/api/notifications/latest/')
+                            .then(response => response.json())
+                            .then(notifData => {
+                                if (notifData.notifications && notifData.notifications.length > 0) {
+                                    const unread = notifData.notifications.filter(n => !n.is_read);
+                                    if (unread.length > 0) {
+                                        const list = document.getElementById('notificationList');
+                                        if (list) {
+                                            const emptyMsg = list.querySelector('.text-muted.text-center');
+                                            if (emptyMsg) emptyMsg.remove();
+                                        }
+                                        
+                                        unread.forEach(notif => {
+                                            const list = document.getElementById('notificationList');
+                                            const existing = list ? list.querySelector(`[data-id="${notif.id}"]`) : null;
+                                            if (!existing) {
+                                                // Show toast notification
+                                                showNotificationToast(notif.message, notif.link);
+                                                addNotificationToList(notif.message, notif.link, notif.id);
+                                                if (notificationSoundEnabled) {
+                                                    playNotificationSound();
+                                                }
+                                            }
+                                        });
+                                    }
+                                }
+                                lastNotificationCount = currentCount;
+                                console.log('📊 Last count updated to:', lastNotificationCount);
+                            })
+                            .catch(error => console.error('Error fetching notifications:', error));
+                    } else if (currentCount < lastNotificationCount) {
+                        // Count decreased - refresh
+                        console.log(`📉 Count decreased: ${lastNotificationCount} → ${currentCount}`);
+                        lastNotificationCount = currentCount;
+                        refreshNotificationList();
+                    } else {
+                        console.log('✅ No new notifications');
+                    }
+                    
+                    // Check pharmacy orders if pharmacy role
+                    {% if role == 'PHARMACY' %}
+                    checkPharmacyOrders();
+                    {% endif %}
+                    
+                    isNotificationPolling = false;
+                })
+                .catch(error => {
+                    console.error('Error checking notification count:', error);
+                    isNotificationPolling = false;
+                });
+        }
+        
+        function refreshNotificationList() {
+            fetch('/api/notifications/latest/')
+                .then(response => response.json())
+                .then(notifData => {
+                    const list = document.getElementById('notificationList');
+                    if (!list) return;
+                    
+                    list.innerHTML = '';
+                    
+                    if (notifData.notifications && notifData.notifications.length > 0) {
+                        const unread = notifData.notifications.filter(n => !n.is_read);
+                        if (unread.length === 0) {
+                            list.innerHTML = '<div class="dropdown-item text-muted text-center">No notifications</div>';
+                        } else {
+                            unread.forEach(notif => {
+                                const item = document.createElement('div');
+                                item.className = 'notification-item unread';
+                                item.dataset.id = notif.id;
+                                const time = new Date(notif.created_at).toLocaleTimeString();
+                                
+                                let viewLink = notif.link || '';
+                                if (viewLink && viewLink.includes('/pharmacy/order/')) {
+                                    const patientId = viewLink.split('/')[3];
+                                    viewLink = `/pharmacy/dispense-patient/${patientId}/`;
+                                }
+                                
+                                item.innerHTML = `
+                                    <div class="d-flex justify-content-between">
+                                        <span>${notif.message}</span>
+                                        <small class="time">${time}</small>
+                                    </div>
+                                    ${viewLink ? `<a href="${viewLink}" class="small text-success">View</a>` : ''}
+                                `;
+                                list.appendChild(item);
+                            });
+                        }
+                    } else {
+                        list.innerHTML = '<div class="dropdown-item text-muted text-center">No notifications</div>';
+                    }
+                    
+                    console.log('✅ Notification list refreshed');
+                })
+                .catch(error => console.error('Error refreshing notification list:', error));
+        }
+        
+        // ============================================
+        // PHARMACY ORDER CHECK
+        // ============================================
+        
+        function checkPharmacyOrders() {
+            fetch('/api/pharmacy/pending-count/')
+                .then(response => response.json())
+                .then(data => {
+                    const count = data.count || 0;
+                    console.log(`💊 Pharmacy pending orders: ${count}`);
+                    updatePharmacyBadge(count);
+                })
+                .catch(error => console.error('Error checking pharmacy count:', error));
+        }
+        
+        function updatePharmacyBadge(count) {
+            const dispensaryBadge = document.getElementById('dispensaryBadge');
+            if (dispensaryBadge) {
+                dispensaryBadge.textContent = count;
+                dispensaryBadge.style.display = count > 0 ? 'inline' : 'none';
+            }
+            
+            const mobilePharmacyBadge = document.getElementById('mobilePharmacyBadge');
+            if (mobilePharmacyBadge) {
+                mobilePharmacyBadge.textContent = count;
+                mobilePharmacyBadge.style.display = count > 0 ? 'inline' : 'none';
+            }
+        }
+        
+        // ============================================
+        // NOTIFICATION UI FUNCTIONS
+        // ============================================
+        
+        function updateNotificationBadge(count) {
+            const badge = document.querySelector('.notification-count');
+            if (badge) {
+                badge.textContent = count;
+                badge.style.display = count > 0 ? 'inline' : 'none';
+                console.log('🔔 Badge updated to:', count);
+            }
+        }
+        
+        function playNotificationSound() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                
+                oscillator.frequency.value = 800;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                
+                oscillator.start(audioCtx.currentTime);
+                oscillator.stop(audioCtx.currentTime + 0.3);
+            } catch (e) {
+                // Silently fail if audio not supported
+            }
+        }
+        
+        function showNotificationToast(message, link, type = 'info') {
+            const container = document.getElementById('notificationToastContainer');
+            if (!container) return;
+            
+            const toast = document.createElement('div');
+            toast.className = `notification-toast ${type}`;
+            toast.innerHTML = `
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <i class="fas fa-bell text-info me-2"></i>
+                        <span>${message}</span>
+                        ${link ? `<br><a href="${link}" class="toast-link mt-1 d-inline-block" onclick="this.closest('.notification-toast').remove()">View Details →</a>` : ''}
+                    </div>
+                    <button type="button" class="btn-close btn-close-sm" onclick="this.closest('.notification-toast').remove()"></button>
+                </div>
+            `;
+            container.appendChild(toast);
+            
             setTimeout(() => {
                 if (toast.parentNode) {
                     toast.style.animation = 'slideOut 0.5s ease';
@@ -822,44 +1524,40 @@
                 }
             }, 8000);
         }
+
+        // ============================================
+        // EXPOSE FUNCTIONS GLOBALLY
+        // ============================================
         
-        // Update notification count
-        function updateNotificationCount(increment = 0) {
-            const badge = document.querySelector('.notification-count');
-            if (badge) {
-                let current = parseInt(badge.textContent) || 0;
-                current += increment;
-                badge.textContent = current;
-                badge.style.display = current > 0 ? 'inline' : 'none';
-            }
-        }
+        window.hardResetNotifications = hardResetNotifications;
+        window.markAllNotificationsRead = markAllNotificationsRead;
+        window.refreshNotificationBadge = refreshNotificationBadge;
+        window.filterDoctorPatients = filterDoctorPatients;
+        window.toggleDoctorPatientSidebar = toggleDoctorPatientSidebar;
+        window.toggleNotificationSound = function() {
+            notificationSoundEnabled = !notificationSoundEnabled;
+            console.log('🔊 Notification sound:', notificationSoundEnabled ? 'ON' : 'OFF');
+            return notificationSoundEnabled;
+        };
+
+        // ============================================
+        // INITIALIZE
+        // ============================================
         
-        // Add notification to dropdown list
-        function addNotificationToList(message, link) {
-            const list = document.getElementById('notificationList');
-            if (!list) return;
-            
-            // Remove "No notifications" message if present
-            const emptyMsg = list.querySelector('.text-muted.text-center');
-            if (emptyMsg) emptyMsg.remove();
-            
-            const item = document.createElement('div');
-            item.className = 'notification-item unread';
-            const time = new Date().toLocaleTimeString();
-            item.innerHTML = `
-                <div class="d-flex justify-content-between">
-                    <span>${message}</span>
-                    <small class="time">just now</small>
-                </div>
-                ${link ? `<a href="${link}" class="small text-success">View</a>` : ''}
-            `;
-            list.prepend(item);
-            
-            // Limit to 20 items
-            while (list.children.length > 20) {
-                list.removeChild(list.lastChild);
-            }
-        }
+        document.addEventListener('DOMContentLoaded', function() {
+            {% if user.is_authenticated %}
+                console.log('🔔 User authenticated, initializing notification system');
+                initializeNotificationSystem();
+                
+                // Debug commands available in console
+                console.log('='.repeat(60));
+                console.log('🔍 AVAILABLE COMMANDS:');
+                console.log('  hardResetNotifications() - Force reset all notifications');
+                console.log('  refreshNotificationBadge() - Refresh the notification badge');
+                console.log('  markAllNotificationsRead() - Mark all as read');
+                console.log('='.repeat(60));
+            {% endif %}
+        });
     </script>
     {% block extra_js %}{% endblock %}
 </body>

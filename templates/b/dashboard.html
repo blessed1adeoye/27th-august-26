@@ -240,36 +240,105 @@
         </div>
         
     {% elif role == 'PHARMACY' %}
-        <!-- Pharmacy Dashboard -->
+    <!-- Pharmacy Dashboard - Shows Patients with Pending Orders -->
         <div class="col-12">
+            <div class="row g-3 g-md-4 mb-4">
+                <div class="col-md-3">
+                    <div class="card text-white bg-success">
+                        <div class="card-body">
+                            <h6><i class="fas fa-prescription-bottle me-2"></i>Total Orders</h6>
+                            <h2>{{ pending_count }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-white bg-primary">
+                        <div class="card-body">
+                            <h6><i class="fas fa-users me-2"></i>Patients Waiting</h6>
+                            <h2>{{ pending_patients_count }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-white bg-info">
+                        <div class="card-body">
+                            <h6><i class="fas fa-check-circle me-2"></i>Dispensed Today</h6>
+                            <h2>{{ dispensed_today }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-white bg-warning">
+                        <div class="card-body">
+                            <h6><i class="fas fa-exclamation-triangle me-2"></i>Low Stock</h6>
+                            <h2>{{ low_stock_count }}</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Patients with Orders - GROUPED BY PATIENT -->
             <div class="card shadow-sm border-0">
-                <div class="card-header bg-white d-flex flex-wrap justify-content-between align-items-center gap-2">
-                    <h5 class="mb-0"><i class="fas fa-pills me-2 text-success"></i>Pharmacy Orders</h5>
-                    <span class="badge bg-primary">{{ pending_count|default:0 }} pending</span>
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="fas fa-list text-success me-2"></i>Patients with Pending Orders</h5>
                 </div>
                 <div class="card-body p-0 p-md-3">
-                    {% if orders %}
-                        <div class="table-responsive-custom">
+                    {% if pending_patients %}
+                        <div class="table-responsive">
                             <table class="table table-hover mb-0">
                                 <thead>
                                     <tr>
                                         <th>Patient</th>
-                                        <th class="d-none d-sm-table-cell">Drug</th>
-                                        <th class="d-none d-md-table-cell">Qty</th>
-                                        <th class="d-none d-lg-table-cell">Dosage</th>
+                                        <th>Hospital No.</th>
+                                        <th>Age</th>
+                                        <th>Medications</th>
+                                        <th>Total Items</th>
                                         <th>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {% for order in orders %}
+                                    {% for patient in pending_patients %}
                                         <tr>
-                                            <td>{{ order.patient.full_name|truncatechars:12 }}</td>
-                                            <td class="d-none d-sm-table-cell">{{ order.drug_name|truncatechars:15 }}</td>
-                                            <td class="d-none d-md-table-cell">{{ order.quantity }}</td>
-                                            <td class="d-none d-lg-table-cell">{{ order.dosage|default:"—" }}</td>
                                             <td>
-                                                <a href="{% url 'b:pharmacy_dispense' order.id %}" class="btn btn-sm btn-success">
-                                                    <i class="fas fa-check me-1"></i>Dispense
+                                                <strong>{{ patient.full_name }}</strong>
+                                                <br><small class="text-muted">{{ patient.phone }}</small>
+                                            </td>
+                                            <td>{{ patient.hospital_number }}</td>
+                                            <td>
+                                                {% if patient.age_data %}
+                                                    {% if patient.age_data.years > 0 %}{{ patient.age_data.years }}y {% endif %}
+                                                    {% if patient.age_data.months > 0 %}{{ patient.age_data.months }}m{% endif %}
+                                                    {% if patient.age_data.years == 0 and patient.age_data.months == 0 %}
+                                                        {% if patient.age_data.days > 0 %}{{ patient.age_data.days }}d{% else %}Newborn{% endif %}
+                                                    {% endif %}
+                                                {% else %}
+                                                    —
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% for order in patient.pharmacy_orders.all %}
+                                                    {% if not order.dispensed %}
+                                                        <span class="badge bg-light text-dark border me-1 mb-1" style="font-size: 12px; padding: 4px 10px;">
+                                                            {{ order.drug_name }} <span class="text-muted">×{{ order.quantity }}</span>
+                                                        </span>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-secondary">
+                                                    {% for order in patient.pharmacy_orders.all %}
+                                                        {% if not order.dispensed %}
+                                                            {{ order.quantity|add:0 }}
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <a href="{% url 'b:pharmacy_dispense_patient' patient.id %}" class="btn btn-sm btn-success">
+                                                    <i class="fas fa-prescription-bottle me-1"></i> Dispense All
+                                                </a>
+                                                <a href="{% url 'b:patient_detail' patient.id %}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-eye"></i>
                                                 </a>
                                             </td>
                                         </tr>
@@ -280,7 +349,7 @@
                     {% else %}
                         <p class="text-muted text-center my-4 py-3">
                             <i class="fas fa-check-circle text-success me-2"></i>
-                            No pending pharmacy orders.
+                            No pending orders. All medications have been dispensed.
                         </p>
                     {% endif %}
                 </div>

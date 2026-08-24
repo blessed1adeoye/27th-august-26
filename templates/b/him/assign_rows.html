@@ -1,0 +1,49 @@
+<!-- templates/b/him/assign_rows.html -->
+{% load crispy_forms_tags %}
+
+<!-- This renders the table rows for the nurse assignment section -->
+{% if unassigned_nurse_patients %}
+    {% for patient in unassigned_nurse_patients %}
+        <tr id="nurse-row-{{ patient.id }}">
+            <!-- Patient info -->
+            <td><strong>{{ patient.hospital_number }}</strong></td>
+            <td>{{ patient.full_name|truncatechars:15 }}</td>
+            <td>{{ patient.gender }}</td>
+            <td>{{ patient.created_at|date:"M d, Y" }}</td>
+            <!-- Assignment form with dropdowns -->
+            <td colspan="2">
+                <form class="assign-form">
+                    <!-- Nurse dropdown -->
+                    <select name="nurse_id">
+                        <option value="">Select Nurse</option>
+                        {% for nurse in nurses %}
+                            <option value="{{ nurse.id }}">
+                                {{ nurse.get_full_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <!-- Physician dropdown -->
+                    <select name="physician_id">
+                        <option value="">Select Physician</option>
+                        {% for physician in physicians %}
+                            <option value="{{ physician.id }}">
+                                Dr. {{ physician.get_full_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <!-- Assign button -->
+                    <button type="button" onclick="assignStaff(this, {{ patient.id }})">
+                        Assign
+                    </button>
+                </form>
+            </td>
+        </tr>
+    {% endfor %}
+{% else %}
+    <!-- Empty state when no patients need assignment -->
+    <tr>
+        <td colspan="7" class="text-center">
+            All patients have been assigned
+        </td>
+    </tr>
+{% endif %}

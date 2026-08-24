@@ -1,7 +1,9 @@
 # b/context_processors.py
 
-from .models import Notification, NurseAssignment, Patient, PharmacyOrder, LaboratoryTest, OpticalAssessment, UserProfile
-from django.db.models import Q
+from .models import *
+from django.db.models import Q, F
+from datetime import date
+from django.utils import timezone
 
 def user_context(request):
     """Context processor to add user role and notifications to all templates"""
@@ -28,6 +30,7 @@ def user_context(request):
         'nurses': [],
         'assigned_patients': [],
         'completed_today': 0,
+        'low_stock_count': 0,
     }
     
     if request.user.is_authenticated:
@@ -77,12 +80,28 @@ def user_context(request):
                 ).count()
                 
             elif user_profile.role == 'PHYSICIAN':
-                context['patients'] = Patient.objects.filter(current_stage='NURSING')
+                # Get patients assigned to this physician (pending consultation)
+                context['patients'] = Patient.objects.filter(
+                    physicianassignment__physician=request.user,
+                    physicianassignment__is_active=True,
+                    current_stage='NURSING'
+                )
                 context['pending_count'] = context['patients'].count()
                 
             elif user_profile.role == 'PHARMACY':
+                # Get pending pharmacy orders
                 context['orders'] = PharmacyOrder.objects.filter(dispensed=False)
-                context['pending_count'] = context['orders'].count()
+                
+                # ===== FIX: Count UNIQUE patients with pending orders =====
+                # This counts each patient once, regardless of how many drugs they have
+                context['pending_count'] = PharmacyOrder.objects.filter(
+                    dispensed=False
+                ).values('patient').distinct().count()
+                
+                # Get low stock count
+                context['low_stock_count'] = Drug.objects.filter(
+                    quantity__lte=F('reorder_level')
+                ).count()
                 
             elif user_profile.role == 'MLS':
                 context['tests'] = LaboratoryTest.objects.filter(completed=False)

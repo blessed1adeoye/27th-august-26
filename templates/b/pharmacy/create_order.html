@@ -1,0 +1,33 @@
+<!-- templates/b/pharmacy/create_order.html -->
+
+
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Create Order - {{ patient.full_name }}{% endblock %}
+
+{% block content %}
+<div class="card card-custom">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-plus-circle text-primary me-2"></i>
+            Create Order - {{ patient.full_name }}
+            <span class="badge bg-secondary ms-2">{{ patient.hospital_number }}</span>
+        </h5>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            {{ form|crispy }}
+            <div class="mt-4 d-flex justify-content-between">
+                <a href="{% url 'b:pharmacy_dashboard' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i> Back
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-2"></i> Save Order
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

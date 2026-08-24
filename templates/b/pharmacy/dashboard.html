@@ -3,89 +3,714 @@
 
 
 {% extends 'base.html' %}
+{% load crispy_forms_tags %}
 
 {% block title %}Pharmacy Dashboard{% endblock %}
 
-{% block content %}
-<div class="row g-4 mb-4">
-    <div class="col-md-4">
-        <div class="stat-card">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="label"><i class="fas fa-prescription me-2"></i>Pending Orders</div>
-                    <div class="number">{{ pending_count }}</div>
-                </div>
-                <i class="fas fa-pills fa-3x text-muted opacity-25"></i>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="stat-card">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="label"><i class="fas fa-check-circle me-2"></i>Dispensed Today</div>
-                    <div class="number">0</div>
-                </div>
-                <i class="fas fa-check-double fa-3x text-muted opacity-25"></i>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="stat-card">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="label"><i class="fas fa-users me-2"></i>Patients Served</div>
-                    <div class="number">0</div>
-                </div>
-                <i class="fas fa-user-md fa-3x text-muted opacity-25"></i>
-            </div>
-        </div>
-    </div>
-</div>
+{% block extra_css %}
+<style>
+    .pharmacy-layout {
+        display: flex;
+        gap: 24px;
+        min-height: calc(100vh - 100px);
+        align-items: flex-start;
+    }
 
-<div class="card card-custom">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0"><i class="fas fa-list text-success me-2"></i>Pending Pharmacy Orders</h5>
-        <span class="badge bg-primary">{{ pending_count }}</span>
+    /* Patient Sidebar for Pharmacy */
+    .pharmacy-patient-sidebar {
+        width: 320px;
+        flex-shrink: 0;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        overflow: hidden;
+        position: sticky;
+        top: 20px;
+        height: fit-content;
+        max-height: calc(100vh - 40px);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .pharmacy-patient-sidebar .sidebar-header {
+        background: linear-gradient(135deg, #065f46, #14b8a6);
+        color: white;
+        padding: 16px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+    }
+
+    .pharmacy-patient-sidebar .sidebar-header h6 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+    }
+
+    .pharmacy-patient-sidebar .sidebar-header .badge-count {
+        background: rgba(255,255,255,0.2);
+        padding: 2px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+    }
+
+    .pharmacy-patient-sidebar .search-box {
+        padding: 10px 16px;
+        border-bottom: 1px solid #e5e7eb;
+        flex-shrink: 0;
+    }
+
+    .pharmacy-patient-sidebar .search-box input {
+        width: 100%;
+        padding: 6px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 13px;
+    }
+
+    .pharmacy-patient-sidebar .search-box input:focus {
+        outline: none;
+        border-color: #065f46;
+        box-shadow: 0 0 0 2px rgba(6,95,70,0.1);
+    }
+
+    .pharmacy-patient-sidebar .patient-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 6px 0;
+    }
+
+    .pharmacy-patient-sidebar .patient-list::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .pharmacy-patient-sidebar .patient-list::-webkit-scrollbar-thumb {
+        background: #d1d5db;
+        border-radius: 2px;
+    }
+
+    .pharmacy-patient-sidebar .patient-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 16px;
+        cursor: pointer;
+        transition: all 0.2s;
+        border-left: 3px solid transparent;
+        text-decoration: none;
+        color: #1f2937;
+        position: relative;
+    }
+
+    .pharmacy-patient-sidebar .patient-item:hover {
+        background: #f0fdf4;
+        border-left-color: #14b8a6;
+    }
+
+    .pharmacy-patient-sidebar .patient-item.active {
+        background: #d1fae5;
+        border-left-color: #065f46;
+    }
+
+    .pharmacy-patient-sidebar .patient-item .avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: #e5e7eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 14px;
+        flex-shrink: 0;
+    }
+
+    .pharmacy-patient-sidebar .patient-item .avatar.male {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .pharmacy-patient-sidebar .patient-item .avatar.female {
+        background: #fce4ec;
+        color: #9a1f3f;
+    }
+
+    .pharmacy-patient-sidebar .patient-item .info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .pharmacy-patient-sidebar .patient-item .name {
+        font-weight: 500;
+        font-size: 14px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .pharmacy-patient-sidebar .patient-item .details {
+        font-size: 12px;
+        color: #6b7280;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .pharmacy-patient-sidebar .patient-item .order-count {
+        background: #d1fae5;
+        color: #065f46;
+        padding: 1px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        min-width: 20px;
+        text-align: center;
+    }
+
+    .pharmacy-patient-sidebar .empty-state {
+        text-align: center;
+        padding: 40px 16px;
+        color: #6b7280;
+    }
+
+    .pharmacy-patient-sidebar .empty-state i {
+        font-size: 2rem;
+        opacity: 0.3;
+        margin-bottom: 10px;
+    }
+
+    /* Main Content */
+    .pharmacy-main {
+        flex: 1;
+        min-width: 0;
+    }
+
+    /* Statistics Cards */
+    .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 16px 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        border-left: 4px solid #065f46;
+        transition: all 0.2s;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .stat-card .stat-number {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #065f46;
+    }
+
+    .stat-card .stat-label {
+        font-size: 0.85rem;
+        color: #6b7280;
+        margin-top: 4px;
+    }
+
+    .stat-card .stat-icon {
+        float: right;
+        font-size: 1.5rem;
+        opacity: 0.3;
+    }
+
+    .stat-card.warning {
+        border-left-color: #f59e0b;
+    }
+    .stat-card.warning .stat-number {
+        color: #f59e0b;
+    }
+    .stat-card.info {
+        border-left-color: #3b82f6;
+    }
+    .stat-card.info .stat-number {
+        color: #3b82f6;
+    }
+    .stat-card.success {
+        border-left-color: #10b981;
+    }
+    .stat-card.success .stat-number {
+        color: #10b981;
+    }
+
+    /* Orders Table */
+    .table-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        overflow: hidden;
+    }
+
+    .table-card .card-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .table-card .card-header h5 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+    }
+
+    .table-card .table-responsive {
+        overflow-x: auto;
+    }
+
+    .table-card table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+    }
+
+    .table-card table th {
+        background: #f8fafc;
+        padding: 10px 16px;
+        text-align: left;
+        font-weight: 600;
+        color: #374151;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .table-card table td {
+        padding: 10px 16px;
+        border-bottom: 1px solid #f3f4f6;
+        vertical-align: middle;
+    }
+
+    .table-card table tr:hover td {
+        background: #f9fafb;
+    }
+
+    .btn-dispense-patient {
+        padding: 6px 16px;
+        border-radius: 6px;
+        border: none;
+        background: #065f46;
+        color: white;
+        font-size: 13px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+        font-weight: 500;
+    }
+
+    .btn-dispense-patient:hover {
+        background: #0d3b3a;
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(6,95,70,0.3);
+    }
+
+    .btn-view-orders {
+        padding: 4px 12px;
+        border-radius: 6px;
+        border: 1px solid #e5e7eb;
+        background: white;
+        color: #374151;
+        font-size: 12px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        transition: all 0.2s;
+    }
+
+    .btn-view-orders:hover {
+        background: #f3f4f6;
+    }
+
+    .order-details-tag {
+        background: #f8fafc;
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        margin: 2px 4px 2px 0;
+        display: inline-block;
+        border: 1px solid #e5e7eb;
+    }
+
+    .order-details-tag .drug-name {
+        font-weight: 500;
+    }
+
+    .order-details-tag .drug-qty {
+        color: #6b7280;
+    }
+
+    /* Responsive */
+    @media (max-width: 992px) {
+        .pharmacy-layout {
+            flex-direction: column;
+        }
+
+        .pharmacy-patient-sidebar {
+            width: 100%;
+            position: static;
+            max-height: 400px;
+        }
+
+        .pharmacy-patient-sidebar .patient-list {
+            max-height: 250px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .stat-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .table-card table {
+            font-size: 13px;
+        }
+
+        .table-card table th,
+        .table-card table td {
+            padding: 8px 12px;
+        }
+
+        .order-details-tag {
+            font-size: 11px;
+            padding: 4px 8px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .stat-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pharmacy-layout">
+    <!-- Patient Sidebar - ONE ENTRY PER PATIENT -->
+    <div class="pharmacy-patient-sidebar">
+        <div class="sidebar-header">
+            <h6><i class="fas fa-prescription-bottle me-2"></i>Patients Waiting</h6>
+            <span class="badge-count">{{ pending_patients_count }}</span>
+        </div>
+        
+        <div class="search-box">
+            <input type="text" id="patientSearch" placeholder="Search patients..." oninput="filterPatients()">
+        </div>
+        
+        <div class="patient-list" id="patientList">
+            {% if pending_patients %}
+                {% for patient in pending_patients %}
+                    <a href="#patient-{{ patient.id }}" class="patient-item" data-name="{{ patient.full_name|lower }}" data-hospital="{{ patient.hospital_number|lower }}" onclick="filterByPatient({{ patient.id }})">
+                        <div class="avatar {% if patient.gender == 'MALE' %}male{% elif patient.gender == 'FEMALE' %}female{% endif %}">
+                            {{ patient.first_name|first|upper }}{{ patient.last_name|first|upper }}
+                        </div>
+                        <div class="info">
+                            <div class="name">{{ patient.full_name }}</div>
+                            <div class="details">
+                                <span>{{ patient.hospital_number }}</span>
+                                <span>{{ patient.phone }}</span>
+                            </div>
+                        </div>
+                        <span class="order-count">{{ patient.pending_order_count }}</span>
+                    </a>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-check-circle"></i>
+                    <p>No pending prescriptions</p>
+                    <small class="text-muted">All medications have been dispensed</small>
+                </div>
+            {% endif %}
+        </div>
     </div>
-    <div class="card-body">
-        {% if orders %}
+
+    <!-- Main Content -->
+    <div class="pharmacy-main">
+        <!-- Statistics -->
+        <div class="stat-grid">
+            <div class="stat-card">
+                <span class="stat-icon"><i class="fas fa-prescription-bottle"></i></span>
+                <div class="stat-number">{{ pending_count }}</div>
+                <div class="stat-label">Total Orders</div>
+            </div>
+            <div class="stat-card info">
+                <span class="stat-icon"><i class="fas fa-users"></i></span>
+                <div class="stat-number">{{ pending_patients_count }}</div>
+                <div class="stat-label">Patients Waiting</div>
+            </div>
+            <div class="stat-card success">
+                <span class="stat-icon"><i class="fas fa-check-circle"></i></span>
+                <div class="stat-number">{{ dispensed_today }}</div>
+                <div class="stat-label">Dispensed Today</div>
+            </div>
+            <div class="stat-card warning">
+                <span class="stat-icon"><i class="fas fa-exclamation-triangle"></i></span>
+                <div class="stat-number">{{ low_stock_count }}</div>
+                <div class="stat-label">Low Stock Items</div>
+            </div>
+        </div>
+
+        <!-- Patients with Orders Table (Grouped by Patient) -->
+        <div class="table-card">
+            <div class="card-header">
+                <h5><i class="fas fa-list me-2 text-success"></i>Patients with Pending Orders</h5>
+                <span class="badge bg-primary">{{ pending_patients_count }} patients</span>
+            </div>
             <div class="table-responsive">
-                <table class="table table-hover">
+                <table class="table" id="ordersTable">
                     <thead>
                         <tr>
                             <th>Patient</th>
-                            <th>Drug</th>
-                            <th>Quantity</th>
-                            <th>Dosage</th>
-                            <th>Frequency</th>
+                            <th>Hospital No.</th>
+                            <th>Orders</th>
+                            <th>Drugs</th>
+                            <th>Total Items</th>
                             <th>Action</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        {% for order in orders %}
+                    <tbody id="ordersTableBody">
+                        {% if pending_patients %}
+                            {% for patient in pending_patients %}
+                                <tr id="patient-row-{{ patient.id }}" class="patient-order-row">
+                                    <td>
+                                        <strong>{{ patient.full_name }}</strong>
+                                        <br><small class="text-muted">{{ patient.phone }}</small>
+                                    </td>
+                                    <td>{{ patient.hospital_number }}</td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ patient.pending_order_count }}</span>
+                                    </td>
+                                    <td>
+                                        {% for order in patient.pharmacy_orders.all %}
+                                            {% if not order.dispensed %}
+                                                <span class="order-details-tag">
+                                                    <span class="drug-name">{{ order.drug_name }}</span>
+                                                    <span class="drug-qty">x{{ order.quantity }}</span>
+                                                </span>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </td>
+                                    <td>
+                                        {% with total=0 %}
+                                            {% for order in patient.pharmacy_orders.all %}
+                                                {% if not order.dispensed %}
+                                                    {% with total=total|add:order.quantity %}{% endwith %}
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% endwith %}
+                                        <span class="fw-bold">
+                                            {% for order in patient.pharmacy_orders.all %}
+                                                {% if not order.dispensed %}
+                                                    {{ order.quantity|add:0 }}
+                                                {% endif %}
+                                            {% endfor %}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'b:pharmacy_dispense_patient' patient.id %}" class="btn-dispense-patient">
+                                            <i class="fas fa-prescription-bottle me-1"></i> Dispense All
+                                        </a>
+                                        <button class="btn-view-orders" onclick="togglePatientOrders({{ patient.id }})">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
                             <tr>
-                                <td>{{ order.patient.full_name }}</td>
-                                <td><strong>{{ order.drug_name }}</strong></td>
-                                <td>{{ order.quantity }}</td>
-                                <td>{{ order.dosage|default:"—" }}</td>
-                                <td>{{ order.frequency|default:"—" }}</td>
-                                <td>
-                                    <a href="{% url 'pharmacy_dispense' order.id %}" class="btn btn-success btn-sm">
-                                        <i class="fas fa-check me-1"></i>Dispense
-                                    </a>
+                                <td colspan="6" class="text-center py-4">
+                                    <i class="fas fa-check-circle fa-2x text-success d-block mb-2"></i>
+                                    No pending orders. All medications have been dispensed.
                                 </td>
                             </tr>
-                        {% endfor %}
+                        {% endif %}
                     </tbody>
                 </table>
             </div>
-        {% else %}
-            <p class="text-muted text-center my-4">
-                <i class="fas fa-check-circle text-success me-2"></i>
-                No pending pharmacy orders.
-            </p>
-        {% endif %}
+        </div>
+
+        <!-- Detailed Orders View (Hidden by default) -->
+        <div id="detailedOrders" style="display: none;" class="mt-3">
+            <div class="table-card">
+                <div class="card-header">
+                    <h5><i class="fas fa-list-ul me-2 text-success"></i>Detailed Orders</h5>
+                    <button class="btn btn-secondary btn-sm" onclick="closeDetailedOrders()">
+                        <i class="fas fa-times"></i> Close
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Patient</th>
+                                <th>Drug</th>
+                                <th>Quantity</th>
+                                <th>Dosage</th>
+                                <th>Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="detailedOrdersBody">
+                            <!-- Dynamic content -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Store all orders data
+    const ordersData = {
+        {% for patient in pending_patients %}
+            {{ patient.id }}: [
+                {% for order in patient.pharmacy_orders.all %}
+                    {% if not order.dispensed %}
+                        {
+                            id: {{ order.id }},
+                            drug_name: "{{ order.drug_name }}",
+                            quantity: {{ order.quantity }},
+                            dosage: "{{ order.dosage|default:'—' }}",
+                            created_at: "{{ order.created_at|date:'M d, Y' }}"
+                        }{% if not forloop.last %},{% endif %}
+                    {% endif %}
+                {% endfor %}
+            ]{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    };
+
+    function filterPatients() {
+        const query = document.getElementById('patientSearch').value.toLowerCase();
+        const items = document.querySelectorAll('#patientList .patient-item');
+        
+        items.forEach(item => {
+            const name = item.dataset.name || '';
+            const hospital = item.dataset.hospital || '';
+            const matches = name.includes(query) || hospital.includes(query);
+            item.style.display = matches ? '' : 'none';
+        });
+    }
+
+    function filterByPatient(patientId) {
+        // Highlight the selected patient in sidebar
+        document.querySelectorAll('#patientList .patient-item').forEach(el => {
+            el.classList.remove('active');
+        });
+        const selected = document.querySelector(`#patientList .patient-item[onclick*="${patientId}"]`);
+        if (selected) selected.classList.add('active');
+        
+        // Filter the table to show only this patient
+        const rows = document.querySelectorAll('#ordersTableBody .patient-order-row');
+        rows.forEach(row => {
+            if (row.id === `patient-row-${patientId}`) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        
+        // Show detailed orders for this patient
+        showDetailedOrders(patientId);
+    }
+
+    function togglePatientOrders(patientId) {
+        const selected = document.querySelector(`#patientList .patient-item[onclick*="${patientId}"]`);
+        if (selected) {
+            // Toggle active state
+            document.querySelectorAll('#patientList .patient-item').forEach(el => {
+                el.classList.remove('active');
+            });
+            if (!selected.classList.contains('active')) {
+                selected.classList.add('active');
+                showDetailedOrders(patientId);
+            } else {
+                selected.classList.remove('active');
+                document.getElementById('detailedOrders').style.display = 'none';
+                // Show all rows
+                document.querySelectorAll('#ordersTableBody .patient-order-row').forEach(row => {
+                    row.style.display = '';
+                });
+            }
+        }
+    }
+
+    function showDetailedOrders(patientId) {
+        const orders = ordersData[patientId];
+        if (!orders || orders.length === 0) return;
+        
+        const tbody = document.getElementById('detailedOrdersBody');
+        let html = '';
+        
+        // Get patient name
+        const patientItem = document.querySelector(`#patientList .patient-item[onclick*="${patientId}"]`);
+        const patientName = patientItem ? patientItem.querySelector('.name').textContent : 'Patient';
+        
+        orders.forEach(order => {
+            html += `
+                <tr>
+                    <td><strong>${patientName}</strong></td>
+                    <td>${order.drug_name}</td>
+                    <td>${order.quantity}</td>
+                    <td>${order.dosage}</td>
+                    <td>${order.created_at}</td>
+                    <td>
+                        <a href="/pharmacy/dispense/${order.id}/" class="btn-dispense" style="padding:4px 12px;border-radius:4px;background:#065f46;color:white;text-decoration:none;font-size:12px;">
+                            <i class="fas fa-check me-1"></i> Dispense
+                        </a>
+                    </td>
+                </tr>
+            `;
+        });
+        
+        tbody.innerHTML = html;
+        document.getElementById('detailedOrders').style.display = 'block';
+        
+        // Scroll to detailed orders
+        document.getElementById('detailedOrders').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function closeDetailedOrders() {
+        document.getElementById('detailedOrders').style.display = 'none';
+        document.querySelectorAll('#patientList .patient-item').forEach(el => {
+            el.classList.remove('active');
+        });
+        document.querySelectorAll('#ordersTableBody .patient-order-row').forEach(row => {
+            row.style.display = '';
+        });
+    }
+
+    // Highlight active patient on page load based on URL
+    document.addEventListener('DOMContentLoaded', function() {
+        const currentPath = window.location.pathname;
+        const items = document.querySelectorAll('#patientList .patient-item');
+        
+        items.forEach(item => {
+            if (item.getAttribute('href') === currentPath) {
+                item.classList.add('active');
+            }
+        });
+    });
+</script>
 {% endblock %}

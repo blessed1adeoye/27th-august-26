@@ -2,7 +2,6 @@
 
 
 from django.urls import path
-from django.contrib.auth import views as auth_views
 from . import views
 
 app_name = 'b'
@@ -11,8 +10,8 @@ urlpatterns = [
     # Home & Auth
     path('', views.home, name='home'),
     path('dashboard/', views.dashboard, name='dashboard'),
-    path('login/', auth_views.LoginView.as_view(template_name='b/login.html'), name='login'),
-    path('logout/', auth_views.LogoutView.as_view(), name='logout'),
+    path('login/', views.login_view, name='login'),  
+    path('logout/', views.logout_view, name='logout'),
     
     # HIM (Patient Management)
     path('patients/register/', views.patient_registration, name='patient_registration'),
@@ -31,7 +30,15 @@ urlpatterns = [
     # Pharmacy
     path('pharmacy/dashboard/', views.pharmacy_dashboard, name='pharmacy_dashboard'),
     path('pharmacy/dispense/<int:order_id>/', views.pharmacy_dispense, name='pharmacy_dispense'),
-    path('pharmacy/order/<int:patient_id>/', views.pharmacy_create_order, name='pharmacy_create_order'),
+    # path('pharmacy/order/<int:patient_id>/', views.pharmacy_create_order, name='pharmacy_create_order'),
+
+
+    # Pharmacy Drug Management
+    path('pharmacy/drugs/', views.pharmacy_drug_list, name='pharmacy_drug_list'),
+    path('pharmacy/drug/add/', views.pharmacy_drug_add, name='pharmacy_drug_add'),
+    path('pharmacy/drug/<int:drug_id>/edit/', views.pharmacy_drug_edit, name='pharmacy_drug_edit'),
+    path('pharmacy/drug/<int:drug_id>/delete/', views.pharmacy_drug_delete, name='pharmacy_drug_delete'),
+    path('pharmacy/dispense-patient/<int:patient_id>/', views.pharmacy_dispense_patient, name='pharmacy_dispense_patient'),
     
     # Laboratory
     path('lab/dashboard/', views.laboratory_dashboard, name='laboratory_dashboard'),
@@ -51,4 +58,15 @@ urlpatterns = [
     
     # API
     path('api/age/', views.get_age_from_dob, name='get_age'),
+    path('api/notification-count/', views.notification_count, name='notification_count'),
+    path('api/notifications/latest/', views.notifications_latest, name='notifications_latest'),
+    path('api/pharmacy/pending-count/', views.pharmacy_pending_count, name='pharmacy_pending_count'),
+    path('api/notifications/mark-all-read/', views.mark_all_notifications_read, name='mark_all_notifications_read'),
+    path('api/notifications/hard-reset/', views.hard_reset_notifications, name='hard_reset_notifications'), 
+
+
+#     # Debug URLs
+#     path('debug/notifications/', views.debug_notification_count, name='debug_notification_count'),
+#     path('debug/pharmacy-orders/', views.debug_pharmacy_orders, name='debug_pharmacy_orders'),
+#     path('debug/mark-read/', views.debug_mark_notifications_read, name='debug_mark_notifications_read'),
 ]

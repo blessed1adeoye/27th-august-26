@@ -1,4 +1,4 @@
-# b/management/commands/setup_groups.py
+# b/management/commands/create_test_users.py
 
 
 from django.core.management.base import BaseCommand
@@ -22,8 +22,8 @@ class Command(BaseCommand):
         parser.add_argument(
             '--patients',
             type=int,
-            default=10,
-            help='Number of patients to create (default: 10)',
+            default=50,
+            help='Number of patients to create (default: 50)',
         )
         parser.add_argument(
             '--password',
@@ -36,16 +36,27 @@ class Command(BaseCommand):
             action='store_true',
             help='Force recreate users even if they exist',
         )
+        parser.add_argument(
+            '--clear',
+            action='store_true',
+            help='Clear all existing users and patients before creating',
+        )
 
     def handle(self, *args, **options):
         user_count = options['users']
         patient_count = options['patients']
         default_password = options['password']
         force = options['force']
+        clear = options['clear']
         
         self.stdout.write('\n' + '='*70)
         self.stdout.write('🏥 MEDICAL OUTREACH SYSTEM - TEST DATA CREATION')
+        self.stdout.write('📍 Location: Ibadan, Oyo State, Nigeria')
         self.stdout.write('='*70 + '\n')
+        
+        # Clear existing data if requested
+        if clear:
+            self.clear_data()
         
         # Create users
         self.create_users(user_count, default_password, force)
@@ -53,8 +64,27 @@ class Command(BaseCommand):
         # Create patients
         self.create_patients(patient_count)
         
+        # Create superuser if none exists
+        self.create_superuser(default_password)
+        
         # Summary
         self.print_summary(default_password)
+
+    def clear_data(self):
+        """Clear all existing users and patients"""
+        self.stdout.write('🧹 Clearing existing data...')
+        
+        # Delete patients first (due to foreign keys)
+        PatientWorkflow.objects.all().delete()
+        Patient.objects.all().delete()
+        
+        # Delete user profiles
+        UserProfile.objects.all().delete()
+        
+        # Delete users except superuser
+        User.objects.exclude(is_superuser=True).delete()
+        
+        self.stdout.write(self.style.SUCCESS('✅ Data cleared successfully!\n'))
 
     def create_users(self, count, default_password, force):
         """Create test users for all roles"""
@@ -122,9 +152,8 @@ class Command(BaseCommand):
                 # Check if user already exists
                 if User.objects.filter(username=username).exists():
                     if force:
-                        # Delete existing user and recreate
+                        # Delete existing user and profile
                         user = User.objects.get(username=username)
-                        # Delete profile first
                         UserProfile.objects.filter(user=user).delete()
                         user.delete()
                         self.stdout.write(self.style.WARNING(f'  🔄 Recreating {username}...'))
@@ -144,44 +173,50 @@ class Command(BaseCommand):
                 # Add to group
                 user.groups.add(group)
                 
-                # Create user profile
-                employee_id = f"{role[:3].upper()}{str(random.randint(100, 999)).zfill(3)}"
-                # Ensure unique employee_id
-                while UserProfile.objects.filter(employee_id=employee_id).exists():
-                    employee_id = f"{role[:3].upper()}{str(random.randint(100, 999)).zfill(3)}"
-                
-                phone = f"080{''.join(random.choices(string.digits, k=8))}"
-                department = random.choice(departments)
-                
-                profile = UserProfile.objects.create(
+                # Get or create profile (signal may have created one)
+                profile, profile_created = UserProfile.objects.get_or_create(
                     user=user,
-                    role=role,
-                    employee_id=employee_id,
-                    phone=phone,
-                    department=department,
-                    is_active=True
+                    defaults={
+                        'role': role,
+                        'employee_id': f"{role[:3].upper()}{''.join(random.choices(string.digits, k=6))}",
+                        'phone': f"080{''.join(random.choices(string.digits, k=8))}",
+                        'department': random.choice(departments),
+                        'is_active': True
+                    }
                 )
+                
+                # If profile already exists, update it
+                if not profile_created:
+                    profile.role = role
+                    profile.employee_id = f"{role[:3].upper()}{''.join(random.choices(string.digits, k=6))}"
+                    profile.phone = f"080{''.join(random.choices(string.digits, k=8))}"
+                    profile.department = random.choice(departments)
+                    profile.is_active = True
+                    profile.save()
                 
                 created_count += 1
                 self.stdout.write(self.style.SUCCESS(f'  ✅ {role}: {username} ({first_name} {last_name})'))
-                self.stdout.write(f'     👤 Employee ID: {employee_id}')
+                self.stdout.write(f'     👤 Employee ID: {profile.employee_id}')
                 self.stdout.write(f'     🔑 Password: {default_password}')
-                self.stdout.write(f'     🏢 Department: {department}')
-                self.stdout.write(f'     📱 Phone: {phone}\n')
+                self.stdout.write(f'     🏢 Department: {profile.department}')
+                self.stdout.write(f'     📱 Phone: {profile.phone}\n')
             
             if created_count == 0:
                 self.stdout.write(self.style.WARNING(f'  ⚠️  No new {role} users created (all exist)\n'))
 
     def create_patients(self, count):
-        """Create test patients"""
+        """Create test patients - all from Ibadan, Nigeria"""
         
+        # Yoruba names (common in Ibadan)
         first_names = [
             'Ade', 'Bola', 'Chidi', 'Damilola', 'Emeka', 'Funke', 'Gbenga', 
             'Hauwa', 'Ikenna', 'Joy', 'Kemi', 'Lola', 'Musa', 'Ngozi', 
             'Olu', 'Peter', 'Queen', 'Ruth', 'Segun', 'Tunde', 'Uche', 
             'Victor', 'Wale', 'Yemi', 'Zainab', 'Abiola', 'Bisi', 'Chinwe',
             'Dayo', 'Efe', 'Femi', 'Gift', 'Hope', 'Ifeanyi', 'Jide',
-            'Kayode', 'Lekan', 'Moyo', 'Nkechi', 'Obi', 'Precious'
+            'Kayode', 'Lekan', 'Moyo', 'Nkechi', 'Obi', 'Precious',
+            'Tayo', 'Ugo', 'Vivian', 'Wura', 'Yinka', 'Zara', 'Adeola',
+            'Bukunmi', 'Chuka', 'Dara', 'Ebi', 'Folake', 'Goke', 'Hakeem'
         ]
         
         last_names = [
@@ -190,16 +225,34 @@ class Command(BaseCommand):
             'Chukwu', 'Oluwaseun', 'Akinwale', 'Balogun', 'Fashola',
             'Gbadegesin', 'Ibrahim', 'Jolayemi', 'Kolawole', 'Lawal',
             'Majekodunmi', 'Nwachukwu', 'Ogunbiyi', 'Oladapo', 'Oluwole',
-            'Oyedele', 'Oyewole', 'Salami', 'Shittu', 'Suleiman', 'Umar'
+            'Oyedele', 'Oyewole', 'Salami', 'Shittu', 'Suleiman', 'Umar',
+            'Afolabi', 'Akinola', 'Alabi', 'Bamidele', 'Durojaiye', 'Falola',
+            'Ilori', 'Jolaoso', 'Kunle', 'Ogunyemi', 'Olanrewaju', 'Oyelade'
         ]
         
-        cities = ['Lagos', 'Abuja', 'Ibadan', 'Kano', 'Port Harcourt', 'Oyo', 'Enugu', 'Zaria', 'Jos', 'Aba']
-        states = ['Lagos', 'FCT', 'Oyo', 'Kano', 'Rivers', 'Enugu', 'Kaduna', 'Plateau', 'Abia', 'Anambra']
-        countries = ['Nigeria']
+        # Ibadan locations (streets and areas)
+        ibadan_areas = [
+            'Bodija', 'Mokola', 'Agodi', 'Oke-Ado', 'Ring Road', 
+            'Aleshinloye', 'Oluyole', 'Challenge', 'Dugbe', 'Gbagi',
+            'Oke Bola', 'Iwo Road', 'Apata', 'Orita', 'Moniya',
+            'Akobo', 'Odo-Ona', 'Kolawole', 'Orogun', 'Sango',
+            'UI Campus', 'Poly Road', 'Ojoo', 'Awa', 'Ataoja'
+        ]
+        
+        ibadan_streets = [
+            'Awolowo Avenue', 'Queen Elizabeth Road', 'Mokola Road',
+            'Oyo Road', 'Oba Adebimpe Road', 'Alesinloye Road',
+            'Old Ife Road', 'New Ife Road', 'Iwo Road', 'Ring Road',
+            'Liberty Road', 'Onireke Street', 'Oke Bola Road',
+            'Ogunpa Road', 'Eleyele Road', 'Ajeigbe Street',
+            'Agodi Road', 'Ososami Road', 'Oke Ado Road',
+            'Olorunsogo Street', 'Oranyan Street', 'Ajibade Street'
+        ]
         
         genders = ['MALE', 'FEMALE']
         
         self.stdout.write('\n🏥 Creating test patients...')
+        self.stdout.write('📍 All patients from Ibadan, Oyo State, Nigeria')
         self.stdout.write('-' * 50)
 
         created_count = 0
@@ -208,8 +261,8 @@ class Command(BaseCommand):
             last_name = random.choice(last_names)
             gender = random.choice(genders)
             
-            # Generate date of birth (18-65 years old)
-            year = random.randint(1958, 2005)
+            # Generate date of birth (18-70 years old)
+            year = random.randint(1953, 2005)
             month = random.randint(1, 12)
             day = random.randint(1, 28)
             dob = date(year, month, day)
@@ -219,8 +272,15 @@ class Command(BaseCommand):
             while Patient.objects.filter(hospital_number=hospital_number).exists():
                 hospital_number = f"HIM{''.join(random.choices(string.digits, k=6))}"
             
-            # Generate phone
-            phone = f"080{''.join(random.choices(string.digits, k=8))}"
+            # Generate phone (Ibadan/Nigeria numbers)
+            phone_prefixes = ['080', '081', '090', '070', '091']
+            phone = f"{random.choice(phone_prefixes)}{''.join(random.choices(string.digits, k=8))}"
+            
+            # Generate Ibadan address
+            area = random.choice(ibadan_areas)
+            street = random.choice(ibadan_streets)
+            house_number = random.randint(1, 200)
+            address = f"{house_number} {street}, {area}, Ibadan, Oyo State"
             
             # Create patient
             patient = Patient.objects.create(
@@ -231,11 +291,7 @@ class Command(BaseCommand):
                 gender=gender,
                 phone=phone,
                 email=f"{first_name.lower()}.{last_name.lower()}@gmail.com",
-                address=f"{random.randint(1, 100)} {random.choice(['Main Street', 'Lane', 'Road', 'Drive', 'Avenue'])}",
-                country=random.choice(countries),
-                state=random.choice(states),
-                city=random.choice(cities),
-                lga=random.choice(['Ikeja', 'Garki', 'Maitama', 'Surulere', 'Kano Municipal']),
+                address=address,
                 current_stage='REGISTERED'
             )
             
@@ -247,17 +303,28 @@ class Command(BaseCommand):
             
             created_count += 1
             age = patient.age_data
-            age_display = f"{age['years']} years" if age else "Unknown"
+            age_display = f"{age['years']} years, {age['months']} months" if age else "Unknown"
             
             self.stdout.write(self.style.SUCCESS(f'  ✅ Patient {i+1}: {hospital_number} - {first_name} {last_name}'))
             self.stdout.write(f'     🎂 DOB: {dob} ({age_display})')
             self.stdout.write(f'     ⚧️ Gender: {gender}')
             self.stdout.write(f'     📱 Phone: {phone}')
-            self.stdout.write(f'     📍 Location: {patient.city}, {patient.state}')
+            self.stdout.write(f'     📍 Address: {address}')
             self.stdout.write(f'     📋 Status: REGISTERED\n')
         
         if created_count == 0:
             self.stdout.write(self.style.WARNING('  ⚠️  No new patients created\n'))
+
+    def create_superuser(self, default_password):
+        """Create superuser if none exists"""
+        if not User.objects.filter(is_superuser=True).exists():
+            self.stdout.write('\n👑 Creating superuser...')
+            User.objects.create_superuser(
+                username='admin',
+                email='admin@medicaloutreach.com',
+                password=default_password
+            )
+            self.stdout.write(self.style.SUCCESS(f'  ✅ Superuser created: admin / {default_password}'))
 
     def print_summary(self, default_password):
         """Print summary of created data"""
@@ -266,12 +333,13 @@ class Command(BaseCommand):
         total_profiles = UserProfile.objects.count()
         total_patients = Patient.objects.count()
         
-        self.stdout.write('='*70)
+        self.stdout.write('\n' + '='*70)
         self.stdout.write(self.style.SUCCESS('✅ TEST DATA CREATED SUCCESSFULLY!'))
         self.stdout.write('='*70)
         self.stdout.write(f'👥 Total Users: {total_users}')
         self.stdout.write(f'👤 Total Profiles: {total_profiles}')
         self.stdout.write(f'🏥 Total Patients: {total_patients}')
+        self.stdout.write(f'📍 Location: Ibadan, Oyo State, Nigeria')
         self.stdout.write(f'🔑 Default Password: {default_password}')
         
         self.stdout.write('\n📋 LOGIN CREDENTIALS:')

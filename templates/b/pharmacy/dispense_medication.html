@@ -1,0 +1,130 @@
+<!-- templates/b/pharmacy/dispense_medication.html -->
+
+
+
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Dispense Medication - Pharmacy{% endblock %}
+
+{% block content %}
+<div class="card card-custom">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-prescription-bottle text-success me-2"></i>
+            Dispense Medication - {{ order.patient.full_name }}
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <h6 class="text-muted border-bottom pb-2">Patient Information</h6>
+                <p><strong>Name:</strong> {{ order.patient.full_name }}</p>
+                <p><strong>Hospital No:</strong> {{ order.patient.hospital_number }}</p>
+                <p><strong>Phone:</strong> {{ order.patient.phone }}</p>
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-muted border-bottom pb-2">Prescription Details</h6>
+                <p><strong>Drug:</strong> {{ order.drug_name }}</p>
+                <p><strong>Quantity:</strong> {{ order.quantity }}</p>
+                <p><strong>Dosage:</strong> {{ order.dosage|default:"—" }}</p>
+                <p><strong>Frequency:</strong> {{ order.frequency|default:"—" }}</p>
+                {% if order.instructions %}
+                    <p><strong>Instructions:</strong> {{ order.instructions }}</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="drug_id">Select Drug <span class="required">*</span></label>
+                        <select name="drug_id" id="drug_id" class="form-select" required>
+                            <option value="">Select a drug...</option>
+                            {% for drug in drugs %}
+                                <option value="{{ drug.id }}" data-stock="{{ drug.quantity }}">
+                                    {{ drug.name }} ({{ drug.strength }}) - {{ drug.quantity }} units available
+                                </option>
+                            {% empty %}
+                                <option value="" disabled>No drugs available in inventory</option>
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted">Only drugs with stock available are shown</small>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="quantity">Quantity to Dispense <span class="required">*</span></label>
+                        <input type="number" name="quantity" id="quantity" class="form-control" min="1" required>
+                        <small class="text-muted" id="stock-info">Available stock: 0 units</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-3">
+                <div class="form-group">
+                    <label for="notes">Dispensing Notes</label>
+                    <textarea name="notes" id="notes" class="form-control" rows="2"></textarea>
+                </div>
+            </div>
+            
+            <div class="alert alert-warning mt-3">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Confirm:</strong> Dispensing <span id="dispense-quantity">0</span> unit(s) of <span id="dispense-drug">selected drug</span> to <strong>{{ order.patient.full_name }}</strong>
+            </div>
+            
+            <div class="mt-4 d-flex justify-content-between">
+                <a href="{% url 'b:pharmacy_dashboard' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i> Back
+                </a>
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-check-circle me-2"></i> Confirm Dispense
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const drugSelect = document.getElementById('drug_id');
+        const quantityInput = document.getElementById('quantity');
+        const stockInfo = document.getElementById('stock-info');
+        const dispenseDrug = document.getElementById('dispense-drug');
+        const dispenseQuantity = document.getElementById('dispense-quantity');
+        
+        function updateStockInfo() {
+            const selectedOption = drugSelect.options[drugSelect.selectedIndex];
+            if (selectedOption && selectedOption.value) {
+                const stock = parseInt(selectedOption.dataset.stock) || 0;
+                stockInfo.textContent = `Available stock: ${stock} units`;
+                dispenseDrug.textContent = selectedOption.text.split(' (')[0];
+                
+                // Update max quantity
+                quantityInput.max = stock;
+                quantityInput.placeholder = `Max ${stock}`;
+            } else {
+                stockInfo.textContent = 'Available stock: 0 units';
+                dispenseDrug.textContent = 'selected drug';
+            }
+            updateDispenseSummary();
+        }
+        
+        function updateDispenseSummary() {
+            const quantity = parseInt(quantityInput.value) || 0;
+            dispenseQuantity.textContent = quantity;
+        }
+        
+        drugSelect.addEventListener('change', updateStockInfo);
+        quantityInput.addEventListener('input', updateDispenseSummary);
+        
+        // Initial update
+        updateStockInfo();
+    });
+</script>
+{% endblock %}
