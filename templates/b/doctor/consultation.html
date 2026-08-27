@@ -1,7 +1,5 @@
 <!-- templates/b/doctor/consultation.html -->
 
-
-
 {% extends 'base.html' %}
 {% load crispy_forms_tags %}
 
@@ -222,167 +220,6 @@
         border-left: 4px solid #28a745;
     }
 
-    /* Pharmacy Styles */
-    .pharmacy-layout {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 20px;
-    }
-
-    @media (max-width: 768px) {
-        .pharmacy-layout {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    .drug-list-container {
-        max-height: 350px;
-        overflow-y: auto;
-        border: 1px solid #e5e7eb;
-        border-radius: 6px;
-        padding: 8px;
-    }
-
-    .drug-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 8px 12px;
-        border-radius: 4px;
-        cursor: pointer;
-        transition: all 0.2s;
-        border: 1px solid transparent;
-        margin-bottom: 4px;
-    }
-
-    .drug-item:hover {
-        background: #f0fdf4;
-        border-color: #d1fae5;
-    }
-
-    .drug-item.selected {
-        background: #d1fae5;
-        border-color: #065f46;
-    }
-
-    .drug-item .drug-name {
-        font-weight: 600;
-        color: #1f2937;
-        font-size: 14px;
-    }
-
-    .drug-item .drug-stock {
-        font-size: 11px;
-        color: #6b7280;
-    }
-
-    .drug-item .drug-stock.low {
-        color: #dc3545;
-    }
-
-    .drug-item .add-btn {
-        padding: 2px 10px;
-        border-radius: 4px;
-        border: none;
-        background: #065f46;
-        color: white;
-        cursor: pointer;
-        font-size: 11px;
-    }
-
-    .drug-item .add-btn:hover {
-        background: #0d3b3a;
-    }
-
-    .drug-item .add-btn.added {
-        background: #28a745;
-    }
-
-    .prescription-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 8px 12px;
-        background: #f8fafc;
-        border-radius: 4px;
-        margin-bottom: 6px;
-        border-left: 3px solid #065f46;
-    }
-
-    .prescription-item .remove-btn {
-        color: #dc3545;
-        cursor: pointer;
-        background: none;
-        border: none;
-        font-size: 16px;
-        padding: 0 4px;
-    }
-
-    .prescription-item .remove-btn:hover {
-        color: #991b1b;
-    }
-
-    .search-box {
-        margin-bottom: 10px;
-    }
-
-    .search-box input {
-        width: 100%;
-        padding: 6px 12px;
-        border: 1px solid #d1d5db;
-        border-radius: 6px;
-        font-size: 13px;
-    }
-
-    .search-box input:focus {
-        outline: none;
-        border-color: #065f46;
-        box-shadow: 0 0 0 2px rgba(6,95,70,0.1);
-    }
-
-    .empty-message {
-        text-align: center;
-        padding: 20px;
-        color: #6b7280;
-    }
-
-    .empty-message i {
-        font-size: 1.5rem;
-        opacity: 0.4;
-        margin-bottom: 6px;
-    }
-
-    .badge-item {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        background: #d1fae5;
-        padding: 2px 10px;
-        border-radius: 20px;
-        margin: 3px;
-        font-size: 13px;
-        border: 1px solid #a7d7c0;
-    }
-
-    .badge-item .remove-btn {
-        cursor: pointer;
-        color: #dc3545;
-        font-weight: bold;
-        padding: 0 2px;
-    }
-
-    .badge-item .remove-btn:hover {
-        color: #991b1b;
-    }
-
-    .selected-items {
-        margin-top: 12px;
-        padding: 12px;
-        background: #f8fafc;
-        border-radius: 6px;
-        border: 1px solid #e5e7eb;
-    }
-
     /* Responsive */
     @media (max-width: 992px) {
         .consultation-layout {
@@ -441,6 +278,91 @@
             font-size: 11px;
         }
     }
+
+    /* Treatment Plan - Prescription styling */
+    .prescription-textarea {
+        font-family: 'Courier New', monospace;
+        font-size: 14px;
+        line-height: 2;
+        background: #fafbfc;
+        border: 2px dashed #d1d5db;
+        min-height: 200px;
+    }
+
+    .prescription-textarea:focus {
+        border-color: #065f46;
+        border-style: solid;
+        background: white;
+    }
+
+    .prescription-hint {
+        background: #f0fdf4;
+        border: 1px solid #d1fae5;
+        border-radius: 6px;
+        padding: 12px 16px;
+        margin-top: 8px;
+    }
+
+    .prescription-hint ul {
+        margin: 6px 0 0 20px;
+        font-size: 13px;
+        color: #065f46;
+        font-family: 'Courier New', monospace;
+    }
+
+    .prescription-hint ul li {
+        margin-bottom: 4px;
+    }
+
+    .prescription-hint .shorthand-guide {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4px 20px;
+        margin: 6px 0 0 0;
+        font-size: 12px;
+        color: #555;
+    }
+
+    .prescription-hint .shorthand-guide .abbr {
+        color: #065f46;
+        font-weight: 600;
+        font-family: 'Courier New', monospace;
+    }
+
+    /* Auto-pharmacy badge */
+    .auto-pharmacy-badge {
+        background: #d1fae5;
+        color: #065f46;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        border: 1px solid #a7d7c0;
+    }
+
+    /* Example preset buttons */
+    .preset-btns {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 8px;
+    }
+    .preset-btns .btn-preset {
+        font-size: 11px;
+        padding: 2px 10px;
+        border-radius: 12px;
+        background: #f0fdf4;
+        border: 1px solid #d1fae5;
+        color: #065f46;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: 'Courier New', monospace;
+    }
+    .preset-btns .btn-preset:hover {
+        background: #d1fae5;
+    }
 </style>
 {% endblock %}
 
@@ -457,11 +379,6 @@
             <div class="consultation-nav-item active" data-section="diagnosis">
                 <span class="nav-icon">📝</span>
                 <span class="nav-label">Diagnosis</span>
-                <span class="nav-status"></span>
-            </div>
-            <div class="consultation-nav-item" data-section="pharmacy">
-                <span class="nav-icon">💊</span>
-                <span class="nav-label">Pharmacy</span>
                 <span class="nav-status"></span>
             </div>
             <div class="consultation-nav-item" data-section="laboratory">
@@ -541,85 +458,72 @@
                         <span style="font-size: 1.2rem;">📝</span>
                         <h3>Diagnosis & Treatment Plan</h3>
                     </div>
-                    {{ form.symptoms|as_crispy_field }}
-                    {{ form.diagnosis|as_crispy_field }}
-                    {{ form.treatment_plan|as_crispy_field }}
-                </div>
-            </div>
-
-            <!-- Pharmacy Section -->
-            <div id="pharmacy-section" class="form-section">
-                <div class="section-card">
-                    <div class="section-header">
-                        <span style="font-size: 1.2rem;">💊</span>
-                        <h3>Pharmacy / Prescriptions</h3>
+                    
+                    <!-- Auto-Pharmacy Info -->
+                    <div class="alert alert-info">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-prescription-bottle fa-2x me-3 text-success"></i>
+                            <div>
+                                <strong>💊 Automatic Pharmacy Referral</strong>
+                                <p class="mb-0 small">
+                                    The treatment plan you enter below will automatically be sent to the pharmacy.
+                                    Use medical shorthand format for prescriptions.
+                                </p>
+                            </div>
+                        </div>
                     </div>
                     
-                    <div class="form-check mb-3">
-                        <input type="checkbox" name="refer_to_pharmacy" id="id_refer_to_pharmacy" class="form-check-input" onchange="togglePharmacy()">
-                        <label class="form-check-label" for="id_refer_to_pharmacy">
-                            <strong>Refer to Pharmacy</strong>
+                    {{ form.symptoms|as_crispy_field }}
+                    {{ form.diagnosis|as_crispy_field }}
+                    
+                    <!-- Treatment Plan - Used as Prescription Sheet -->
+                    <div class="mt-3">
+                        <label for="id_treatment_plan" class="form-label">
+                            <strong>💊 Treatment Plan / Prescription</strong>
+                            <span class="auto-pharmacy-badge">
+                                <i class="fas fa-prescription-bottle"></i> Auto-sent to Pharmacy
+                            </span>
                         </label>
-                    </div>
-
-                    <div id="pharmacySelection" style="display: none;">
-                        <div class="pharmacy-layout">
-                            <!-- Left: Available Drugs -->
-                            <div>
-                                <h6 class="text-muted mb-2">Available Drugs</h6>
-                                <div class="search-box">
-                                    <input type="text" id="drugSearch" placeholder="Search drugs..." oninput="filterDrugs()">
-                                </div>
-                                <div class="drug-list-container" id="drugList">
-                                    {% for drug in drugs %}
-                                        <div class="drug-item" data-id="{{ drug.id }}" data-name="{{ drug.name }}" data-stock="{{ drug.quantity }}">
-                                            <div>
-                                                <div class="drug-name">{{ drug.name }}</div>
-                                                <div class="drug-stock {% if drug.quantity <= 10 %}low{% endif %}">
-                                                    Stock: {{ drug.quantity }} | {{ drug.dosage_form|default:"N/A" }}
-                                                </div>
-                                            </div>
-                                            <button type="button" class="add-btn" onclick="addToCart(this, {{ drug.id }})">
-                                                <i class="fas fa-plus"></i> Add
-                                            </button>
-                                        </div>
-                                    {% empty %}
-                                        <div class="empty-message">
-                                            <i class="fas fa-pills"></i>
-                                            <p>No drugs available</p>
-                                        </div>
-                                    {% endfor %}
-                                </div>
+                        {{ form.treatment_plan|as_crispy_field }}
+                        
+                        <div class="prescription-hint">
+                            <i class="fas fa-info-circle text-success me-1"></i>
+                            <strong>Medical Shorthand Format:</strong>
+                            <ul>
+                                <li>Paracetamol 500mg <strong>i bid 5/7</strong> → 1 tablet twice daily for 5 days</li>
+                                <li>Amoxicillin 500mg <strong>ii tid 7/7</strong> → 2 capsules three times daily for 7 days</li>
+                                <li>Ciprofloxacin 500mg <strong>i bd 5/7</strong> → 1 tablet twice daily for 5 days</li>
+                                <li>Metronidazole 400mg <strong>i tds 7/7</strong> → 1 tablet three times daily for 7 days</li>
+                            </ul>
+                            <div class="shorthand-guide">
+                                <span><span class="abbr">i</span> = 1 tablet/dose</span>
+                                <span><span class="abbr">ii</span> = 2 tablets/dose</span>
+                                <span><span class="abbr">iii</span> = 3 tablets/dose</span>
+                                <span><span class="abbr">bid</span> = twice daily</span>
+                                <span><span class="abbr">tid</span> = three times daily</span>
+                                <span><span class="abbr">qid</span> = four times daily</span>
+                                <span><span class="abbr">bd</span> = twice daily (alternate)</span>
+                                <span><span class="abbr">tds</span> = three times daily (alternate)</span>
+                                <span><span class="abbr">od</span> = once daily</span>
+                                <span><span class="abbr">prn</span> = as needed</span>
+                                <span><span class="abbr">stat</span> = immediately</span>
+                                <span><span class="abbr">x/7</span> = x days (e.g., 5/7 = 5 days)</span>
                             </div>
-
-                            <!-- Right: Prescription Cart -->
-                            <div>
-                                <h6 class="text-muted mb-2">Prescription</h6>
-                                <div id="cartContainer">
-                                    <div class="empty-message" id="emptyCart">
-                                        <i class="fas fa-shopping-cart"></i>
-                                        <p>No medications added</p>
-                                    </div>
-                                    <div id="cartItems"></div>
-                                </div>
-                                <div class="mt-2 d-flex gap-2">
-                                    <button type="button" class="btn btn-danger btn-sm" onclick="clearCart()">
-                                        <i class="fas fa-trash"></i> Clear
-                                    </button>
-                                    <button type="button" class="btn btn-secondary btn-sm" onclick="loadPreset()">
-                                        <i class="fas fa-prescription"></i> Preset
-                                    </button>
-                                </div>
-                            </div>
+                            <p class="text-muted small mt-2 mb-0">
+                                <i class="fas fa-info-circle"></i> This prescription will be automatically sent to the pharmacy when you complete the consultation.
+                            </p>
                         </div>
 
-                        <div class="selected-items mt-3">
-                            <strong>Prescription Summary:</strong>
-                            <div id="prescriptionSummary">
-                                <span class="text-muted small">No drugs selected</span>
-                            </div>
+                        <!-- Preset Examples -->
+                        <div class="preset-btns">
+                            <span class="text-muted small me-2">Quick presets:</span>
+                            <button type="button" class="btn-preset" onclick="insertPreset('Paracetamol 500mg i bid 5/7')">Paracetamol</button>
+                            <button type="button" class="btn-preset" onclick="insertPreset('Amoxicillin 500mg i tid 7/7')">Amoxicillin</button>
+                            <button type="button" class="btn-preset" onclick="insertPreset('Ciprofloxacin 500mg i bd 5/7')">Ciprofloxacin</button>
+                            <button type="button" class="btn-preset" onclick="insertPreset('Metronidazole 400mg i tds 7/7')">Metronidazole</button>
+                            <button type="button" class="btn-preset" onclick="insertPreset('Diclofenac 50mg i bid 3/7')">Diclofenac</button>
+                            <button type="button" class="btn-preset" onclick="insertPreset('Omeprazole 20mg i od 14/7')">Omeprazole</button>
                         </div>
-                        <input type="hidden" name="selected_drugs" id="selectedDrugs" value="">
                     </div>
                 </div>
             </div>
@@ -655,18 +559,6 @@
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" value="hbsag" onchange="updateLabTests()">
                                     <label class="form-check-label">HBsAg</label>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" value="hcv" onchange="updateLabTests()">
-                                    <label class="form-check-label">HCV</label>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" value="hiv" onchange="updateLabTests()">
-                                    <label class="form-check-label">HIV</label>
                                 </div>
                             </div>
                             <div class="col-md-12">
@@ -718,7 +610,7 @@
                     Next <i class="fas fa-arrow-right"></i>
                 </button>
                 <button type="button" class="btn btn-success" id="completeBtn" style="display: none;">
-                    <i class="fas fa-check-circle"></i> Complete
+                    <i class="fas fa-check-circle"></i> Complete Consultation
                 </button>
             </div>
 
@@ -742,10 +634,33 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // ============================================
+    // PRESET INSERT FUNCTION
+    // ============================================
+    
+    window.insertPreset = function(text) {
+        const textarea = document.getElementById('id_treatment_plan');
+        if (!textarea) return;
+        
+        const current = textarea.value;
+        if (current) {
+            textarea.value = current + '\n' + text;
+        } else {
+            textarea.value = text;
+        }
+        textarea.focus();
+        
+        // Trigger input event to mark section complete
+        const event = new Event('input', { bubbles: true });
+        textarea.dispatchEvent(event);
+        
+        showToast('✅ Preset added: ' + text, 'success');
+    };
+
+    // ============================================
     // SECTION NAVIGATION
     // ============================================
     
-    const sections = ['diagnosis', 'pharmacy', 'laboratory', 'optician', 'specialist'];
+    const sections = ['diagnosis', 'laboratory', 'optician', 'specialist'];
     let currentIndex = 0;
     let sectionData = {};
 
@@ -780,9 +695,28 @@ document.addEventListener('DOMContentLoaded', function() {
         sections.forEach(s => {
             if (sectionData[s]) completed++;
         });
-        const pct = Math.round((completed / sections.length) * 100);
+        // Diagnosis is always considered complete if it has data
+        const diagnosis = document.getElementById('id_diagnosis');
+        const treatment = document.getElementById('id_treatment_plan');
+        if (diagnosis && (diagnosis.value.trim() || (treatment && treatment.value.trim()))) {
+            sectionData['diagnosis'] = true;
+        }
+        const total = sections.length;
+        const done = Object.keys(sectionData).length;
+        const pct = Math.round((done / total) * 100);
         document.getElementById('progressFill').style.width = pct + '%';
         document.getElementById('progressPercent').textContent = pct + '% Complete';
+    }
+
+    // Mark section as completed when data is entered
+    function markSectionComplete(section) {
+        sectionData[section] = true;
+        updateProgress();
+        const navItems = document.querySelectorAll('.consultation-nav-item');
+        const index = sections.indexOf(section);
+        if (index !== -1 && navItems[index]) {
+            navItems[index].classList.add('has-data');
+        }
     }
 
     // Nav click handlers
@@ -794,6 +728,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Next/Prev buttons
     document.getElementById('nextBtn').addEventListener('click', function() {
+        // Mark diagnosis as complete
+        const diagnosis = document.getElementById('id_diagnosis');
+        const treatment = document.getElementById('id_treatment_plan');
+        if (diagnosis && (diagnosis.value.trim() || (treatment && treatment.value.trim()))) {
+            markSectionComplete('diagnosis');
+        }
+        
         if (currentIndex < sections.length - 1) {
             showSection(currentIndex + 1);
         }
@@ -806,168 +747,15 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // ============================================
-    // PHARMACY SECTION
-    // ============================================
-    
-    let cart = [];
-
-    window.togglePharmacy = function() {
-        const checked = document.getElementById('id_refer_to_pharmacy').checked;
-        document.getElementById('pharmacySelection').style.display = checked ? 'block' : 'none';
-        if (!checked) clearCart();
-    };
-
-    window.addToCart = function(btn, drugId) {
-        const item = btn.closest('.drug-item');
-        const name = item.dataset.name;
-        const stock = parseInt(item.dataset.stock);
-        
-        // Check if already in cart
-        const existing = cart.find(d => d.id === drugId);
-        if (existing) {
-            if (existing.qty < stock) {
-                existing.qty++;
-                updateCart();
-            } else {
-                showToast('Not enough stock!', 'warning');
-            }
-            return;
-        }
-        
-        cart.push({ id: drugId, name: name, qty: 1, maxStock: stock });
-        btn.innerHTML = '<i class="fas fa-check"></i> Added';
-        btn.classList.add('added');
-        item.classList.add('selected');
-        updateCart();
-        showToast(name + ' added', 'success');
-    };
-
-    function updateCart() {
-        const container = document.getElementById('cartItems');
-        const empty = document.getElementById('emptyCart');
-        const summary = document.getElementById('prescriptionSummary');
-        const hidden = document.getElementById('selectedDrugs');
-        
-        if (cart.length === 0) {
-            container.innerHTML = '';
-            empty.style.display = 'block';
-            summary.innerHTML = '<span class="text-muted small">No drugs selected</span>';
-            hidden.value = '';
-            return;
-        }
-        
-        empty.style.display = 'none';
-        
-        let html = '';
-        let summaryHtml = '';
-        const drugsData = [];
-        
-        cart.forEach((item, idx) => {
-            html += `
-                <div class="prescription-item">
-                    <div>
-                        <strong>${item.name}</strong>
-                        <div class="text-muted small">Qty: ${item.qty}</div>
-                    </div>
-                    <div class="d-flex align-items-center gap-2">
-                        <button class="btn btn-sm btn-outline-secondary" onclick="adjustQty(${idx}, -1)">-</button>
-                        <span class="fw-bold">${item.qty}</span>
-                        <button class="btn btn-sm btn-outline-secondary" onclick="adjustQty(${idx}, 1)" ${item.qty >= item.maxStock ? 'disabled' : ''}>+</button>
-                        <button class="remove-btn" onclick="removeFromCart(${idx})">&times;</button>
-                    </div>
-                </div>
-            `;
-            summaryHtml += `<span class="badge-item">${item.name} x${item.qty} <span class="remove-btn" onclick="removeFromCart(${idx})">&times;</span></span>`;
-            drugsData.push({ id: item.id, name: item.name, quantity: item.qty });
-        });
-        
-        container.innerHTML = html;
-        summary.innerHTML = summaryHtml;
-        hidden.value = JSON.stringify(drugsData);
-    }
-
-    window.adjustQty = function(idx, delta) {
-        if (idx < 0 || idx >= cart.length) return;
-        const item = cart[idx];
-        const newQty = item.qty + delta;
-        if (newQty < 1) { removeFromCart(idx); return; }
-        if (newQty > item.maxStock) { showToast('Not enough stock!', 'warning'); return; }
-        item.qty = newQty;
-        updateCart();
-    };
-
-    window.removeFromCart = function(idx) {
-        const item = cart[idx];
-        if (!item) return;
-        
-        // Reset drug item
-        const drugItem = document.querySelector(`.drug-item[data-id="${item.id}"]`);
-        if (drugItem) {
-            drugItem.classList.remove('selected');
-            const btn = drugItem.querySelector('.add-btn');
-            if (btn) {
-                btn.innerHTML = '<i class="fas fa-plus"></i> Add';
-                btn.classList.remove('added');
-            }
-        }
-        
-        cart.splice(idx, 1);
-        updateCart();
-        showToast('Removed from prescription', 'info');
-    };
-
-    window.clearCart = function() {
-        if (cart.length === 0) return;
-        
-        document.querySelectorAll('.drug-item').forEach(el => {
-            el.classList.remove('selected');
-            const btn = el.querySelector('.add-btn');
-            if (btn) {
-                btn.innerHTML = '<i class="fas fa-plus"></i> Add';
-                btn.classList.remove('added');
-            }
-        });
-        
-        cart = [];
-        updateCart();
-        showToast('Cart cleared', 'info');
-    };
-
-    window.filterDrugs = function() {
-        const query = document.getElementById('drugSearch').value.toLowerCase();
-        document.querySelectorAll('.drug-item').forEach(el => {
-            el.style.display = el.textContent.toLowerCase().includes(query) ? '' : 'none';
-        });
-    };
-
-    window.loadPreset = function() {
-        // Load common prescription
-        const presets = [
-            { id: 1, name: 'Paracetamol' },
-            { id: 2, name: 'Amoxicillin' }
-        ];
-        
-        presets.forEach(p => {
-            const drugItem = document.querySelector(`.drug-item[data-id="${p.id}"]`);
-            if (drugItem) {
-                const btn = drugItem.querySelector('.add-btn');
-                const exists = cart.find(c => c.id === p.id);
-                if (!exists && btn) {
-                    addToCart(btn, p.id);
-                }
-            }
-        });
-        
-        showToast('Preset loaded: Paracetamol, Amoxicillin', 'info');
-    };
-
-    // ============================================
     // LABORATORY SECTION
     // ============================================
     
     window.toggleLaboratory = function() {
         const checked = document.getElementById('id_refer_to_laboratory').checked;
         document.getElementById('laboratorySelection').style.display = checked ? 'block' : 'none';
+        if (checked) {
+            markSectionComplete('laboratory');
+        }
         if (!checked) updateLabTests();
     };
 
@@ -1032,6 +820,48 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ============================================
+    // AUTO-DETECT DIAGNOSIS COMPLETION
+    // ============================================
+    
+    document.getElementById('id_diagnosis').addEventListener('input', function() {
+        if (this.value.trim()) {
+            markSectionComplete('diagnosis');
+        }
+    });
+
+    document.getElementById('id_symptoms').addEventListener('input', function() {
+        if (this.value.trim()) {
+            markSectionComplete('diagnosis');
+        }
+    });
+
+    document.getElementById('id_treatment_plan').addEventListener('input', function() {
+        if (this.value.trim()) {
+            markSectionComplete('diagnosis');
+        }
+    });
+
+    // ============================================
+    // OPTICIAN CHECKBOX HANDLER
+    // ============================================
+    
+    document.getElementById('id_refer_to_optician').addEventListener('change', function() {
+        if (this.checked) {
+            markSectionComplete('optician');
+        }
+    });
+
+    // ============================================
+    // SPECIALIST CHECKBOX HANDLER
+    // ============================================
+    
+    document.getElementById('id_refer_to_specialist').addEventListener('change', function() {
+        if (this.checked) {
+            markSectionComplete('specialist');
+        }
+    });
+
+    // ============================================
     // COMPLETE CONSULTATION
     // ============================================
     
@@ -1041,6 +871,38 @@ document.addEventListener('DOMContentLoaded', function() {
             showToast('Please confirm all information is accurate', 'warning');
             return;
         }
+        
+        const treatmentPlan = document.getElementById('id_treatment_plan');
+        if (!treatmentPlan || !treatmentPlan.value.trim()) {
+            showToast('Please enter a treatment plan/prescription', 'warning');
+            return;
+        }
+        
+        // Mark all sections as complete
+        sections.forEach(s => {
+            if (s === 'diagnosis') {
+                markSectionComplete('diagnosis');
+            } else if (s === 'laboratory') {
+                const checkbox = document.getElementById('id_refer_to_laboratory');
+                if (checkbox && checkbox.checked) {
+                    markSectionComplete('laboratory');
+                }
+            } else if (s === 'optician') {
+                const checkbox = document.getElementById('id_refer_to_optician');
+                if (checkbox && checkbox.checked) {
+                    markSectionComplete('optician');
+                }
+            } else if (s === 'specialist') {
+                const checkbox = document.getElementById('id_refer_to_specialist');
+                if (checkbox && checkbox.checked) {
+                    markSectionComplete('specialist');
+                }
+            }
+        });
+        
+        // Show pharmacy auto-referral notification
+        showToast('✅ Consultation completed! Prescription sent to pharmacy.', 'success');
+        
         document.getElementById('consultationForm').submit();
     });
 
@@ -1050,12 +912,30 @@ document.addEventListener('DOMContentLoaded', function() {
     
     showSection(0);
     
-    // Pharmacy checkbox state
-    if (document.getElementById('id_refer_to_pharmacy').checked) {
-        document.getElementById('pharmacySelection').style.display = 'block';
-    }
+    // Check initial states
     if (document.getElementById('id_refer_to_laboratory').checked) {
         document.getElementById('laboratorySelection').style.display = 'block';
+        markSectionComplete('laboratory');
+    }
+    if (document.getElementById('id_refer_to_optician').checked) {
+        markSectionComplete('optician');
+    }
+    if (document.getElementById('id_refer_to_specialist').checked) {
+        markSectionComplete('specialist');
+    }
+    
+    // Check if diagnosis already has data
+    const diagnosisField = document.getElementById('id_diagnosis');
+    const symptomsField = document.getElementById('id_symptoms');
+    const treatmentField = document.getElementById('id_treatment_plan');
+    if (diagnosisField && diagnosisField.value.trim()) {
+        markSectionComplete('diagnosis');
+    }
+    if (symptomsField && symptomsField.value.trim()) {
+        markSectionComplete('diagnosis');
+    }
+    if (treatmentField && treatmentField.value.trim()) {
+        markSectionComplete('diagnosis');
     }
 });
 </script>

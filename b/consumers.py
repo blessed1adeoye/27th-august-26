@@ -4,7 +4,9 @@ import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.contrib.auth.models import User
+from django.utils import timezone
 from .models import Notification
+
 
 class NotificationConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -41,12 +43,30 @@ class NotificationConsumer(AsyncWebsocketConsumer):
             'created_at': event.get('created_at', '')
         }))
 
+    # async def assignment_update(self, event):
+    #     # Send assignment update
+    #     await self.send(text_data=json.dumps({
+    #         'type': 'assignment_update',
+    #         'patient_id': event['patient_id'],
+    #         'patient_name': event['patient_name'],
+    #         'action': event['action'],
+    #         'role': event['role']
+    #     }))
+
     async def assignment_update(self, event):
-        # Send assignment update
+        """Send assignment update to WebSocket"""
         await self.send(text_data=json.dumps({
             'type': 'assignment_update',
             'patient_id': event['patient_id'],
             'patient_name': event['patient_name'],
             'action': event['action'],
             'role': event['role']
+        }))
+        
+        # Also send as a notification
+        await self.send(text_data=json.dumps({
+            'type': 'notification',
+            'message': f'You have been assigned to patient {event["patient_name"]}',
+            'link': f'/nursing/assessment/{event["patient_id"]}/',
+            'created_at': str(timezone.now())
         }))

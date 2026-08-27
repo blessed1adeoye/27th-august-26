@@ -2,12 +2,6 @@
 
 from django import forms
 from django.contrib.auth.models import User
-# from .models import (
-#     Patient, NursingAssessment, MedicalConsultation, 
-#     PharmacyOrder, LaboratoryTest, OpticalAssessment,
-#     UserProfile
-# )
-
 from django.utils import timezone
 from .models import *
 from django import forms
@@ -31,17 +25,7 @@ class UserRegistrationForm(forms.ModelForm):
             raise forms.ValidationError("Passwords do not match")
         return cleaned_data
 
-# class PatientRegistrationForm(forms.ModelForm):
-#     class Meta:
-#         model = Patient
-#         fields = [
-#             'hospital_number', 'first_name', 'last_name', 'middle_name',
-#             'date_of_birth', 'gender', 'phone', 'email', 'address'
-#         ]
-#         widgets = {
-#             'date_of_birth': forms.DateInput(attrs={'type': 'date'}),
-#             'address': forms.Textarea(attrs={'rows': 3}),
-#         }
+
 
 class PatientRegistrationForm(forms.ModelForm):
     class Meta:
@@ -82,18 +66,6 @@ class PatientRegistrationForm(forms.ModelForm):
         return number
 
 # ============= NURSING FORM =============
-# class NursingAssessmentForm(forms.ModelForm):
-#     class Meta:
-#         model = NursingAssessment
-#         fields = [
-#             'blood_pressure_systolic', 'blood_pressure_diastolic', 
-#             'pulse_rate', 'temperature', 'respiratory_rate', 'oxygen_saturation',
-#             'biohazard_risk', 'isolation_required', 'notes'
-#         ]
-#         widgets = {
-#             'notes': forms.Textarea(attrs={'rows': 3}),
-#             'biohazard_risk': forms.Textarea(attrs={'rows': 2}),
-#         }
 
 class NursingAssessmentForm(forms.ModelForm):
     class Meta:
@@ -149,17 +121,6 @@ class PharmacyOrderForm(forms.ModelForm):
         }
 
 # ============= LABORATORY FORM =============
-# class LaboratoryTestForm(forms.ModelForm):
-#     class Meta:
-#         model = LaboratoryTest
-#         fields = [
-#             'malaria_parasite', 'random_blood_sugar', 
-#             'hbsag', 'hcv', 'hiv', 'other_tests', 'notes'
-#         ]
-#         widgets = {
-#             'other_tests': forms.Textarea(attrs={'rows': 2}),
-#             'notes': forms.Textarea(attrs={'rows': 2}),
-#         }
 
 class LaboratoryTestForm(forms.ModelForm):
     class Meta:
@@ -234,19 +195,6 @@ class OpticalAssessmentForm(forms.ModelForm):
         
         return cleaned_data
     
-# class OpticalAssessmentForm(forms.ModelForm):
-#     class Meta:
-#         model = OpticalAssessment
-#         fields = [
-#             'is_walk_in', 'visual_acuity_left', 'visual_acuity_right',
-#             'refractive_error', 'eye_health_notes', 'glasses_allocated',
-#             'glasses_type', 'glasses_prescription'
-#         ]
-#         widgets = {
-#             'refractive_error': forms.Textarea(attrs={'rows': 2}),
-#             'eye_health_notes': forms.Textarea(attrs={'rows': 2}),
-#             'glasses_prescription': forms.Textarea(attrs={'rows': 2}),
-#         }
 
 # ================= User Management ============================
 
@@ -325,18 +273,17 @@ class UserRegistrationForm(forms.ModelForm):
 
 # =============================== DRUG Form ==========================
 
-
 class DrugForm(forms.ModelForm):
     class Meta:
         model = Drug
         fields = [
-            'name', 'generic_name', 'category', 'dosage_form', 'strength',
-            'quantity', 'reorder_level', 'unit_price', 'manufacturer',
-            'expiry_date', 'batch_number', 'description', 'is_active'
+            'name', 'category', 'quantity', 'reorder_level', 'is_active'
         ]
         widgets = {
-            'expiry_date': forms.DateInput(attrs={'type': 'date'}),
-            'description': forms.Textarea(attrs={'rows': 3}),
+            'name': forms.TextInput(attrs={
+                'class': 'form-control', 
+                'placeholder': 'e.g., Ibuprofen 200mg, Paracetamol 500mg'
+            }),
         }
     
     def __init__(self, *args, **kwargs):
@@ -344,3 +291,7 @@ class DrugForm(forms.ModelForm):
         for field in self.fields:
             if 'class' not in self.fields[field].widget.attrs:
                 self.fields[field].widget.attrs['class'] = 'form-control'
+            if isinstance(self.fields[field], forms.Select):
+                self.fields[field].widget.attrs['class'] = 'form-select'
+            if isinstance(self.fields[field], forms.CheckboxInput):
+                self.fields[field].widget.attrs['class'] = 'form-check-input'

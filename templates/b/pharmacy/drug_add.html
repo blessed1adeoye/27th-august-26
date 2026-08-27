@@ -1,33 +1,69 @@
 <!-- templates/b/pharmacy/drug_add.html -->
 
-
 {% extends 'base.html' %}
 {% load crispy_forms_tags %}
 
-{% block title %}Add Drug - Pharmacy{% endblock %}
+{% block title %}Add Drug{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-8 mx-auto">
-        <div class="card card-custom">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-plus-circle text-success me-2"></i>Add New Drug</h5>
-            </div>
-            <div class="card-body">
-                <form method="post" novalidate>
-                    {% csrf_token %}
-                    {{ form|crispy }}
-                    <div class="mt-4 d-flex justify-content-between">
-                        <a href="{% url 'b:pharmacy_drug_list' %}" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left me-2"></i> Cancel
-                        </a>
-                        <button type="submit" class="btn btn-success">
-                            <i class="fas fa-save me-2"></i> Add Drug
-                        </button>
-                    </div>
-                </form>
-            </div>
+<div class="card card-custom">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-plus-circle text-success me-2"></i>
+            Add Drug to Inventory
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>Format:</strong> Enter the drug name with strength and form.
+            <br>
+            <small>Examples: <code>Ibuprofen 200mg</code>, <code>Paracetamol 500mg</code>, <code>ACT 80/480mg</code>, <code>Amlodipine 10mg</code></small>
         </div>
+        
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="row">
+                <div class="col-md-12">
+                    {{ form.name|as_crispy_field }}
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    {{ form.category|as_crispy_field }}
+                </div>
+                <div class="col-md-6">
+                    {{ form.quantity|as_crispy_field }}
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    {{ form.reorder_level|as_crispy_field }}
+                </div>
+                <div class="col-md-6">
+                    <div class="form-check mt-4 pt-2">
+                        {{ form.is_active|as_crispy_field }}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-4 d-flex justify-content-between">
+                <a href="{% url 'b:pharmacy_drug_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i> Back
+                </a>
+                <div>
+                    <a href="{% url 'b:pharmacy_drug_bulk_add' %}" class="btn btn-outline-primary me-2">
+                        <i class="fas fa-list me-2"></i> Bulk Add
+                    </a>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save me-2"></i> Save Drug
+                    </button>
+                </div>
+            </div>
+        </form>
     </div>
 </div>
 {% endblock %}

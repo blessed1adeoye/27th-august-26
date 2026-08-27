@@ -1,79 +1,257 @@
 <!-- templates/b/doctor/dashboard.html -->
 
-
-
 {% extends 'base.html' %}
-
-{% block title %}Doctor Dashboard{% endblock %}
+{% load static %}
 
 {% block content %}
-<div class="row g-4 mb-4">
-    <div class="col-md-6">
-        <div class="stat-card">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="label"><i class="fas fa-stethoscope me-2"></i>Pending Consultations</div>
-                    <div class="number">{{ pending_count }}</div>
+<div class="row g-3 g-md-4">
+    <div class="col-12">
+        <!-- Stats -->
+        <div class="row g-2 g-md-3 mb-4">
+            <div class="col-md-3 col-6">
+                <div class="card text-white bg-primary">
+                    <div class="card-body">
+                        <h6><i class="fas fa-clock me-2"></i>Pending</h6>
+                        <h2>{{ pending_count }}</h2>
+                        <small>Consultations waiting</small>
+                    </div>
                 </div>
-                <i class="fas fa-prescription fa-3x text-muted opacity-25"></i>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="card text-white bg-success">
+                    <div class="card-body">
+                        <h6><i class="fas fa-check-circle me-2"></i>Completed</h6>
+                        <h2>{{ completed_count }}</h2>
+                        <small>Consultations done</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="card text-white bg-warning">
+                    <div class="card-body">
+                        <h6><i class="fas fa-share me-2"></i>Referred</h6>
+                        <h2>{{ referred_count }}</h2>
+                        <small>Patients referred</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="card text-white bg-info">
+                    <div class="card-body">
+                        <h6><i class="fas fa-vial me-2"></i>Results</h6>
+                        <h2>{{ lab_results_count|add:optician_results_count }}</h2>
+                        <small>Lab & Optician results</small>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-    <div class="col-md-6">
-        <div class="stat-card">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="label"><i class="fas fa-user-md me-2"></i>Today's Patients</div>
-                    <div class="number">0</div>
+
+        <!-- ===== LAB RESULTS SECTION ===== -->
+        {% if patients_with_lab_results %}
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-vial text-info me-2"></i>Lab Results Ready</h5>
+            </div>
+            <div class="card-body p-0 p-md-3">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Patient</th>
+                                <th>Hospital No.</th>
+                                <th>Tests</th>
+                                <th>Results</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for patient in patients_with_lab_results %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ patient.full_name }}</strong>
+                                        <br><small class="text-muted">{{ patient.phone }}</small>
+                                    </td>
+                                    <td>{{ patient.hospital_number }}</td>
+                                    <td>
+                                        {% for test in patient.lab_tests.all %}
+                                            {% if test.completed %}
+                                                <span class="badge bg-light text-dark border me-1 mb-1">
+                                                    {% if test.malaria_parasite != 'PENDING' %}Malaria{% endif %}
+                                                    {% if test.hbsag != 'PENDING' %}HBsAg{% endif %}
+                                                    {% if test.random_blood_sugar is not None %}RBS{% endif %}
+                                                    {% if test.other_tests %}{{ test.other_tests }}{% endif %}
+                                                </span>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </td>
+                                    <td>
+                                        {% for test in patient.lab_tests.all %}
+                                            {% if test.completed %}
+                                                <div class="small">
+                                                    {% if test.malaria_parasite != 'PENDING' %}
+                                                        <span class="badge {% if test.malaria_parasite == 'POSITIVE' %}bg-danger{% else %}bg-success{% endif %} me-1">
+                                                            Malaria: {{ test.malaria_parasite }}
+                                                        </span>
+                                                    {% endif %}
+                                                    {% if test.random_blood_sugar is not None %}
+                                                        <span class="badge bg-info me-1">RBS: {{ test.random_blood_sugar }} mmol/L</span>
+                                                    {% endif %}
+                                                    {% if test.hbsag != 'PENDING' %}
+                                                        <span class="badge {% if test.hbsag == 'POSITIVE' %}bg-danger{% else %}bg-success{% endif %} me-1">
+                                                            HBsAg: {{ test.hbsag }}
+                                                        </span>
+                                                    {% endif %}
+                                                    {% if test.other_tests %}
+                                                        <span class="badge bg-secondary me-1">{{ test.other_tests }}</span>
+                                                    {% endif %}
+                                                </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'b:doctor_consultation' patient.id %}" class="btn btn-sm btn-success">
+                                            <i class="fas fa-prescription me-1"></i> Review
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
-                <i class="fas fa-calendar-check fa-3x text-muted opacity-25"></i>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- ===== OPTICIAN RESULTS SECTION ===== -->
+        {% if patients_with_optician_results %}
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-eye text-primary me-2"></i>Optician Results Ready</h5>
+            </div>
+            <div class="card-body p-0 p-md-3">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Patient</th>
+                                <th>Hospital No.</th>
+                                <th>Assessment</th>
+                                <th>Results</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for patient in patients_with_optician_results %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ patient.full_name }}</strong>
+                                        <br><small class="text-muted">{{ patient.phone }}</small>
+                                    </td>
+                                    <td>{{ patient.hospital_number }}</td>
+                                    <td>
+                                        {% for assessment in patient.optical_assessments.all %}
+                                            {% if assessment.completed %}
+                                                <span class="badge bg-light text-dark border me-1 mb-1">
+                                                    {% if assessment.is_walk_in %}Walk-in{% else %}Referral{% endif %}
+                                                </span>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </td>
+                                    <td>
+                                        {% for assessment in patient.optical_assessments.all %}
+                                            {% if assessment.completed %}
+                                                <div class="small">
+                                                    <span class="badge bg-secondary me-1">VA: {{ assessment.visual_acuity_left|default:"—" }}/{{ assessment.visual_acuity_right|default:"—" }}</span>
+                                                    {% if assessment.glasses_allocated > 0 %}
+                                                        <span class="badge bg-success me-1">Glasses: {{ assessment.glasses_allocated }} ({{ assessment.glasses_type|default:"N/A" }})</span>
+                                                    {% endif %}
+                                                    {% if assessment.refractive_error %}
+                                                        <span class="badge bg-info me-1">{{ assessment.refractive_error|truncatechars:20 }}</span>
+                                                    {% endif %}
+                                                </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'b:doctor_consultation' patient.id %}" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-prescription me-1"></i> Review
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Pending Consultations -->
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-stethoscope text-success me-2"></i>Pending Consultations</h5>
+            </div>
+            <div class="card-body p-0 p-md-3">
+                {% if patients %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Hospital No.</th>
+                                    <th>Name</th>
+                                    <th class="d-none d-sm-table-cell">Gender</th>
+                                    <th class="d-none d-md-table-cell">Age</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for patient in patients %}
+                                    <tr>
+                                        <td><small>{{ patient.hospital_number }}</small></td>
+                                        <td>{{ patient.full_name|truncatechars:15 }}</td>
+                                        <td class="d-none d-sm-table-cell">{{ patient.gender }}</td>
+                                        <td class="d-none d-md-table-cell">{{ patient.age_data.years }}y</td>
+                                        <td>
+                                            <a href="{% url 'b:doctor_consultation' patient.id %}" class="btn btn-sm btn-success">
+                                                <i class="fas fa-prescription me-1"></i>Consult
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center my-4 py-3">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        No patients pending consultation.
+                    </p>
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
 
-<div class="card card-custom">
-    <div class="card-header">
-        <h5 class="mb-0"><i class="fas fa-list text-success me-2"></i>Patients Awaiting Consultation</h5>
-    </div>
-    <div class="card-body">
-        {% if patients %}
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>Hospital No.</th>
-                            <th>Name</th>
-                            <th>Gender</th>
-                            <th>Age</th>
-                            <th>Phone</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for patient in patients %}
-                            <tr>
-                                <td><strong>{{ patient.hospital_number }}</strong></td>
-                                <td>{{ patient.full_name }}</td>
-                                <td>{{ patient.gender }}</td>
-                                <td>{{ patient.age_data.years }}y</td>
-                                <td>{{ patient.phone }}</td>
-                                <td>
-                                    <a href="{% url 'b:doctor_consultation' patient.id %}" class="btn btn-success btn-sm">
-                                        <i class="fas fa-prescription me-1"></i>Consult
-                                    </a>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        {% else %}
-            <p class="text-muted text-center my-4">
-                <i class="fas fa-check-circle text-success me-2"></i>
-                No patients pending consultation.
-            </p>
-        {% endif %}
-    </div>
-</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('👨‍⚕️ Doctor dashboard loaded');
+    
+    // Auto-refresh results every 15 seconds
+    setInterval(function() {
+        console.log('👨‍⚕️ Refreshing doctor dashboard...');
+        fetch('/api/doctor/dashboard-data/')
+            .then(response => response.json())
+            .then(data => {
+                console.log('👨‍⚕️ Dashboard refreshed:', data);
+                if (data.lab_results_count > 0) {
+                    document.querySelector('.lab-results-count')?.textContent = data.lab_results_count;
+                }
+                if (data.optician_results_count > 0) {
+                    document.querySelector('.optician-results-count')?.textContent = data.optician_results_count;
+                }
+            })
+            .catch(error => console.error('Error refreshing doctor dashboard:', error));
+    }, 15000);
+});
+</script>
 {% endblock %}

@@ -12,12 +12,15 @@
         <h5 class="mb-0">
             <i class="fas fa-microscope text-success me-2"></i>
             Laboratory Tests - {{ test.patient.full_name }}
+            <span class="badge bg-secondary ms-2">{{ test.patient.hospital_number }}</span>
         </h5>
     </div>
     <div class="card-body">
         <div class="alert alert-info">
             <i class="fas fa-info-circle me-2"></i>
             Performing laboratory tests for <strong>{{ test.patient.full_name }}</strong>
+            <br>
+            <small class="text-muted">Available tests: Malaria Parasite, Random Blood Sugar, HBsAg</small>
         </div>
         
         <form method="post">
@@ -32,8 +35,6 @@
                 <div class="col-md-6">
                     <h6 class="text-success border-bottom pb-2"><i class="fas fa-virus me-2"></i>Serology</h6>
                     {{ form.hbsag|as_crispy_field }}
-                    {{ form.hcv|as_crispy_field }}
-                    {{ form.hiv|as_crispy_field }}
                 </div>
             </div>
             
@@ -41,7 +42,7 @@
             {{ form.notes|as_crispy_field }}
             
             <div class="mt-4 d-flex justify-content-between">
-                <a href="{% url 'laboratory_dashboard' %}" class="btn btn-secondary">
+                <a href="{% url 'b:laboratory_dashboard' %}" class="btn btn-secondary">
                     <i class="fas fa-arrow-left me-2"></i> Back
                 </a>
                 <button type="submit" class="btn btn-success">

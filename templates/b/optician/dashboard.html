@@ -1,96 +1,133 @@
 <!-- templates/b/optician/dashboard.html -->
 
-
-
 {% extends 'base.html' %}
 
 {% block title %}Optician Dashboard{% endblock %}
 
 {% block content %}
-<div class="row g-4 mb-4">
-    <div class="col-md-4">
-        <div class="stat-card">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="label"><i class="fas fa-eye me-2"></i>Pending Assessments</div>
-                    <div class="number">{{ pending_count }}</div>
+<div class="row g-3 g-md-4">
+    <div class="col-12">
+        <!-- Stats -->
+        <div class="row g-2 g-md-3 mb-4">
+            <div class="col-md-3 col-6">
+                <div class="card text-white bg-primary">
+                    <div class="card-body">
+                        <h6><i class="fas fa-users me-2"></i>Patients Waiting</h6>
+                        <h2 class="optician-patient-count">{{ pending_count|default:0 }}</h2>
+                        <small class="opacity-75">Unique patients</small>
+                    </div>
                 </div>
-                <i class="fas fa-glasses fa-3x text-muted opacity-25"></i>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="card text-white bg-warning">
+                    <div class="card-body">
+                        <h6><i class="fas fa-eye me-2"></i>Total Assessments</h6>
+                        <h2>{{ pending_assessment_count|default:0 }}</h2>
+                        <small class="opacity-75">Pending assessments</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="card text-white bg-info">
+                    <div class="card-body">
+                        <h6><i class="fas fa-user-plus me-2"></i>Walk-ins</h6>
+                        <h2>{{ walk_in_count|default:0 }}</h2>
+                        <small class="opacity-75">Walk-in patients</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="card text-white bg-success">
+                    <div class="card-body">
+                        <h6><i class="fas fa-check-circle me-2"></i>Completed Today</h6>
+                        <h2>{{ completed_today|default:0 }}</h2>
+                        <small class="opacity-75">Assessments done</small>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-    <div class="col-md-4">
-        <div class="stat-card">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="label"><i class="fas fa-check-circle me-2"></i>Completed Today</div>
-                    <div class="number">0</div>
-                </div>
-                <i class="fas fa-check-double fa-3x text-muted opacity-25"></i>
+        
+        <!-- Patients with Pending Assessments -->
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-eye text-primary me-2"></i>Patients with Pending Assessments</h5>
             </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="stat-card">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="label"><i class="fas fa-user-plus me-2"></i>Walk-ins</div>
-                    <div class="number">0</div>
-                </div>
-                <i class="fas fa-user-plus fa-3x text-muted opacity-25"></i>
+            <div class="card-body p-0 p-md-3" id="opticianPatientsContainer">
+                {% if pending_patients %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0" id="opticianPatientsTable">
+                            <thead>
+                                <tr>
+                                    <th>Patient</th>
+                                    <th>Hospital No.</th>
+                                    <th>Type</th>
+                                    <th># Assessments</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for patient in pending_patients %}
+                                    <tr data-patient-id="{{ patient.id }}">
+                                        <td>
+                                            <strong>{{ patient.full_name }}</strong>
+                                            <br><small class="text-muted">{{ patient.phone }}</small>
+                                        </td>
+                                        <td>{{ patient.hospital_number }}</td>
+                                        <td>
+                                            {% for assessment in patient.optical_assessments.all %}
+                                                {% if not assessment.completed %}
+                                                    {% if assessment.is_walk_in %}
+                                                        <span class="badge bg-info">Walk-in</span>
+                                                    {% else %}
+                                                        <span class="badge bg-primary">Referral</span>
+                                                    {% endif %}
+                                                {% endif %}
+                                            {% endfor %}
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary">
+                                                {{ patient.pending_assessment_count }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'b:optician_assessment' patient.id %}" class="btn btn-sm btn-success">
+                                                <i class="fas fa-eye me-1"></i> Assess
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center my-4 py-3">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        No patients with pending optical assessments.
+                    </p>
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
 
-<div class="card card-custom">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0"><i class="fas fa-list text-success me-2"></i>Pending Optical Assessments</h5>
-        <a href="{% url 'optician_assessment_walkin' %}" class="btn btn-success btn-sm">
-            <i class="fas fa-user-plus me-1"></i> Walk-in Patient
-        </a>
-    </div>
-    <div class="card-body">
-        {% if assessments %}
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>Patient</th>
-                            <th>Type</th>
-                            <th>Glasses Allocated</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for assessment in assessments %}
-                            <tr>
-                                <td>{{ assessment.patient.full_name }}</td>
-                                <td>
-                                    {% if assessment.is_walk_in %}
-                                        <span class="badge bg-info">Walk-in</span>
-                                    {% else %}
-                                        <span class="badge bg-primary">Referral</span>
-                                    {% endif %}
-                                </td>
-                                <td>{{ assessment.glasses_allocated }}</td>
-                                <td>
-                                    <a href="{% url 'optician_assessment' assessment.patient.id %}" class="btn btn-success btn-sm">
-                                        <i class="fas fa-eye me-1"></i>Assess
-                                    </a>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        {% else %}
-            <p class="text-muted text-center my-4">
-                <i class="fas fa-check-circle text-success me-2"></i>
-                No pending optical assessments.
-            </p>
-        {% endif %}
-    </div>
-</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('👁️ Optician dashboard loaded');
+    
+    // Auto-refresh every 10 seconds
+    setInterval(function() {
+        console.log('👁️ Refreshing optician dashboard...');
+        fetch('/api/optician/notification-check/')
+            .then(response => response.json())
+            .then(data => {
+                const countElement = document.querySelector('.optician-patient-count');
+                if (countElement) {
+                    countElement.textContent = data.patient_count || 0;
+                }
+                console.log(`👁️ Dashboard refreshed: ${data.patient_count} patients waiting`);
+            })
+            .catch(error => console.error('Error refreshing optician dashboard:', error));
+    }, 10000);
+});
+</script>
 {% endblock %}
-

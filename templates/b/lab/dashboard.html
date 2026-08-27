@@ -1,82 +1,129 @@
 <!-- templates/b/lab/dashboard.html -->
 
-
-
 {% extends 'base.html' %}
 
 {% block title %}Laboratory Dashboard{% endblock %}
 
 {% block content %}
-<div class="row g-4 mb-4">
-    <div class="col-md-6">
-        <div class="stat-card">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="label"><i class="fas fa-vial me-2"></i>Pending Tests</div>
-                    <div class="number">{{ pending_count }}</div>
+<div class="row g-3 g-md-4">
+    <div class="col-12">
+        <!-- Stats -->
+        <div class="row g-2 g-md-3 mb-4">
+            <div class="col-md-4 col-6">
+                <div class="card text-white bg-primary">
+                    <div class="card-body">
+                        <h6><i class="fas fa-users me-2"></i>Patients Waiting</h6>
+                        <h2 class="lab-patient-count">{{ pending_count|default:0 }}</h2>
+                        <small class="opacity-75">Unique patients with pending tests</small>
+                    </div>
                 </div>
-                <i class="fas fa-microscope fa-3x text-muted opacity-25"></i>
+            </div>
+            <div class="col-md-4 col-6">
+                <div class="card text-white bg-warning">
+                    <div class="card-body">
+                        <h6><i class="fas fa-vial me-2"></i>Total Tests</h6>
+                        <h2>{{ pending_test_count|default:0 }}</h2>
+                        <small class="opacity-75">Individual tests pending</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 col-6">
+                <div class="card text-white bg-success">
+                    <div class="card-body">
+                        <h6><i class="fas fa-check-circle me-2"></i>Completed Today</h6>
+                        <h2>{{ completed_today|default:0 }}</h2>
+                        <small class="opacity-75">Tests completed today</small>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-    <div class="col-md-6">
-        <div class="stat-card">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="label"><i class="fas fa-check-circle me-2"></i>Completed Today</div>
-                    <div class="number">0</div>
-                </div>
-                <i class="fas fa-check-double fa-3x text-muted opacity-25"></i>
+        
+        <!-- Patients with Pending Tests -->
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-microscope text-success me-2"></i>Patients with Pending Tests</h5>
+            </div>
+            <div class="card-body p-0 p-md-3" id="labPatientsContainer">
+                {% if pending_patients %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0" id="labPatientsTable">
+                            <thead>
+                                <tr>
+                                    <th>Patient</th>
+                                    <th>Hospital No.</th>
+                                    <th>Tests Requested</th>
+                                    <th># Tests</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for patient in pending_patients %}
+                                    <tr data-patient-id="{{ patient.id }}">
+                                        <td>
+                                            <strong>{{ patient.full_name }}</strong>
+                                            <br><small class="text-muted">{{ patient.phone }}</small>
+                                        </td>
+                                        <td>{{ patient.hospital_number }}</td>
+                                        <td>
+                                            {% for test in patient.lab_tests.all %}
+                                                {% if not test.completed %}
+                                                    <span class="badge bg-light text-dark border me-1 mb-1">
+                                                        {% if test.malaria_parasite == 'PENDING' %}Malaria{% endif %}
+                                                        {% if test.hbsag == 'PENDING' %}HBsAg{% endif %}
+                                                        {% if test.random_blood_sugar is None %}RBS{% endif %}
+                                                        {% if test.other_tests %}{{ test.other_tests }}{% endif %}
+                                                    </span>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary">
+                                                {{ patient.pending_test_count }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% for test in patient.lab_tests.all %}
+                                                {% if not test.completed %}
+                                                    <a href="{% url 'b:laboratory_test' test.id %}" class="btn btn-sm btn-success">
+                                                        <i class="fas fa-vial me-1"></i> Test
+                                                    </a>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center my-4 py-3">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        No patients with pending laboratory tests.
+                    </p>
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
 
-<div class="card card-custom">
-    <div class="card-header">
-        <h5 class="mb-0"><i class="fas fa-list text-success me-2"></i>Pending Laboratory Tests</h5>
-    </div>
-    <div class="card-body">
-        {% if tests %}
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>Patient</th>
-                            <th>Malaria</th>
-                            <th>RBS (mmol/L)</th>
-                            <th>HBsAg</th>
-                            <th>HCV</th>
-                            <th>HIV</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for test in tests %}
-                            <tr>
-                                <td>{{ test.patient.full_name }}</td>
-                                <td><span class="badge bg-warning">{{ test.malaria_parasite }}</span></td>
-                                <td>{{ test.random_blood_sugar|default:"—" }}</td>
-                                <td><span class="badge bg-warning">{{ test.hbsag }}</span></td>
-                                <td><span class="badge bg-warning">{{ test.hcv }}</span></td>
-                                <td><span class="badge bg-warning">{{ test.hiv }}</span></td>
-                                <td>
-                                    <a href="{% url 'laboratory_test' test.id %}" class="btn btn-success btn-sm">
-                                        <i class="fas fa-vial me-1"></i>Run Tests
-                                    </a>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        {% else %}
-            <p class="text-muted text-center my-4">
-                <i class="fas fa-check-circle text-success me-2"></i>
-                No pending laboratory tests.
-            </p>
-        {% endif %}
-    </div>
-</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-refresh the lab dashboard every 10 seconds
+    setInterval(function() {
+        console.log('🧪 Refreshing lab dashboard...');
+        // Refresh only the patient list and stats
+        fetch('/api/mls/notification-check/')
+            .then(response => response.json())
+            .then(data => {
+                // Update patient count
+                const countElement = document.querySelector('.lab-patient-count');
+                if (countElement) {
+                    countElement.textContent = data.patient_count || 0;
+                }
+                console.log(`🧪 Lab dashboard refreshed: ${data.patient_count} patients waiting`);
+            })
+            .catch(error => console.error('Error refreshing lab dashboard:', error));
+    }, 10000);
+});
+</script>
 {% endblock %}
-

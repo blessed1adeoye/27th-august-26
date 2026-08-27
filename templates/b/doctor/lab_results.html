@@ -1,0 +1,231 @@
+<!-- templates/b/doctor/lab_results.html -->
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Lab Results{% endblock %}
+
+{% block extra_css %}
+<style>
+    .result-card {
+        border-left: 4px solid #17a2b8;
+        transition: all 0.3s ease;
+    }
+    .result-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .result-card .result-item {
+        padding: 10px 0;
+        border-bottom: 1px solid #f3f4f6;
+    }
+    .result-card .result-item:last-child {
+        border-bottom: none;
+    }
+    .badge-positive {
+        background: #dc3545;
+        color: white;
+    }
+    .badge-negative {
+        background: #28a745;
+        color: white;
+    }
+    .badge-pending {
+        background: #ffc107;
+        color: #212529;
+    }
+    .badge-new {
+        background: #ffc107;
+        color: #212529;
+        animation: pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    .stats-card {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 12px 16px;
+        border: 1px solid #e5e7eb;
+        text-align: center;
+    }
+    .stats-card .stat-number {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #065f46;
+    }
+    .stats-card .stat-label {
+        font-size: 0.75rem;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .stats-card .stat-number.unviewed {
+        color: #dc3545;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <h5 class="mb-0">
+                    <i class="fas fa-vial text-info me-2"></i>
+                    Lab Results
+                </h5>
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                    {% if unviewed_count > 0 %}
+                        <button class="btn btn-sm btn-outline-success" onclick="markAllResultsRead()">
+                            <i class="fas fa-check-double me-1"></i> Mark All as Read
+                        </button>
+                    {% endif %}
+                    <span class="badge bg-info">{{ total_results }} test(s)</span>
+                    <span class="badge bg-secondary">{{ unique_patients }} patient(s)</span>
+                    {% if unviewed_count > 0 %}
+                        <span class="badge badge-new">{{ unviewed_count }} new</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body p-0 p-md-3">
+                <!-- Stats -->
+                <div class="row g-2 g-md-3 mb-3">
+                    <div class="col-md-4 col-6">
+                        <div class="stats-card">
+                            <div class="stat-number">{{ total_results }}</div>
+                            <div class="stat-label">Total Lab Tests</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-6">
+                        <div class="stats-card">
+                            <div class="stat-number">{{ unique_patients }}</div>
+                            <div class="stat-label">Patients with Results</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-6">
+                        <div class="stats-card">
+                            <div class="stat-number {% if unviewed_count > 0 %}unviewed{% endif %}">{{ unviewed_count }}</div>
+                            <div class="stat-label">Unread Results</div>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if results %}
+                    <div class="row g-3">
+                        {% for item in results %}
+                            <div class="col-md-6 col-lg-4">
+                                <div class="card result-card h-100">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <h6 class="mb-1">
+                                                    <a href="{% url 'b:physician_lab_result_detail' item.test.id %}" class="text-dark text-decoration-none">
+                                                        {{ item.patient.full_name }}
+                                                    </a>
+                                                </h6>
+                                                <small class="text-muted">{{ item.patient.hospital_number }}</small>
+                                            </div>
+                                            <div>
+                                                <span class="badge bg-success">Completed</span>
+                                                {% if not item.viewed %}
+                                                    <span class="badge badge-new ms-1">New</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="mt-3">
+                                            {% for test in item.tests %}
+                                                <div class="result-item">
+                                                    <div class="d-flex justify-content-between">
+                                                        <span class="text-muted small">{{ test.name }}</span>
+                                                        <span class="badge {% if test.result == 'POSITIVE' %}badge-positive{% elif test.result == 'NEGATIVE' %}badge-negative{% else %}badge-pending{% endif %}">
+                                                            {{ test.result }}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                        
+                                        <div class="mt-3">
+                                            <small class="text-muted">
+                                                <i class="far fa-clock me-1"></i>
+                                                {{ item.completed_at|date:"M d, Y H:i" }}
+                                            </small>
+                                        </div>
+                                        
+                                        <div class="mt-2">
+                                            <a href="{% url 'b:physician_lab_result_detail' item.test.id %}" class="btn btn-sm btn-outline-info">
+                                                <i class="fas fa-eye me-1"></i> View Details
+                                            </a>
+                                            <a href="{% url 'b:doctor_consultation' item.patient.id %}" class="btn btn-sm btn-outline-success">
+                                                <i class="fas fa-prescription me-1"></i> Review
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-vial fa-4x text-muted opacity-25 mb-3"></i>
+                        <h6 class="text-muted">No lab results available</h6>
+                        <p class="text-muted small">Lab results will appear here when tests are completed</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+function markAllResultsRead() {
+    if (!confirm('Mark all lab results as read?')) return;
+    
+    fetch('/api/physician/mark-lab-results-read/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCSRFToken(),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update the badge count
+            const badge = document.querySelector('.lab-results-badge');
+            if (badge) {
+                badge.textContent = '0';
+                badge.style.display = 'none';
+            }
+            // Reload the page to update everything
+            location.reload();
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function getCSRFToken() {
+    const name = 'csrftoken';
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+
+{% endblock %}

@@ -1,8 +1,50 @@
+<!-- templates/b/pharmacy/dispense_patient.html -->
+
 {% extends 'base.html' %}
 {% load crispy_forms_tags %}
-{% load custom_filters %}
 
-{% block title %}Dispense Medications - {{ patient.full_name }}{% endblock %}
+{% block title %}Dispense Medications{% endblock %}
+
+{% block extra_css %}
+<style>
+    .order-item {
+        background: #f8fafc;
+        border-radius: 6px;
+        padding: 12px 16px;
+        margin-bottom: 10px;
+        border-left: 3px solid #065f46;
+    }
+    .order-item .drug-name {
+        font-weight: 600;
+        color: #1f2937;
+    }
+    .order-item .drug-detail {
+        font-size: 13px;
+        color: #6b7280;
+    }
+    .order-item select {
+        max-width: 200px;
+    }
+    .order-item input[type="number"] {
+        max-width: 80px;
+    }
+    .patient-card {
+        background: linear-gradient(135deg, #f0fdf4, #d1fae5);
+        border-radius: 8px;
+        padding: 16px 20px;
+        margin-bottom: 20px;
+        border: 1px solid #a7d7c0;
+    }
+    .auto-match-badge {
+        background: #fef3c7;
+        color: #92400e;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        border: 1px solid #f59e0b;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="card card-custom">
@@ -11,100 +53,112 @@
             <i class="fas fa-prescription-bottle text-success me-2"></i>
             Dispense Medications - {{ patient.full_name }}
             <span class="badge bg-secondary ms-2">{{ patient.hospital_number }}</span>
-            <span class="badge bg-secondary ms-2">{{ patient.age_data|format_age }}</span>
         </h5>
     </div>
     <div class="card-body">
-        <div class="alert alert-info">
-            <i class="fas fa-info-circle me-2"></i>
-            Dispensing <strong>{{ pending_orders|length }}</strong> medication(s) for <strong>{{ patient.full_name }}</strong>
+        <!-- Patient Info -->
+        <div class="patient-card">
+            <div class="row">
+                <div class="col-md-3">
+                    <small class="text-muted">Patient</small>
+                    <div><strong>{{ patient.full_name }}</strong></div>
+                </div>
+                <div class="col-md-2">
+                    <small class="text-muted">Age</small>
+                    <div>{{ formatted_age }}</div>
+                </div>
+                <div class="col-md-2">
+                    <small class="text-muted">Gender</small>
+                    <div>{{ patient.gender }}</div>
+                </div>
+                <div class="col-md-3">
+                    <small class="text-muted">Phone</small>
+                    <div>{{ patient.phone }}</div>
+                </div>
+                <div class="col-md-2">
+                    <small class="text-muted">Orders</small>
+                    <div><span class="badge bg-primary">{{ pending_orders.count }}</span></div>
+                </div>
+            </div>
         </div>
 
-        <form method="post" id="dispenseForm">
-            {% csrf_token %}
-            
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th><input type="checkbox" id="selectAll" onchange="toggleAll()"></th>
-                            <th>Drug</th>
-                            <th>Prescribed Qty</th>
-                            <th>Dosage</th>
-                            <th>Available Stock</th>
-                            <th>Qty to Dispense</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for order in pending_orders %}
-                            <tr>
-                                <td>
-                                    <input type="checkbox" name="selected_drugs[]" value="{{ order.id }}" class="order-checkbox" checked>
-                                </td>
-                                <td><strong>{{ order.drug_name }}</strong></td>
-                                <td>{{ order.quantity }}</td>
-                                <td>{{ order.dosage|default:"—" }}</td>
-                                <td>
-                                    {% with drug=order.drug_name %}
-                                        {% for d in drugs %}
-                                            {% if d.name == order.drug_name %}
-                                                <span class="{% if d.quantity < order.quantity %}text-danger{% elif d.quantity < 10 %}text-warning{% else %}text-success{% endif %}">
-                                                    {{ d.quantity }} units
-                                                </span>
-                                            {% endif %}
-                                        {% empty %}
-                                            <span class="text-muted">Unknown</span>
-                                        {% endfor %}
-                                    {% endwith %}
-                                </td>
-                                <td>
-                                    <input type="number" name="quantities[]" class="form-control form-control-sm" value="{{ order.quantity }}" min="1" max="{{ order.quantity }}" style="width: 80px;">
-                                </td>
-                                <td>
-                                    <span class="badge bg-warning">Pending</span>
-                                </td>
-                            </tr>
-                        {% empty %}
-                            <tr>
-                                <td colspan="7" class="text-center py-4">
-                                    <i class="fas fa-check-circle text-success fa-2x d-block mb-2"></i>
-                                    No pending orders for this patient.
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+        {% if pending_orders %}
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <h6 class="text-success"><i class="fas fa-list me-2"></i>Pending Orders</h6>
+                    <p class="text-muted small">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Select inventory drugs to dispense. If no matching drug is found, it will be dispensed without stock deduction.
+                    </p>
+                </div>
 
-            <div class="mt-4 d-flex justify-content-between">
-                <a href="{% url 'b:pharmacy_dashboard' %}" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left me-2"></i> Back
+                {% for order in pending_orders %}
+                <div class="order-item">
+                    <input type="hidden" name="selected_drugs[]" value="{{ order.id }}">
+                    
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <div class="drug-name">{{ order.drug_name }}</div>
+                            <div class="drug-detail">
+                                {% if order.instructions %}
+                                    {{ order.instructions|truncatechars:50 }}
+                                {% else %}
+                                    Quantity: {{ order.quantity }}
+                                {% endif %}
+                            </div>
+                            <span class="auto-match-badge">
+                                <i class="fas fa-magic me-1"></i> Auto-match enabled
+                            </span>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <label class="small text-muted">Select Drug from Inventory</label>
+                            <select name="drug_ids[]" class="form-select form-select-sm">
+                                <option value="">-- Auto-match by name --</option>
+                                {% for drug in drugs %}
+                                    <option value="{{ drug.id }}">
+                                        {{ drug.name }} (Stock: {{ drug.quantity }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-2">
+                            <label class="small text-muted">Quantity</label>
+                            <input type="number" name="quantities[]" class="form-control form-control-sm" 
+                                   value="{{ order.quantity }}" min="1" step="1">
+                        </div>
+                        
+                        <div class="col-md-3 text-end">
+                            <span class="badge {% if order.dispensed %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                                {% if order.dispensed %}Dispensed{% else %}Pending{% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <div class="mt-4 d-flex justify-content-between">
+                    <a href="{% url 'b:pharmacy_dashboard' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-2"></i> Back
+                    </a>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-prescription-bottle me-2"></i> Dispense Selected
+                    </button>
+                </div>
+            </form>
+        {% else %}
+            <div class="text-center py-4">
+                <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                <h5>No pending orders for this patient</h5>
+                <p class="text-muted">All medications have been dispensed.</p>
+                <a href="{% url 'b:pharmacy_dashboard' %}" class="btn btn-primary">
+                    <i class="fas fa-arrow-left me-2"></i> Back to Dashboard
                 </a>
-                <button type="submit" class="btn btn-success" {% if not pending_orders %}disabled{% endif %}>
-                    <i class="fas fa-check-circle me-2"></i> Dispense Selected
-                </button>
             </div>
-        </form>
+        {% endif %}
     </div>
 </div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-    function toggleAll() {
-        const checked = document.getElementById('selectAll').checked;
-        document.querySelectorAll('.order-checkbox').forEach(cb => cb.checked = checked);
-    }
-
-    document.addEventListener('DOMContentLoaded', function() {
-        document.getElementById('dispenseForm').addEventListener('submit', function(e) {
-            const checked = document.querySelectorAll('.order-checkbox:checked');
-            if (checked.length === 0) {
-                e.preventDefault();
-                alert('Please select at least one medication to dispense.');
-            }
-        });
-    });
-</script>
 {% endblock %}

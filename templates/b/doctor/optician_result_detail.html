@@ -1,0 +1,170 @@
+<!-- templates/b/doctor/optician_result_detail.html -->
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Optician Result Details{% endblock %}
+
+{% block extra_css %}
+<style>
+    .detail-card {
+        border-left: 4px solid #6f42c1;
+    }
+    .result-row {
+        padding: 12px 0;
+        border-bottom: 1px solid #f3f4f6;
+    }
+    .result-row:last-child {
+        border-bottom: none;
+    }
+    .patient-info {
+        background: linear-gradient(135deg, #f8fafc, #f3e8ff);
+        border-radius: 8px;
+        padding: 16px 20px;
+        border-left: 4px solid #6f42c1;
+    }
+    .glasses-detail {
+        background: #e0e7ff;
+        border-radius: 8px;
+        padding: 12px 16px;
+        border: 1px solid #c7d2fe;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Back button -->
+        <div class="mb-3">
+            <a href="{% url 'b:physician_optician_results' %}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-left me-2"></i> Back to Optician Results
+            </a>
+        </div>
+        
+        <div class="card shadow-sm border-0 detail-card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-eye text-primary me-2"></i>
+                    Optician Result Details
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- Patient Info -->
+                <div class="patient-info mb-4">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <small class="text-muted">Patient</small>
+                            <div><strong>{{ patient.full_name }}</strong></div>
+                        </div>
+                        <div class="col-md-2">
+                            <small class="text-muted">Hospital No.</small>
+                            <div><strong>{{ patient.hospital_number }}</strong></div>
+                        </div>
+                        <div class="col-md-2">
+                            <small class="text-muted">Gender</small>
+                            <div><strong>{{ patient.gender }}</strong></div>
+                        </div>
+                        <div class="col-md-2">
+                            <small class="text-muted">Age</small>
+                            <div><strong>
+                                {% if patient.age_data %}
+                                    {{ patient.age_data.years }}y {{ patient.age_data.months }}m
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </strong></div>
+                        </div>
+                        <div class="col-md-3">
+                            <small class="text-muted">Completed</small>
+                            <div><strong>{{ assessment.completed_at|date:"M d, Y H:i" }}</strong></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Assessment Results -->
+                <h6 class="text-primary mb-3"><i class="fas fa-list me-2"></i>Assessment Results</h6>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="text-muted">Visual Acuity</h6>
+                                <div class="row mt-2">
+                                    <div class="col-6">
+                                        <small class="text-muted">Left Eye</small>
+                                        <div><strong>{{ assessment.visual_acuity_left|default:"—" }}</strong></div>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted">Right Eye</small>
+                                        <div><strong>{{ assessment.visual_acuity_right|default:"—" }}</strong></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="text-muted">Glasses</h6>
+                                <div class="mt-2">
+                                    <div><strong>{{ assessment.glasses_allocated|default:"0" }}</strong> allocated</div>
+                                    {% if assessment.glasses_type %}
+                                        <div class="mt-1">
+                                            <span class="glasses-badge">{{ assessment.glasses_type }}</span>
+                                        </div>
+                                    {% endif %}
+                                    {% if assessment.glasses_prescription %}
+                                        <div class="mt-2">
+                                            <small class="text-muted">Prescription:</small>
+                                            <p class="mb-0">{{ assessment.glasses_prescription }}</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Additional Info -->
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="text-muted">Refractive Error</h6>
+                                <p class="mb-0">{{ assessment.refractive_error|default:"Not recorded" }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="text-muted">Eye Health Notes</h6>
+                                <p class="mb-0">{{ assessment.eye_health_notes|default:"No notes recorded" }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Walk-in info -->
+                {% if assessment.is_walk_in %}
+                <div class="mt-3">
+                    <span class="badge bg-info">Walk-in Patient</span>
+                </div>
+                {% endif %}
+                
+                <!-- Action Buttons -->
+                <div class="mt-4 d-flex gap-2">
+                    <a href="{% url 'b:doctor_consultation' patient.id %}" class="btn btn-success">
+                        <i class="fas fa-prescription me-2"></i> Review with Patient
+                    </a>
+                    <a href="{% url 'b:physician_optician_results' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-2"></i> Back
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

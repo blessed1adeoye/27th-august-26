@@ -1,8 +1,10 @@
+# b/admin.py
+
 from django.contrib import admin
 from .models import (
     UserProfile, Patient, NursingAssessment, MedicalConsultation,
     PharmacyOrder, LaboratoryTest, OpticalAssessment, PatientWorkflow,
-    NurseAssignment, PhysicianAssignment, Notification
+    NurseAssignment, PhysicianAssignment, Notification, Drug, PharmacyDispensing
 )
 
 @admin.register(UserProfile)
@@ -69,20 +71,6 @@ class NursingAssessmentAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
-    
-@admin.register(PhysicianAssignment)
-class PhysicianAssignmentAdmin(admin.ModelAdmin):
-    list_display = ['patient', 'physician', 'assigned_by', 'assigned_at', 'is_active']
-    list_filter = ['is_active']
-    search_fields = ['patient__first_name', 'patient__last_name', 
-                     'physician__username', 'physician__first_name', 'physician__last_name']
-    readonly_fields = ['assigned_at']
-    
-    fieldsets = (
-        ('Assignment', {
-            'fields': ('patient', 'physician', 'assigned_by', 'assigned_at', 'is_active')
-        }),
-    )
 
 @admin.register(MedicalConsultation)
 class MedicalConsultationAdmin(admin.ModelAdmin):
@@ -142,9 +130,9 @@ class PharmacyOrderAdmin(admin.ModelAdmin):
 
 @admin.register(LaboratoryTest)
 class LaboratoryTestAdmin(admin.ModelAdmin):
-    list_display = ['patient', 'malaria_parasite', 'random_blood_sugar', 
-                    'hbsag', 'hcv', 'hiv', 'completed']
-    list_filter = ['malaria_parasite', 'hbsag', 'hcv', 'hiv', 'completed']
+    # Updated - removed hcv and hiv
+    list_display = ['patient', 'malaria_parasite', 'random_blood_sugar', 'hbsag', 'completed']
+    list_filter = ['malaria_parasite', 'hbsag', 'completed']
     search_fields = ['patient__first_name', 'patient__last_name']
     readonly_fields = ['created_at', 'updated_at']
     
@@ -156,7 +144,7 @@ class LaboratoryTestAdmin(admin.ModelAdmin):
             'fields': ('malaria_parasite', 'random_blood_sugar')
         }),
         ('Serology', {
-            'fields': ('hbsag', 'hcv', 'hiv')
+            'fields': ('hbsag',)
         }),
         ('Additional', {
             'fields': ('other_tests', 'notes')
@@ -238,6 +226,20 @@ class NurseAssignmentAdmin(admin.ModelAdmin):
         }),
     )
 
+@admin.register(PhysicianAssignment)
+class PhysicianAssignmentAdmin(admin.ModelAdmin):
+    list_display = ['patient', 'physician', 'assigned_by', 'assigned_at', 'is_active']
+    list_filter = ['is_active']
+    search_fields = ['patient__first_name', 'patient__last_name', 
+                     'physician__username', 'physician__first_name', 'physician__last_name']
+    readonly_fields = ['assigned_at']
+    
+    fieldsets = (
+        ('Assignment', {
+            'fields': ('patient', 'physician', 'assigned_by', 'assigned_at', 'is_active')
+        }),
+    )
+
 @admin.register(Notification)
 class NotificationAdmin(admin.ModelAdmin):
     list_display = ['recipient', 'message_summary', 'is_read', 'created_at']
@@ -252,6 +254,45 @@ class NotificationAdmin(admin.ModelAdmin):
     fieldsets = (
         ('Notification', {
             'fields': ('recipient', 'message', 'link', 'is_read', 'created_at')
+        }),
+    )
+
+@admin.register(Drug)
+class DrugAdmin(admin.ModelAdmin):
+    # Remove unit_price from list_display
+    list_display = ['name', 'category', 'quantity', 'reorder_level', 'is_active']
+    list_filter = ['category', 'is_active']
+    search_fields = ['name']
+    readonly_fields = ['created_at', 'updated_at']
+    
+    fieldsets = (
+        ('Drug Information', {
+            'fields': ('name', 'category')
+        }),
+        ('Inventory', {
+            'fields': ('quantity', 'reorder_level')
+        }),
+        ('Status', {
+            'fields': ('is_active',)
+        }),
+        ('Audit', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+@admin.register(PharmacyDispensing)
+class PharmacyDispensingAdmin(admin.ModelAdmin):
+    list_display = ['patient', 'drug', 'quantity_dispensed', 'dispensing_date', 'dispensed_by']
+    list_filter = ['dispensing_date']
+    search_fields = ['patient__first_name', 'patient__last_name', 'drug__name']
+    readonly_fields = ['dispensing_date']
+    
+    fieldsets = (
+        ('Dispensing Information', {
+            'fields': ('patient', 'prescription', 'drug', 'quantity_dispensed', 'dispensing_date')
+        }),
+        ('Dispensed By', {
+            'fields': ('dispensed_by', 'notes')
         }),
     )
 

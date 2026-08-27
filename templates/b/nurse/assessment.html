@@ -1,11 +1,95 @@
 <!-- templates/b/nurse/assessment.html -->
 
-
-
 {% extends 'base.html' %}
 {% load crispy_forms_tags %}
 
 {% block title %}Nursing Assessment{% endblock %}
+
+{% block extra_css %}
+<style>
+    .optional-badge {
+        font-size: 0.7rem;
+        color: #6b7280;
+        font-weight: 400;
+        margin-left: 4px;
+    }
+    .vital-signs-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+    }
+    @media (max-width: 768px) {
+        .vital-signs-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+    @media (max-width: 480px) {
+        .vital-signs-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    /* Patient Bio Card Styles */
+    .patient-bio-card {
+        background: linear-gradient(135deg, #f8fafc, #e8f5e9);
+        border-radius: 12px;
+        border-left: 5px solid #065f46;
+        padding: 16px 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .patient-bio-card .bio-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        color: #6b7280;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+    .patient-bio-card .bio-value {
+        font-weight: 500;
+        color: #1f2937;
+    }
+    .patient-bio-card .bio-divider {
+        width: 1px;
+        background: #d1d5db;
+        margin: 0 12px;
+    }
+    .patient-bio-card .patient-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1.2rem;
+        color: white;
+        flex-shrink: 0;
+    }
+    .patient-bio-card .patient-avatar.male {
+        background: linear-gradient(135deg, #1e40af, #3b82f6);
+    }
+    .patient-bio-card .patient-avatar.female {
+        background: linear-gradient(135deg, #9a1f3f, #ec4899);
+    }
+    .patient-bio-card .patient-avatar.other {
+        background: linear-gradient(135deg, #6d28d9, #8b5cf6);
+    }
+    
+    @media (max-width: 576px) {
+        .patient-bio-card .bio-divider {
+            display: none;
+        }
+        .patient-bio-card .bio-row {
+            flex-wrap: wrap;
+            gap: 4px 0;
+        }
+        .patient-bio-card .bio-item {
+            width: 50%;
+        }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="card card-custom">
@@ -17,9 +101,123 @@
         </h5>
     </div>
     <div class="card-body">
+        
+        <!-- ===== PATIENT BIO INFORMATION ===== -->
+        <div class="patient-bio-card">
+            <div class="d-flex align-items-center gap-3">
+                <!-- Avatar -->
+                <div class="patient-avatar {% if patient.gender == 'MALE' %}male{% elif patient.gender == 'FEMALE' %}female{% else %}other{% endif %}">
+                    {{ patient.first_name|first|upper }}{{ patient.last_name|first|upper }}
+                </div>
+                
+                <!-- Patient Info -->
+                <div class="flex-grow-1">
+                    <div class="d-flex flex-wrap align-items-center bio-row">
+                        <div class="bio-item">
+                            <div class="bio-label">Full Name</div>
+                            <div class="bio-value">{{ patient.full_name }}</div>
+                        </div>
+                        
+                        <div class="bio-divider"></div>
+                        
+                        <div class="bio-item">
+                            <div class="bio-label">Hospital Number</div>
+                            <div class="bio-value">{{ patient.hospital_number }}</div>
+                        </div>
+                        
+                        <div class="bio-divider"></div>
+                        
+                        <div class="bio-item">
+                            <div class="bio-label">Gender</div>
+                            <div class="bio-value">
+                                {% if patient.gender == 'MALE' %}
+                                    <i class="fas fa-mars text-primary me-1"></i> Male
+                                {% elif patient.gender == 'FEMALE' %}
+                                    <i class="fas fa-venus text-danger me-1"></i> Female
+                                {% else %}
+                                    <i class="fas fa-genderless text-secondary me-1"></i> Other
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="bio-divider"></div>
+                        
+                        <div class="bio-item">
+                            <div class="bio-label">Date of Birth</div>
+                            <div class="bio-value">
+                                {{ patient.date_of_birth|date:"M d, Y" }}
+                                {% if patient.age_data %}
+                                    <span class="badge bg-light text-dark ms-1">
+                                        {{ patient.age_data.years }}y 
+                                        {% if patient.age_data.months > 0 %}{{ patient.age_data.months }}m{% endif %}
+                                        {% if patient.age_data.years == 0 and patient.age_data.months == 0 %}
+                                            {% if patient.age_data.days > 0 %}{{ patient.age_data.days }}d{% else %}Newborn{% endif %}
+                                        {% endif %}
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Second Row: Contact & Address -->
+                    <div class="d-flex flex-wrap align-items-center bio-row mt-2 pt-2 border-top border-light">
+                        <div class="bio-item">
+                            <div class="bio-label">Phone</div>
+                            <div class="bio-value">
+                                <i class="fas fa-phone text-muted me-1" style="font-size: 0.75rem;"></i>
+                                {{ patient.phone }}
+                            </div>
+                        </div>
+                        
+                        <div class="bio-divider"></div>
+                        
+                        <div class="bio-item">
+                            <div class="bio-label">Email</div>
+                            <div class="bio-value">
+                                {% if patient.email %}
+                                    <i class="fas fa-envelope text-muted me-1" style="font-size: 0.75rem;"></i>
+                                    {{ patient.email }}
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="bio-divider"></div>
+                        
+                        <div class="bio-item">
+                            <div class="bio-label">Address</div>
+                            <div class="bio-value">
+                                {% if patient.address %}
+                                    <i class="fas fa-map-marker-alt text-muted me-1" style="font-size: 0.75rem;"></i>
+                                    {{ patient.address|truncatechars:30 }}
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="bio-divider"></div>
+                        
+                        <div class="bio-item">
+                            <div class="bio-label">Current Stage</div>
+                            <div class="bio-value">
+                                <span class="badge bg-warning text-dark">
+                                    {{ patient.get_current_stage_display|default:patient.current_stage }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Alert -->
         <div class="alert alert-info">
             <i class="fas fa-info-circle me-2"></i>
             Complete the vital signs and biohazard assessment for <strong>{{ patient.full_name }}</strong>
+            <br>
+            <small class="text-muted"><i class="fas fa-asterisk text-danger me-1" style="font-size: 8px;"></i> All fields are optional for pediatric patients</small>
         </div>
         
         <form method="post">
@@ -28,14 +226,14 @@
             <div class="row">
                 <div class="col-md-6">
                     <h6 class="text-success border-bottom pb-2"><i class="fas fa-heartbeat me-2"></i>Vital Signs</h6>
-                    <div class="row">
-                        <div class="col-md-6">{{ form.blood_pressure_systolic|as_crispy_field }}</div>
-                        <div class="col-md-6">{{ form.blood_pressure_diastolic|as_crispy_field }}</div>
+                    <div class="vital-signs-grid">
+                        <div>{{ form.blood_pressure_systolic|as_crispy_field }}</div>
+                        <div>{{ form.blood_pressure_diastolic|as_crispy_field }}</div>
+                        {{ form.pulse_rate|as_crispy_field }}
+                        {{ form.temperature|as_crispy_field }}
+                        {{ form.respiratory_rate|as_crispy_field }}
+                        {{ form.oxygen_saturation|as_crispy_field }}
                     </div>
-                    {{ form.pulse_rate|as_crispy_field }}
-                    {{ form.temperature|as_crispy_field }}
-                    {{ form.respiratory_rate|as_crispy_field }}
-                    {{ form.oxygen_saturation|as_crispy_field }}
                 </div>
                 <div class="col-md-6">
                     <h6 class="text-success border-bottom pb-2"><i class="fas fa-biohazard me-2"></i>Biohazard Assessment</h6>

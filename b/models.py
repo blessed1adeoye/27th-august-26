@@ -98,13 +98,37 @@ class Patient(AuditMixin):
 class NursingAssessment(AuditMixin):
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='nursing_assessments')
     
-    # Vitals
-    blood_pressure_systolic = models.IntegerField(help_text="Systolic BP (mmHg)")
-    blood_pressure_diastolic = models.IntegerField(help_text="Diastolic BP (mmHg)")
-    pulse_rate = models.IntegerField(help_text="Pulse rate (beats/min)")
-    temperature = models.DecimalField(max_digits=4, decimal_places=1, null=True, blank=True)
-    respiratory_rate = models.IntegerField(null=True, blank=True)
-    oxygen_saturation = models.IntegerField(null=True, blank=True, help_text="SpO2 %")
+    # Vitals - ALL fields should allow null/blank
+    blood_pressure_systolic = models.IntegerField(
+        null=True,         
+        blank=True,         
+        help_text="Systolic BP (mmHg)"
+    )
+    blood_pressure_diastolic = models.IntegerField(
+        null=True,          
+        blank=True,        
+        help_text="Diastolic BP (mmHg)"
+    )
+    pulse_rate = models.IntegerField(
+        null=True,          
+        blank=True,         
+        help_text="Pulse rate (beats/min)"
+    )
+    temperature = models.DecimalField(
+        max_digits=4, 
+        decimal_places=1, 
+        null=True, 
+        blank=True
+    )
+    respiratory_rate = models.IntegerField(
+        null=True, 
+        blank=True
+    )
+    oxygen_saturation = models.IntegerField(
+        null=True, 
+        blank=True, 
+        help_text="SpO2 %"
+    )
     
     # Biohazard assessment
     biohazard_risk = models.TextField(blank=True, help_text="Any biohazard risks identified")
@@ -117,7 +141,6 @@ class NursingAssessment(AuditMixin):
     
     def __str__(self):
         return f"Nursing Assessment - {self.patient.full_name}"
-
 
 class NurseAssignment(models.Model):
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE)
@@ -192,7 +215,7 @@ class PharmacyOrder(AuditMixin):
     dispensed_at = models.DateTimeField(null=True, blank=True)
     dispensed_by = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, 
-        related_name='dispensed_pharmacy_orders'  # <-- CHANGED: unique related_name
+        related_name='dispensed_pharmacy_orders'
     )
     
     def __str__(self):
@@ -214,21 +237,19 @@ class Drug(models.Model):
         ('GASTROINTESTINAL', 'Gastrointestinal'),
         ('NEUROLOGICAL', 'Neurological'),
         ('VITAMINS', 'Vitamins & Supplements'),
+        ('DERMATOLOGICAL', 'Dermatological'),
+        ('OPHTHALMIC', 'Ophthalmic'),
+        ('INJECTABLES', 'Injectables'),
         ('OTHER', 'Other'),
     ]
     
-    name = models.CharField(max_length=200)
-    generic_name = models.CharField(max_length=200, blank=True)
+    name = models.CharField(
+        max_length=200, 
+        help_text="e.g., Ibuprofen 200mg, Paracetamol 500mg, Amlodipine 10mg"
+    )
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='OTHER')
-    dosage_form = models.CharField(max_length=100, blank=True, help_text="e.g., Tablet, Capsule, Syrup")
-    strength = models.CharField(max_length=50, blank=True, help_text="e.g., 500mg, 10mg/ml")
     quantity = models.IntegerField(default=0, help_text="Available stock quantity")
     reorder_level = models.IntegerField(default=10, help_text="Alert when stock reaches this level")
-    unit_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    manufacturer = models.CharField(max_length=200, blank=True)
-    expiry_date = models.DateField(null=True, blank=True)
-    batch_number = models.CharField(max_length=50, blank=True)
-    description = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -243,25 +264,29 @@ class Drug(models.Model):
             models.Index(fields=['category']),
         ]
 
-
 # ============= PHARMACY DISPENSING =============
 class PharmacyDispensing(AuditMixin):
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='dispensed_medications')
     prescription = models.ForeignKey(PharmacyOrder, on_delete=models.CASCADE, related_name='dispensing_records')
-    drug = models.ForeignKey(Drug, on_delete=models.CASCADE, related_name='dispensing_records')
+    drug = models.ForeignKey(
+        Drug, 
+        on_delete=models.SET_NULL,  # CHANGE: Use SET_NULL instead of CASCADE
+        null=True,                   # Allow NULL
+        blank=True,                  # Allow blank
+        related_name='dispensing_records'
+    )
     quantity_dispensed = models.IntegerField()
     dispensing_date = models.DateTimeField(default=timezone.now)
     dispensed_by = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, 
-        related_name='dispensed_drugs'  # <-- CHANGED: unique related_name
+        related_name='dispensed_drugs'
     )
     notes = models.TextField(blank=True)
     
     def __str__(self):
-        return f"{self.drug.name} - {self.quantity_dispensed} units for {self.patient.full_name}"
-
-
-
+        if self.drug:
+            return f"{self.drug.name} - {self.quantity_dispensed} units for {self.patient.full_name}"
+        return f"Dispensed {self.quantity_dispensed} units for {self.patient.full_name} (drug not specified)"
 
 # ============= LABORATORY =============
 class LaboratoryTest(AuditMixin):
@@ -271,7 +296,7 @@ class LaboratoryTest(AuditMixin):
         null=True, blank=True, related_name='lab_tests'
     )
     
-    # Tests (Only 3 tests now)
+    # Tests
     malaria_parasite = models.CharField(
         max_length=20, 
         choices=[('POSITIVE', 'Positive'), ('NEGATIVE', 'Negative'), ('PENDING', 'Pending')],
@@ -299,56 +324,105 @@ class LaboratoryTest(AuditMixin):
         related_name='completed_lab_tests'
     )
     
+    # ===== NEW: Track if physician has viewed this result =====
+    viewed_by_physician = models.BooleanField(default=False)
+    viewed_at = models.DateTimeField(null=True, blank=True)
+    
     def __str__(self):
         return f"Lab Test - {self.patient.full_name}"
-    
-# class LaboratoryTest(AuditMixin):
-#     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='lab_tests')
-#     consultation = models.ForeignKey(
-#         MedicalConsultation, on_delete=models.SET_NULL, 
-#         null=True, blank=True, related_name='lab_tests'
-#     )
-    
-#     # Tests
-#     malaria_parasite = models.CharField(
-#         max_length=20, 
-#         choices=[('POSITIVE', 'Positive'), ('NEGATIVE', 'Negative'), ('PENDING', 'Pending')],
-#         default='PENDING'
-#     )
-#     random_blood_sugar = models.DecimalField(
-#         max_digits=5, decimal_places=1, null=True, blank=True,
-#         help_text="Random Blood Sugar (mmol/L)"
-#     )
-#     hbsag = models.CharField(
-#         max_length=20,
-#         choices=[('POSITIVE', 'Positive'), ('NEGATIVE', 'Negative'), ('PENDING', 'Pending')],
-#         default='PENDING'
-#     )
-#     hcv = models.CharField(
-#         max_length=20,
-#         choices=[('POSITIVE', 'Positive'), ('NEGATIVE', 'Negative'), ('PENDING', 'Pending')],
-#         default='PENDING'
-#     )
-#     hiv = models.CharField(
-#         max_length=20,
-#         choices=[('POSITIVE', 'Positive'), ('NEGATIVE', 'Negative'), ('PENDING', 'Pending')],
-#         default='PENDING'
-#     )
-    
-#     # Additional tests
-#     other_tests = models.TextField(blank=True)
-#     notes = models.TextField(blank=True)
-    
-#     # Status
-#     completed = models.BooleanField(default=False)
-#     completed_at = models.DateTimeField(null=True, blank=True)
-#     completed_by = models.ForeignKey(
-#         User, on_delete=models.SET_NULL, null=True, 
-#         related_name='completed_lab_tests'
-#     )
-    
-#     def __str__(self):
-#         return f"Lab Test - {self.patient.full_name}"
+
+@receiver(post_save, sender=LaboratoryTest)
+def laboratory_test_created(sender, instance, created, **kwargs):
+    """Send notification when a new lab test is created"""
+    if created:
+        # Notify all MLS staff
+        mls_users = User.objects.filter(userprofile__role='MLS')
+        
+        # Get list of tests requested
+        tests_requested = []
+        if instance.malaria_parasite == 'PENDING':
+            tests_requested.append('Malaria Parasite')
+        if instance.hbsag == 'PENDING':
+            tests_requested.append('HBsAg')
+        if instance.random_blood_sugar is None:
+            tests_requested.append('Random Blood Sugar')
+        if instance.other_tests:
+            tests_requested.append(instance.other_tests)
+        
+        test_summary = ", ".join(tests_requested) if tests_requested else "Laboratory tests"
+        
+        for user in mls_users:
+            # Create database notification
+            Notification.objects.create(
+                recipient=user,
+                message=f'🧪 New lab tests needed for {instance.patient.full_name}: {test_summary}',
+                link=f'/lab/test/{instance.id}/',
+                is_read=False
+            )
+            print(f"✅ MLS NOTIFICATION: {user.username} - New tests for {instance.patient.full_name}")
+            
+            # Send WebSocket notification
+            try:
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.group_send)(
+                    f'user_{user.id}',
+                    {
+                        'type': 'notification_message',
+                        'message': f'🧪 New lab tests needed for {instance.patient.full_name}: {test_summary}',
+                        'link': f'/lab/test/{instance.id}/',
+                        'created_at': str(instance.created_at or timezone.now())
+                    }
+                )
+            except Exception as e:
+                print(f"WebSocket error (MLS): {e}")
+
+@receiver(post_save, sender=LaboratoryTest)
+def laboratory_test_completed(sender, instance, **kwargs):
+    """Send notification to physician when lab test is completed"""
+    if instance.completed:
+        # Find the physician assigned to this patient
+        physician_assignment = PhysicianAssignment.objects.filter(
+            patient=instance.patient,
+            is_active=True
+        ).first()
+        
+        if physician_assignment:
+            # Build result summary
+            result_summary = []
+            if instance.malaria_parasite != 'PENDING':
+                result_summary.append(f"Malaria: {instance.malaria_parasite}")
+            if instance.random_blood_sugar is not None:
+                result_summary.append(f"RBS: {instance.random_blood_sugar} mmol/L")
+            if instance.hbsag != 'PENDING':
+                result_summary.append(f"HBsAg: {instance.hbsag}")
+            if instance.other_tests:
+                result_summary.append(f"Other: {instance.other_tests}")
+            
+            summary_text = ", ".join(result_summary) if result_summary else "Results available"
+            
+            # Create notification for physician
+            Notification.objects.create(
+                recipient=physician_assignment.physician,
+                message=f'🧪 Lab results ready for {instance.patient.full_name}: {summary_text}',
+                link=f'/doctor/consultation/{instance.patient.id}/',
+                is_read=False
+            )
+            print(f"✅ PHYSICIAN NOTIFICATION: Lab results ready for {instance.patient.full_name}")
+            
+            # Send WebSocket notification
+            try:
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.group_send)(
+                    f'user_{physician_assignment.physician.id}',
+                    {
+                        'type': 'notification_message',
+                        'message': f'🧪 Lab results ready for {instance.patient.full_name}: {summary_text}',
+                        'link': f'/doctor/consultation/{instance.patient.id}/',
+                        'created_at': str(instance.completed_at or timezone.now())
+                    }
+                )
+            except Exception as e:
+                print(f"WebSocket error: {e}")
 
 # ============= OPTICIAN =============
 class OpticalAssessment(AuditMixin):
@@ -380,8 +454,18 @@ class OpticalAssessment(AuditMixin):
         related_name='completed_optical_assessments'
     )
     
+    # ===== Track if optician has viewed/processed this =====
+    viewed_by_optician = models.BooleanField(default=False)
+    viewed_at = models.DateTimeField(null=True, blank=True)
+    
+    # ===== NEW: Track if physician has viewed this result =====
+    viewed_by_physician = models.BooleanField(default=False)
+    viewed_by_physician_at = models.DateTimeField(null=True, blank=True)
+    
     def __str__(self):
         return f"Optical Assessment - {self.patient.full_name}"
+    
+
 
 # ============= WORKFLOW TRACKING =============
 class PatientWorkflow(AuditMixin):
@@ -441,10 +525,9 @@ def create_user_profile(sender, instance, created, **kwargs):
     if created:
         import random
         import string
-        role = 'USER'  # Default role
+        role = 'USER'
         employee_id = f"{role[:3].upper()}{''.join(random.choices(string.digits, k=6))}"
         
-        # Make sure employee_id is unique
         while UserProfile.objects.filter(employee_id=employee_id).exists():
             employee_id = f"{role[:3].upper()}{''.join(random.choices(string.digits, k=6))}"
         
@@ -462,7 +545,6 @@ def save_user_profile(sender, instance, **kwargs):
     try:
         instance.userprofile.save()
     except UserProfile.DoesNotExist:
-        # Create profile if it doesn't exist
         import random
         import string
         role = 'USER'
@@ -479,12 +561,10 @@ def save_user_profile(sender, instance, **kwargs):
         )
 
 # ========================= NOTIFICATION SIGNALS =========================
-# These signals create BOTH database notifications (for polling) AND WebSocket notifications (for real-time)
 
 @receiver(post_save, sender=NurseAssignment)
 def nurse_assignment_created(sender, instance, created, **kwargs):
     if created:
-        # 1. CREATE DATABASE NOTIFICATION (for polling system)
         Notification.objects.create(
             recipient=instance.nurse,
             message=f'You have been assigned to patient {instance.patient.full_name} (ID: {instance.patient.hospital_number})',
@@ -493,7 +573,6 @@ def nurse_assignment_created(sender, instance, created, **kwargs):
         )
         print(f"✅ DB NOTIFICATION: Nurse {instance.nurse.username} assigned to {instance.patient.full_name}")
         
-        # 2. Send WebSocket notification (for real-time)
         try:
             channel_layer = get_channel_layer()
             async_to_sync(channel_layer.group_send)(
@@ -505,13 +584,23 @@ def nurse_assignment_created(sender, instance, created, **kwargs):
                     'created_at': str(instance.assigned_at)
                 }
             )
+            async_to_sync(channel_layer.group_send)(
+                f'user_{instance.nurse.id}',
+                {
+                    'type': 'assignment_update',
+                    'patient_id': instance.patient.id,
+                    'patient_name': instance.patient.full_name,
+                    'action': 'assigned',
+                    'role': 'NURSE'
+                }
+            )
+            print(f"✅ WebSocket notification sent to nurse {instance.nurse.username}")
         except Exception as e:
             print(f"WebSocket error: {e}")
 
 @receiver(post_save, sender=PhysicianAssignment)
 def physician_assignment_created(sender, instance, created, **kwargs):
     if created:
-        # 1. CREATE DATABASE NOTIFICATION (for polling system)
         Notification.objects.create(
             recipient=instance.physician,
             message=f'You have been assigned to patient {instance.patient.full_name} (ID: {instance.patient.hospital_number}) for consultation',
@@ -520,7 +609,6 @@ def physician_assignment_created(sender, instance, created, **kwargs):
         )
         print(f"✅ DB NOTIFICATION: Physician {instance.physician.username} assigned to {instance.patient.full_name}")
         
-        # 2. Send WebSocket notification (for real-time)
         try:
             channel_layer = get_channel_layer()
             async_to_sync(channel_layer.group_send)(
@@ -538,14 +626,12 @@ def physician_assignment_created(sender, instance, created, **kwargs):
 @receiver(post_save, sender=NursingAssessment)
 def nursing_assessment_completed(sender, instance, **kwargs):
     if instance.completed:
-        # Send notification to physician
         physician_assignment = PhysicianAssignment.objects.filter(
             patient=instance.patient,
             is_active=True
         ).first()
         
         if physician_assignment:
-            # 1. CREATE DATABASE NOTIFICATION (for polling system)
             Notification.objects.create(
                 recipient=physician_assignment.physician,
                 message=f'Nursing assessment completed for {instance.patient.full_name}. Ready for consultation.',
@@ -554,7 +640,6 @@ def nursing_assessment_completed(sender, instance, **kwargs):
             )
             print(f"✅ DB NOTIFICATION: Physician {physician_assignment.physician.username} - Nursing completed for {instance.patient.full_name}")
             
-            # 2. Send WebSocket notification (for real-time)
             try:
                 channel_layer = get_channel_layer()
                 async_to_sync(channel_layer.group_send)(
@@ -569,285 +654,193 @@ def nursing_assessment_completed(sender, instance, **kwargs):
             except Exception as e:
                 print(f"WebSocket error: {e}")
 
+# ============= FIXED: SINGLE MedicalConsultation SIGNAL =============
 @receiver(post_save, sender=MedicalConsultation)
 def medical_consultation_completed(sender, instance, **kwargs):
-    if instance.completed:
-        channel_layer = get_channel_layer()
+    """Handle all notifications when a medical consultation is completed"""
+    if not instance.completed:
+        return
+    
+    channel_layer = get_channel_layer()
+    
+    # ============= PHARMACY NOTIFICATIONS =============
+    # Check if pharmacy referral is enabled OR treatment plan exists
+    has_pharmacy = instance.refer_to_pharmacy or (instance.treatment_plan and instance.treatment_plan.strip())
+    
+    if has_pharmacy:
+        # Get all pharmacy orders from this consultation that are not yet dispensed
+        pharmacy_orders = PharmacyOrder.objects.filter(
+            consultation=instance,
+            dispensed=False
+        )
         
-        # Send notifications based on referrals
-        if instance.refer_to_pharmacy:
+        if pharmacy_orders.exists():
+            # Create a summary of drugs
+            drug_list = []
+            for order in pharmacy_orders:
+                drug_list.append(f"{order.drug_name} (x{order.quantity})")
+            drug_summary = ", ".join(drug_list)
+            drug_count = pharmacy_orders.count()
+            
+            # Notify pharmacy staff
             pharmacy_users = User.objects.filter(userprofile__role='PHARMACY')
             for user in pharmacy_users:
-                # 1. CREATE DATABASE NOTIFICATION (for polling system)
                 Notification.objects.create(
                     recipient=user,
-                    message=f'Pharmacy order needed for patient {instance.patient.full_name}',
-                    link=f'/pharmacy/order/{instance.patient.id}/',
+                    message=f'💊 {drug_count} prescription(s) for {instance.patient.full_name}: {drug_summary}',
+                    link=f'/pharmacy/dispense-patient/{instance.patient.id}/',
                     is_read=False
                 )
-                print(f"✅ DB NOTIFICATION: Pharmacy {user.username} - Order needed for {instance.patient.full_name}")
+                print(f"✅ PHARMACY NOTIFICATION: {user.username} - {drug_count} drugs for {instance.patient.full_name}")
                 
-                # 2. Send WebSocket notification (for real-time)
                 try:
                     async_to_sync(channel_layer.group_send)(
                         f'user_{user.id}',
                         {
                             'type': 'notification_message',
-                            'message': f'Pharmacy order needed for patient {instance.patient.full_name}',
-                            'link': f'/pharmacy/order/{instance.patient.id}/',
-                            'created_at': str(instance.completed_at)
+                            'message': f'💊 {drug_count} prescription(s) for {instance.patient.full_name}: {drug_summary}',
+                            'link': f'/pharmacy/dispense-patient/{instance.patient.id}/',
+                            'created_at': str(instance.completed_at or timezone.now())
                         }
                     )
                 except Exception as e:
-                    print(f"WebSocket error: {e}")
-        
-        if instance.refer_to_laboratory:
-            lab_users = User.objects.filter(userprofile__role='MLS')
-            for user in lab_users:
-                # 1. CREATE DATABASE NOTIFICATION (for polling system)
-                Notification.objects.create(
-                    recipient=user,
-                    message=f'Laboratory tests needed for patient {instance.patient.full_name}',
-                    link=f'/lab/test/{instance.patient.id}/',
-                    is_read=False
+                    print(f"WebSocket error (Pharmacy): {e}")
+        else:
+            # If no pharmacy order exists but referral is true, create one from treatment plan
+            if instance.treatment_plan and instance.treatment_plan.strip():
+                pharmacy_order = PharmacyOrder.objects.create(
+                    patient=instance.patient,
+                    consultation=instance,
+                    drug_name="Prescription from Treatment Plan",
+                    quantity=1,
+                    dosage="See treatment plan",
+                    frequency="As prescribed",
+                    duration="As prescribed",
+                    instructions=instance.treatment_plan,
+                    created_by=instance.created_by
                 )
-                print(f"✅ DB NOTIFICATION: Lab {user.username} - Tests needed for {instance.patient.full_name}")
                 
-                # 2. Send WebSocket notification (for real-time)
-                try:
-                    async_to_sync(channel_layer.group_send)(
-                        f'user_{user.id}',
-                        {
-                            'type': 'notification_message',
-                            'message': f'Laboratory tests needed for patient {instance.patient.full_name}',
-                            'link': f'/lab/test/{instance.patient.id}/',
-                            'created_at': str(instance.completed_at)
-                        }
-                    )
-                except Exception as e:
-                    print(f"WebSocket error: {e}")
-        
-        if instance.refer_to_optician:
-            optician_users = User.objects.filter(userprofile__role='OPTOMETRIST')
-            for user in optician_users:
-                # 1. CREATE DATABASE NOTIFICATION (for polling system)
-                Notification.objects.create(
-                    recipient=user,
-                    message=f'Optical assessment needed for patient {instance.patient.full_name}',
-                    link=f'/optician/assessment/{instance.patient.id}/',
-                    is_read=False
-                )
-                print(f"✅ DB NOTIFICATION: Optician {user.username} - Assessment needed for {instance.patient.full_name}")
-                
-                # 2. Send WebSocket notification (for real-time)
-                try:
-                    async_to_sync(channel_layer.group_send)(
-                        f'user_{user.id}',
-                        {
-                            'type': 'notification_message',
-                            'message': f'Optical assessment needed for patient {instance.patient.full_name}',
-                            'link': f'/optician/assessment/{instance.patient.id}/',
-                            'created_at': str(instance.completed_at)
-                        }
-                    )
-                except Exception as e:
-                    print(f"WebSocket error: {e}")
-
-@receiver(post_save, sender=MedicalConsultation)
-def medical_consultation_completed(sender, instance, **kwargs):
-    if instance.completed:
-        channel_layer = get_channel_layer()
-        
-        # ============= PHARMACY NOTIFICATIONS =============
-        if instance.refer_to_pharmacy:
-            # Get all pharmacy orders from this consultation that are not yet dispensed
-            pharmacy_orders = PharmacyOrder.objects.filter(
-                consultation=instance,
-                dispensed=False
-            )
-            
-            if pharmacy_orders.exists():
-                # Create a summary of drugs
-                drug_list = []
-                for order in pharmacy_orders:
-                    drug_list.append(f"{order.drug_name} (x{order.quantity})")
-                drug_summary = ", ".join(drug_list)
-                drug_count = pharmacy_orders.count()
-                
-                # Notify pharmacy staff
                 pharmacy_users = User.objects.filter(userprofile__role='PHARMACY')
                 for user in pharmacy_users:
-                    # Create database notification
                     Notification.objects.create(
                         recipient=user,
-                        message=f'💊 {drug_count} medication(s) for {instance.patient.full_name}: {drug_summary}',
+                        message=f'💊 New prescription for {instance.patient.full_name}',
                         link=f'/pharmacy/dispense-patient/{instance.patient.id}/',
                         is_read=False
                     )
-                    print(f"✅ DB NOTIFICATION: Pharmacy {user.username} - {drug_count} drugs for {instance.patient.full_name}")
+                    print(f"✅ PHARMACY NOTIFICATION: {user.username} - New prescription for {instance.patient.full_name}")
                     
-                    # Send WebSocket notification (for real-time)
                     try:
                         async_to_sync(channel_layer.group_send)(
                             f'user_{user.id}',
                             {
                                 'type': 'notification_message',
-                                'message': f'💊 {drug_count} medication(s) for {instance.patient.full_name}: {drug_summary}',
+                                'message': f'💊 New prescription for {instance.patient.full_name}',
                                 'link': f'/pharmacy/dispense-patient/{instance.patient.id}/',
-                                'created_at': str(instance.completed_at)
+                                'created_at': str(instance.completed_at or timezone.now())
                             }
                         )
                     except Exception as e:
-                        print(f"WebSocket error (Pharmacy): {e}")
+                        print(f"WebSocket error: {e}")
+    
+    # ============= LABORATORY NOTIFICATIONS =============
+    if instance.refer_to_laboratory:
+        lab_users = User.objects.filter(userprofile__role='MLS')
+        lab_test = LaboratoryTest.objects.filter(
+            consultation=instance,
+            completed=False
+        ).first()
         
-        # ============= LABORATORY NOTIFICATIONS =============
-        if instance.refer_to_laboratory:
-            # Get the lab test created from this consultation
-            lab_test = LaboratoryTest.objects.filter(
-                consultation=instance,
-                completed=False
-            ).first()
+        if lab_test:
+            tests_requested = []
+            if lab_test.malaria_parasite == 'PENDING':
+                tests_requested.append('Malaria Parasite')
+            if lab_test.hbsag == 'PENDING':
+                tests_requested.append('HBsAg')
+            if lab_test.random_blood_sugar is None:
+                tests_requested.append('Random Blood Sugar')
+            if lab_test.other_tests:
+                tests_requested.append(lab_test.other_tests)
             
-            if lab_test:
-                # Get list of tests requested
-                tests_requested = []
-                if lab_test.malaria_parasite == 'PENDING':
-                    tests_requested.append('Malaria Parasite')
-                if lab_test.hbsag == 'PENDING':
-                    tests_requested.append('HBsAg')
-                if lab_test.hcv == 'PENDING':
-                    tests_requested.append('HCV')
-                if lab_test.hiv == 'PENDING':
-                    tests_requested.append('HIV')
-                if lab_test.random_blood_sugar is None:
-                    tests_requested.append('Random Blood Sugar')
-                if lab_test.other_tests:
-                    tests_requested.append(lab_test.other_tests)
-                
-                test_summary = ", ".join(tests_requested) if tests_requested else "Laboratory tests"
-                test_count = len(tests_requested)
-                
-                # Notify laboratory staff
-                lab_users = User.objects.filter(userprofile__role='MLS')
-                for user in lab_users:
-                    Notification.objects.create(
-                        recipient=user,
-                        message=f'🧪 {test_count} test(s) needed for {instance.patient.full_name}: {test_summary}',
-                        link=f'/lab/test/{lab_test.id}/',
-                        is_read=False
-                    )
-                    print(f"✅ DB NOTIFICATION: Lab {user.username} - Tests for {instance.patient.full_name}")
-                    
-                    try:
-                        async_to_sync(channel_layer.group_send)(
-                            f'user_{user.id}',
-                            {
-                                'type': 'notification_message',
-                                'message': f'🧪 {test_count} test(s) needed for {instance.patient.full_name}: {test_summary}',
-                                'link': f'/lab/test/{lab_test.id}/',
-                                'created_at': str(instance.completed_at)
-                            }
-                        )
-                    except Exception as e:
-                        print(f"WebSocket error (Lab): {e}")
-        
-        # ============= OPTICIAN NOTIFICATIONS =============
-        if instance.refer_to_optician:
-            # Get the optical assessment created from this consultation
-            optical_assessment = OpticalAssessment.objects.filter(
-                consultation=instance,
-                completed=False
-            ).first()
+            test_summary = ", ".join(tests_requested) if tests_requested else "Laboratory tests"
+            test_count = len(tests_requested)
             
-            if optical_assessment:
-                # Notify optician staff
-                optician_users = User.objects.filter(userprofile__role='OPTOMETRIST')
-                for user in optician_users:
-                    Notification.objects.create(
-                        recipient=user,
-                        message=f'👁️ Optical assessment needed for {instance.patient.full_name}',
-                        link=f'/optician/assessment/{instance.patient.id}/',
-                        is_read=False
-                    )
-                    print(f"✅ DB NOTIFICATION: Optician {user.username} - Assessment for {instance.patient.full_name}")
-                    
-                    try:
-                        async_to_sync(channel_layer.group_send)(
-                            f'user_{user.id}',
-                            {
-                                'type': 'notification_message',
-                                'message': f'👁️ Optical assessment needed for {instance.patient.full_name}',
-                                'link': f'/optician/assessment/{instance.patient.id}/',
-                                'created_at': str(instance.completed_at)
-                            }
-                        )
-                    except Exception as e:
-                        print(f"WebSocket error (Optician): {e}")
-        
-        # ============= SPECIALIST NOTIFICATIONS =============
-        if instance.refer_to_specialist:
-            # Notify specialist (you might want to customize this based on your needs)
-            specialist_users = User.objects.filter(userprofile__role='PHYSICIAN')
-            for user in specialist_users:
+            for user in lab_users:
                 Notification.objects.create(
                     recipient=user,
-                    message=f'🩺 Specialist referral needed for {instance.patient.full_name}',
-                    link=f'/doctor/consultation/{instance.patient.id}/',
+                    message=f'🧪 {test_count} test(s) needed for {instance.patient.full_name}: {test_summary}',
+                    link=f'/lab/test/{lab_test.id}/',
                     is_read=False
                 )
-                print(f"✅ DB NOTIFICATION: Specialist {user.username} - Referral for {instance.patient.full_name}")
+                print(f"✅ LAB NOTIFICATION: {user.username} - Tests for {instance.patient.full_name}")
                 
                 try:
                     async_to_sync(channel_layer.group_send)(
                         f'user_{user.id}',
                         {
                             'type': 'notification_message',
-                            'message': f'🩺 Specialist referral needed for {instance.patient.full_name}',
-                            'link': f'/doctor/consultation/{instance.patient.id}/',
-                            'created_at': str(instance.completed_at)
+                            'message': f'🧪 {test_count} test(s) needed for {instance.patient.full_name}: {test_summary}',
+                            'link': f'/lab/test/{lab_test.id}/',
+                            'created_at': str(instance.completed_at or timezone.now())
                         }
                     )
                 except Exception as e:
-                    print(f"WebSocket error (Specialist): {e}")
-
-
-
+                    print(f"WebSocket error (Lab): {e}")
     
+    # ============= OPTICIAN NOTIFICATIONS =============
+    if instance.refer_to_optician:
+        optician_users = User.objects.filter(userprofile__role='OPTOMETRIST')
+        optical_assessment = OpticalAssessment.objects.filter(
+            consultation=instance,
+            completed=False
+        ).first()
+        
+        if optical_assessment:
+            for user in optician_users:
+                Notification.objects.create(
+                    recipient=user,
+                    message=f'👁️ Optical assessment needed for {instance.patient.full_name}',
+                    link=f'/optician/assessment/{instance.patient.id}/',
+                    is_read=False
+                )
+                print(f"✅ OPTICIAN NOTIFICATION: {user.username} - Assessment for {instance.patient.full_name}")
+                
+                try:
+                    async_to_sync(channel_layer.group_send)(
+                        f'user_{user.id}',
+                        {
+                            'type': 'notification_message',
+                            'message': f'👁️ Optical assessment needed for {instance.patient.full_name}',
+                            'link': f'/optician/assessment/{instance.patient.id}/',
+                            'created_at': str(instance.completed_at or timezone.now())
+                        }
+                    )
+                except Exception as e:
+                    print(f"WebSocket error (Optician): {e}")
+    
+    # ============= SPECIALIST NOTIFICATIONS =============
+    if instance.refer_to_specialist:
+        specialist_users = User.objects.filter(userprofile__role='PHYSICIAN')
+        for user in specialist_users:
+            Notification.objects.create(
+                recipient=user,
+                message=f'🩺 Specialist referral needed for {instance.patient.full_name}',
+                link=f'/doctor/consultation/{instance.patient.id}/',
+                is_read=False
+            )
+            print(f"✅ SPECIALIST NOTIFICATION: {user.username} - Referral for {instance.patient.full_name}")
+            
+            try:
+                async_to_sync(channel_layer.group_send)(
+                    f'user_{user.id}',
+                    {
+                        'type': 'notification_message',
+                        'message': f'🩺 Specialist referral needed for {instance.patient.full_name}',
+                        'link': f'/doctor/consultation/{instance.patient.id}/',
+                        'created_at': str(instance.completed_at or timezone.now())
+                    }
+                )
+            except Exception as e:
+                print(f"WebSocket error (Specialist): {e}")
 
 # =========================== END OF MODELS.PY ==========================#
-
-"""
-    # Add this model to b/models.py if you want dynamic lab tests
-class LabTestType(models.Model):
-    CATEGORY_CHOICES = [
-        ('HEMATOLOGY', 'Hematology'),
-        ('BIOCHEMISTRY', 'Biochemistry'),
-        ('MICROBIOLOGY', 'Microbiology'),
-        ('IMMUNOLOGY', 'Immunology'),
-        ('PARASITOLOGY', 'Parasitology'),
-        ('SEROLOGY', 'Serology'),
-        ('OTHER', 'Other'),
-    ]
-    
-    name = models.CharField(max_length=200)
-    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='OTHER')
-    normal_range = models.CharField(max_length=100, blank=True)
-    unit = models.CharField(max_length=50, blank=True)
-    description = models.TextField(blank=True)
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
-    def __str__(self):
-        return self.name
-    
-    class Meta:
-        ordering = ['name']
-
-
-
-    views.py
-    # Get available lab tests from the database
-lab_tests = LabTestType.objects.filter(is_active=True).order_by('name')
-"""
-

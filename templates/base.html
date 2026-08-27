@@ -1,6 +1,5 @@
 <!-- templates/base.html -->
 
-
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
@@ -9,10 +8,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{% block title %}HIM - Health Information Management{% endblock %}</title>
     
-    <!-- Bootstrap 5 -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
-    <!-- Font Awesome 6 -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <!-- Local Static Files -->
+    <link rel="shortcut icon" href="{% static 'img/icon.png' %}" type="image/x-icon">
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}" />
+    <link rel="stylesheet" href="{% static 'fonts/css/all.css' %}" />
     
     <style>
         /* Global Styles */
@@ -58,6 +57,7 @@
         .role-badge.pharmacy { background: #e0e7ff; color: #3730a3; }
         .role-badge.mls { background: #fce4ec; color: #9a1f3f; }
         .role-badge.optician { background: #f3e8ff; color: #6d28d9; }
+        .role-badge.admin { background: #fef3c7; color: #92400e; }
         
         /* Notification Badge */
         .notification-badge {
@@ -524,7 +524,7 @@
                 <i class="fas fa-bars fs-4"></i>
             </button>
             
-            <a class="navbar-brand" href="{% url 'b:dashboard' %}">
+            <a class="navbar-brand" href="{% if user.is_superuser or user.is_staff %}{% url 'b:admin_dashboard' %}{% else %}{% url 'b:dashboard' %}{% endif %}">
                 <i class="fas fa-heartbeat me-2"></i>COREP OUTREACH
             </a>
             
@@ -535,17 +535,33 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link {% if page == 'dashboard' %}active{% endif %}" href="{% url 'b:dashboard' %}">
+                        <a class="nav-link {% if page == 'dashboard' or page == 'admin_dashboard' %}active{% endif %}" href="{% if user.is_superuser or user.is_staff %}{% url 'b:admin_dashboard' %}{% else %}{% url 'b:dashboard' %}{% endif %}">
                             <i class="fas fa-chart-pie"></i> Dashboard
                         </a>
                     </li>
                     <!-- Doctor extra nav items -->
                     {% if role == 'PHYSICIAN' %}
                         <li class="nav-item">
-                            <a class="nav-link {% if page == 'doctor' or page == 'doctor_consultation' %}active{% endif %}" href="{% url 'b:doctor_dashboard' %}">
+                            <a class="nav-link {% if page == 'doctor' or page == 'doctor_consultation' or page == 'dashboard' %}active{% endif %}" href="{% url 'b:doctor_dashboard' %}">
                                 <i class="fas fa-stethoscope"></i> Consultations
                                 {% if pending_count > 0 %}
                                     <span class="badge bg-danger ms-1">{{ pending_count }}</span>
+                                {% endif %}
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if page == 'lab_results' or page == 'lab_result_detail' %}active{% endif %}" href="{% url 'b:physician_lab_results' %}">
+                                <i class="fas fa-vial"></i> Lab Results
+                                {% if lab_results_count > 0 %}
+                                    <span class="badge bg-info ms-1">{{ lab_results_count }}</span>
+                                {% endif %}
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if page == 'optician_results' or page == 'optician_result_detail' %}active{% endif %}" href="{% url 'b:physician_optician_results' %}">
+                                <i class="fas fa-eye"></i> Optician Results
+                                {% if optician_results_count > 0 %}
+                                    <span class="badge bg-primary ms-1">{{ optician_results_count }}</span>
                                 {% endif %}
                             </a>
                         </li>
@@ -561,57 +577,64 @@
                         <i class="fas fa-leaf me-1"></i> zero paper
                     </span>
                     
-                    <!-- Notifications -->
+                    <!-- Notifications Dropdown -->
                     <div class="dropdown">
-                        <button class="btn btn-outline-light btn-sm position-relative" data-bs-toggle="dropdown" id="notificationBell">
+                        <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button" id="notificationDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fas fa-bell"></i>
                             <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-count" style="font-size: 0.6rem;">
                                 {{ notification_count|default:0 }}
                             </span>
                         </button>
-                        <div class="dropdown-menu dropdown-menu-end notification-dropdown" id="notificationDropdown">
-                            <h6 class="dropdown-header d-flex justify-content-between align-items-center">
-                                <span>Notifications</span>
-                                <button class="btn btn-sm btn-link text-success p-0" onclick="markAllNotificationsRead()" style="font-size: 11px; text-decoration: none;">
-                                    Mark all as read
-                                </button>
-                            </h6>
-                            <div id="notificationList">
-                                {% if notifications %}
-                                    {% for notification in notifications %}
-                                        <div class="notification-item {% if not notification.is_read %}unread{% endif %}" data-id="{{ notification.id }}">
-                                            <div class="d-flex justify-content-between">
-                                                <span>{{ notification.message }}</span>
-                                                <small class="time">{{ notification.created_at|timesince }} ago</small>
+                        <ul class="dropdown-menu dropdown-menu-end notification-dropdown" aria-labelledby="notificationDropdown" id="notificationDropdownMenu">
+                            <li>
+                                <h6 class="dropdown-header d-flex justify-content-between align-items-center">
+                                    <span>Notifications</span>
+                                    <button class="btn btn-sm btn-link text-success p-0" onclick="markAllNotificationsRead()" style="font-size: 11px; text-decoration: none;">
+                                        Mark all as read
+                                    </button>
+                                </h6>
+                            </li>
+                            <li>
+                                <div id="notificationList">
+                                    {% if notifications %}
+                                        {% for notification in notifications %}
+                                            <div class="notification-item {% if not notification.is_read %}unread{% endif %}" data-id="{{ notification.id }}">
+                                                <div class="d-flex justify-content-between">
+                                                    <span>{{ notification.message }}</span>
+                                                    <small class="time">{{ notification.created_at|timesince }} ago</small>
+                                                </div>
+                                                {% if notification.link %}
+                                                    {% with link=notification.link %}
+                                                        {% if '/pharmacy/order/' in link %}
+                                                            {% with patient_id=link|cut:'/pharmacy/order/'|cut:'/' %}
+                                                                <a href="{% url 'b:pharmacy_dispense_patient' patient_id %}" class="small text-success">View</a>
+                                                            {% endwith %}
+                                                        {% else %}
+                                                            <a href="{{ link }}" class="small text-success">View</a>
+                                                        {% endif %}
+                                                    {% endwith %}
+                                                {% endif %}
                                             </div>
-                                            {% if notification.link %}
-                                                {% with link=notification.link %}
-                                                    {% if '/pharmacy/order/' in link %}
-                                                        {% with patient_id=link|cut:'/pharmacy/order/'|cut:'/' %}
-                                                            <a href="{% url 'b:pharmacy_dispense_patient' patient_id %}" class="small text-success">View</a>
-                                                        {% endwith %}
-                                                    {% else %}
-                                                        <a href="{{ link }}" class="small text-success">View</a>
-                                                    {% endif %}
-                                                {% endwith %}
-                                            {% endif %}
-                                        </div>
-                                    {% endfor %}
-                                {% else %}
-                                    <div class="dropdown-item text-muted text-center" id="noNotificationsMsg">No notifications</div>
-                                {% endif %}
-                            </div>
-                        </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="dropdown-item text-muted text-center" id="noNotificationsMsg">No notifications</div>
+                                    {% endif %}
+                                </div>
+                            </li>
+                        </ul>
                     </div>
                     
+                    <!-- User Dropdown -->
                     <div class="dropdown">
-                        <button class="btn btn-outline-light btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+                        <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fas fa-user-circle me-1"></i>
                             <span class="d-none d-sm-inline">{{ user.get_full_name|default:user.username }}</span>
-                            <span class="role-badge {{ role|lower }} ms-1 d-none d-md-inline">{{ role }}</span>
+                            <span class="role-badge {% if user.is_superuser or user.is_staff %}admin{% else %}{{ role|lower }}{% endif %} ms-1 d-none d-md-inline">
+                                {% if user.is_superuser or user.is_staff %}Admin{% else %}{{ role }}{% endif %}
+                            </span>
                         </button>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><span class="dropdown-item-text"><strong>Role:</strong> {{ role }}</span></li>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li><span class="dropdown-item-text"><strong>Role:</strong> {% if user.is_superuser or user.is_staff %}Super Admin{% else %}{{ role }}{% endif %}</span></li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <form method="post" action="{% url 'b:logout' %}">
@@ -639,10 +662,30 @@
         </div>
         <ul class="nav flex-column">
             <li class="nav-item">
-                <a class="nav-link {% if page == 'dashboard' %}active{% endif %}" href="{% url 'b:dashboard' %}">
+                <a class="nav-link {% if page == 'dashboard' or page == 'admin_dashboard' %}active{% endif %}" href="{% if user.is_superuser or user.is_staff %}{% url 'b:admin_dashboard' %}{% else %}{% url 'b:dashboard' %}{% endif %}">
                     <i class="fas fa-chart-pie me-2"></i> Dashboard
                 </a>
             </li>
+            
+            <!-- Super Admin / Staff Role -->
+            {% if user.is_superuser or user.is_staff %}
+                <li class="nav-item">
+                    <a class="nav-link {% if page == 'admin_dashboard' %}active{% endif %}" href="{% url 'b:admin_dashboard' %}">
+                        <i class="fas fa-chart-pie me-2"></i> Admin Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'b:admin_export_data' %}">
+                        <i class="fas fa-file-excel me-2"></i> Export Data
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/admin/">
+                        <i class="fas fa-cog me-2"></i> System Admin
+                    </a>
+                </li>
+                <hr>
+            {% endif %}
             
             <!-- HIM Role -->
             {% if role == 'HIM' %}
@@ -692,19 +735,26 @@
             <!-- Physician Role -->
             {% elif role == 'PHYSICIAN' %}
                 <li class="nav-item">
-                    <a class="nav-link {% if page == 'doctor' or page == 'doctor_consultation' %}active{% endif %}" href="{% url 'b:doctor_dashboard' %}">
+                    <a class="nav-link {% if page == 'doctor' or page == 'doctor_consultation' or page == 'dashboard' %}active{% endif %}" href="{% url 'b:doctor_dashboard' %}">
                         <i class="fas fa-stethoscope me-2"></i> Consultations
                         {% if pending_count > 0 %}
                             <span class="badge bg-danger ms-2">{{ pending_count }}</span>
                         {% endif %}
                     </a>
                 </li>
-
                 <li class="nav-item">
-                    <a class="nav-link {% if page == 'doctor' or page == 'doctor_consultation' %}active{% endif %}" href="{% url 'b:doctor_dashboard' %}">
-                        <i class="fas fa-stethoscope me-2"></i> LAb Report
-                        {% if pending_count > 0 %}
-                            <span class="badge bg-danger ms-2">{{ pending_count }}</span>
+                    <a class="nav-link {% if page == 'lab_results' or page == 'lab_result_detail' %}active{% endif %}" href="{% url 'b:physician_lab_results' %}">
+                        <i class="fas fa-vial me-2"></i> Lab Results
+                        {% if lab_results_count > 0 %}
+                            <span class="badge bg-info ms-2">{{ lab_results_count }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if page == 'optician_results' or page == 'optician_result_detail' %}active{% endif %}" href="{% url 'b:physician_optician_results' %}">
+                        <i class="fas fa-eye me-2"></i> Optician Results
+                        {% if optician_results_count > 0 %}
+                            <span class="badge bg-primary ms-2">{{ optician_results_count }}</span>
                         {% endif %}
                     </a>
                 </li>
@@ -732,6 +782,11 @@
                 <li class="nav-item">
                     <a class="nav-link {% if page == 'pharmacy_drug_add' %}active{% endif %}" href="{% url 'b:pharmacy_drug_add' %}">
                         <i class="fas fa-plus-circle me-2"></i> Add Drug
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if page == 'pharmacy_drug_add' %}active{% endif %}" href="">
+                        <i class="fas fa-plus-circle me-2"></i> Seen Patient
                     </a>
                 </li>
             
@@ -797,11 +852,46 @@
                     <div class="nav-section-title">Main</div>
                     <ul class="nav flex-column">
                         <li class="nav-item">
-                            <a class="nav-link {% if page == 'dashboard' %}active{% endif %}" href="{% url 'b:dashboard' %}">
+                            <a class="nav-link {% if page == 'dashboard' or page == 'admin_dashboard' %}active{% endif %}" href="{% if user.is_superuser or user.is_staff %}{% url 'b:admin_dashboard' %}{% else %}{% url 'b:dashboard' %}{% endif %}">
                                 <i class="fas fa-chart-pie"></i> Dashboard
                             </a>
                         </li>
                     </ul>
+                    
+                    <!-- Super Admin / Staff Sections -->
+                    {% if user.is_superuser or user.is_staff %}
+                        <div class="nav-section-title mt-3">Admin</div>
+                        <ul class="nav flex-column">
+                            <li class="nav-item">
+                                <a class="nav-link {% if page == 'admin_dashboard' %}active{% endif %}" href="{% url 'b:admin_dashboard' %}">
+                                    <i class="fas fa-chart-pie"></i> Dashboard
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'b:admin_export_data' %}">
+                                    <i class="fas fa-file-excel"></i> Export Data
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/admin/">
+                                    <i class="fas fa-cog"></i> System Admin
+                                </a>
+                            </li>
+                            <div class="nav-section-title mt-3">User Management</div>
+                        
+                            <li class="nav-item">
+                                <a class="nav-link {% if page == 'user_list' %}active{% endif %}" href="{% url 'b:user_list' %}">
+                                    <i class="fas fa-users"></i> All Users
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if page == 'user_register' %}active{% endif %}" href="{% url 'b:user_registration' %}">
+                                    <i class="fas fa-user-plus"></i> Add User
+                                </a>
+                            </li>
+                        
+                        </ul>
+                    {% endif %}
                     
                     <!-- HIM Role Sections -->
                     {% if role == 'HIM' %}
@@ -861,10 +951,29 @@
                         <div class="nav-section-title mt-3">Consultations</div>
                         <ul class="nav flex-column">
                             <li class="nav-item">
-                                <a class="nav-link {% if page == 'doctor' or page == 'doctor_consultation' %}active{% endif %}" href="{% url 'b:doctor_dashboard' %}">
+                                <a class="nav-link {% if page == 'doctor' or page == 'doctor_consultation' or page == 'dashboard' %}active{% endif %}" href="{% url 'b:doctor_dashboard' %}">
                                     <i class="fas fa-stethoscope"></i> Consultations
                                     {% if pending_count > 0 %}
                                         <span class="badge-notification">{{ pending_count }}</span>
+                                    {% endif %}
+                                </a>
+                            </li>
+                        </ul>
+                        <div class="nav-section-title mt-3">Results</div>
+                        <ul class="nav flex-column">
+                            <li class="nav-item">
+                                <a class="nav-link {% if page == 'lab_results' or page == 'lab_result_detail' %}active{% endif %}" href="{% url 'b:physician_lab_results' %}">
+                                    <i class="fas fa-vial"></i> Lab Results
+                                    {% if lab_results_count > 0 %}
+                                        <span class="badge-notification lab-results-badge" style="background: #17a2b8;">{{ lab_results_count }}</span>
+                                    {% endif %}
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if page == 'optician_results' or page == 'optician_result_detail' %}active{% endif %}" href="{% url 'b:physician_optician_results' %}">
+                                    <i class="fas fa-eye"></i> Optician Results
+                                    {% if optician_results_count > 0 %}
+                                        <span class="badge-notification optician-results-badge" style="background: #6f42c1;">{{ optician_results_count }}</span>
                                     {% endif %}
                                 </a>
                             </li>
@@ -909,7 +1018,9 @@
                                 <a class="nav-link {% if page == 'lab' or page == 'lab_test' %}active{% endif %}" href="{% url 'b:laboratory_dashboard' %}">
                                     <i class="fas fa-vial"></i> Lab Tests
                                     {% if pending_count > 0 %}
-                                        <span class="badge-notification">{{ pending_count }}</span>
+                                        <span class="badge-notification mls-badge">{{ pending_count }}</span>
+                                    {% else %}
+                                        <span class="badge-notification mls-badge" style="display: none;">0</span>
                                     {% endif %}
                                 </a>
                             </li>
@@ -924,7 +1035,9 @@
                                 <a class="nav-link {% if page == 'optician' or page == 'optician_assessment' %}active{% endif %}" href="{% url 'b:optician_dashboard' %}">
                                     <i class="fas fa-eye"></i> Optical Assessments
                                     {% if pending_count > 0 %}
-                                        <span class="badge-notification">{{ pending_count }}</span>
+                                        <span class="badge-notification optician-badge">{{ pending_count }}</span>
+                                    {% else %}
+                                        <span class="badge-notification optician-badge" style="display: none;">0</span>
                                     {% endif %}
                                 </a>
                             </li>
@@ -995,569 +1108,1742 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Bootstrap JS Local -->
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+    
     <script>
-        // ============================================
-        // MOBILE SIDEBAR TOGGLE
-        // ============================================
-        
-        function toggleMobileSidebar() {
-            const sidebar = document.getElementById('mobileSidebar');
-            const overlay = document.getElementById('mobileOverlay');
-            sidebar.classList.toggle('active');
-            overlay.classList.toggle('active');
-            document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
+    // ============================================
+    // FORCE DROPDOWN INITIALIZATION
+    // ============================================
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize all dropdowns
+        var dropdownElementList = [].slice.call(document.querySelectorAll('.dropdown-toggle'));
+        var dropdownList = dropdownElementList.map(function (dropdownToggleEl) {
+            return new bootstrap.Dropdown(dropdownToggleEl);
+        });
+        console.log('✅ Dropdowns initialized:', dropdownList.length);
+    });
+
+    // ============================================
+    // MOBILE SIDEBAR TOGGLE
+    // ============================================
+    
+    function toggleMobileSidebar() {
+        const sidebar = document.getElementById('mobileSidebar');
+        const overlay = document.getElementById('mobileOverlay');
+        sidebar.classList.toggle('active');
+        overlay.classList.toggle('active');
+        document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
+    }
+    
+    function checkScreenSize() {
+        const hamburger = document.querySelector('.hamburger-btn');
+        if (window.innerWidth < 768) {
+            hamburger.style.display = 'block';
+        } else {
+            hamburger.style.display = 'none';
+            document.getElementById('mobileSidebar').classList.remove('active');
+            document.getElementById('mobileOverlay').classList.remove('active');
+            document.body.style.overflow = '';
+            document.getElementById('doctorPatientSidebar')?.classList.remove('mobile-show');
         }
-        
-        function checkScreenSize() {
-            const hamburger = document.querySelector('.hamburger-btn');
-            if (window.innerWidth < 768) {
-                hamburger.style.display = 'block';
-            } else {
-                hamburger.style.display = 'none';
-                document.getElementById('mobileSidebar').classList.remove('active');
-                document.getElementById('mobileOverlay').classList.remove('active');
-                document.body.style.overflow = '';
-                document.getElementById('doctorPatientSidebar')?.classList.remove('mobile-show');
+    }
+    
+    window.addEventListener('resize', checkScreenSize);
+    window.addEventListener('load', checkScreenSize);
+
+    // ============================================
+    // DOCTOR PATIENT SIDEBAR
+    // ============================================
+    
+    function filterDoctorPatients() {
+        const query = document.getElementById('doctorPatientSearch').value.toLowerCase();
+        const items = document.querySelectorAll('#doctorPatientList .patient-item');
+        items.forEach(item => {
+            const name = item.dataset.name || '';
+            const hospital = item.dataset.hospital || '';
+            const matches = name.includes(query) || hospital.includes(query);
+            item.style.display = matches ? '' : 'none';
+        });
+    }
+
+    function toggleDoctorPatientSidebar() {
+        const sidebar = document.getElementById('doctorPatientSidebar');
+        sidebar.classList.toggle('mobile-show');
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const currentPath = window.location.pathname;
+        const items = document.querySelectorAll('#doctorPatientList .patient-item');
+        items.forEach(item => {
+            if (item.getAttribute('href') === currentPath) {
+                item.classList.add('active');
+            }
+        });
+    });
+
+    // ============================================
+    // AUTO-DISMISS ALERTS
+    // ============================================
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            });
+        }, 5000);
+    });
+
+    // ============================================
+    // GET CSRF TOKEN
+    // ============================================
+    
+    function getCSRFToken() {
+        const name = 'csrftoken';
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
             }
         }
-        
-        window.addEventListener('resize', checkScreenSize);
-        window.addEventListener('load', checkScreenSize);
+        return cookieValue;
+    }
 
-        // ============================================
-        // DOCTOR PATIENT SIDEBAR
-        // ============================================
+    // ============================================
+    // MARK ALL NOTIFICATIONS AS READ
+    // ============================================
+    
+    function markAllNotificationsRead() {
+        if (!confirm('Mark all notifications as read?')) return;
         
-        function filterDoctorPatients() {
-            const query = document.getElementById('doctorPatientSearch').value.toLowerCase();
-            const items = document.querySelectorAll('#doctorPatientList .patient-item');
-            items.forEach(item => {
-                const name = item.dataset.name || '';
-                const hospital = item.dataset.hospital || '';
-                const matches = name.includes(query) || hospital.includes(query);
-                item.style.display = matches ? '' : 'none';
-            });
+        const btn = document.querySelector('.dropdown-header .btn-link');
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = 'Loading...';
         }
-
-        function toggleDoctorPatientSidebar() {
-            const sidebar = document.getElementById('doctorPatientSidebar');
-            sidebar.classList.toggle('mobile-show');
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            const currentPath = window.location.pathname;
-            const items = document.querySelectorAll('#doctorPatientList .patient-item');
-            items.forEach(item => {
-                if (item.getAttribute('href') === currentPath) {
-                    item.classList.add('active');
-                }
-            });
-        });
-
-        // ============================================
-        // AUTO-DISMISS ALERTS
-        // ============================================
         
-        document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(function() {
-                const alerts = document.querySelectorAll('.alert');
-                alerts.forEach(function(alert) {
-                    const bsAlert = new bootstrap.Alert(alert);
-                    bsAlert.close();
-                });
-            }, 5000);
-        });
-
-        // ============================================
-        // GET CSRF TOKEN
-        // ============================================
-        
-        function getCSRFToken() {
-            const name = 'csrftoken';
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                const cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookie = cookies[i].trim();
-                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
-                }
+        fetch('/api/notifications/mark-all-read/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+                'Content-Type': 'application/json'
             }
-            return cookieValue;
-        }
-
-        // ============================================
-        // MARK ALL NOTIFICATIONS AS READ
-        // ============================================
-        
-        function markAllNotificationsRead() {
-            if (!confirm('Mark all notifications as read?')) return;
-            
-            const btn = document.querySelector('.dropdown-header .btn-link');
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                lastNotificationCount = 0;
+                updateNotificationBadge(0);
+                clearNotificationList();
+                console.log('✅ All notifications marked as read');
+                
+                // Reset all tracking sets
+                knownAssignmentIds = new Set();
+                knownPrescriptionIds = new Set();
+                knownTestIds = new Set();
+                knownLabResultIds = new Set();
+                knownOpticianResultIds = new Set();
+                knownAssessmentIds = new Set();
+                
+                // Reset all flags
+                nurseInitialToastShown = false;
+                pharmacyInitialToastShown = false;
+                mlsInitialToastShown = false;
+                doctorInitialToastShown = false;
+                opticianInitialToastShown = false;
+                pharmacyInitialCheckDone = false;
+                mlsInitialCheckDone = false;
+                doctorInitialCheckDone = false;
+                opticianInitialCheckDone = false;
+            }
+        })
+        .catch(error => console.error('Error marking notifications as read:', error))
+        .finally(() => {
             if (btn) {
-                btn.disabled = true;
-                btn.textContent = 'Loading...';
+                btn.disabled = false;
+                btn.textContent = 'Mark all as read';
             }
-            
-            fetch('/api/notifications/mark-all-read/', {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': getCSRFToken(),
-                    'Content-Type': 'application/json'
-                }
-            })
+        });
+    }
+
+    // ============================================
+    // TOAST FUNCTIONS - DISABLED
+    // ============================================
+
+    function showToast(message, type = 'info') {
+        // Toast messages are disabled
+        console.log('🔕 Toast disabled:', message);
+        return;
+    }
+
+    function showToastOnce(message, type, key, cooldown = 15000) {
+        // Toast messages are disabled
+        console.log('🔕 Toast disabled:', message);
+        return;
+    }
+
+    function showNotificationToast(message, link, type = 'info') {
+        // Toast messages are disabled
+        console.log('🔕 Toast disabled:', message);
+        return;
+    }
+
+    // ============================================
+    // ADD NOTIFICATION TO LIST
+    // ============================================
+    
+    function addNotificationToList(message, link, notificationId) {
+        const list = document.getElementById('notificationList');
+        if (!list) return;
+        
+        const emptyMsg = list.querySelector('.text-muted.text-center');
+        if (emptyMsg) emptyMsg.remove();
+        
+        if (notificationId && list.querySelector(`[data-id="${notificationId}"]`)) {
+            return;
+        }
+        
+        const item = document.createElement('div');
+        item.className = 'notification-item unread';
+        item.dataset.id = notificationId || 'notif-' + Date.now();
+        const time = new Date().toLocaleTimeString();
+        
+        let viewLink = link || '';
+        if (viewLink && viewLink.includes('/pharmacy/order/')) {
+            const patientId = viewLink.split('/')[3];
+            viewLink = `/pharmacy/dispense-patient/${patientId}/`;
+        }
+        
+        item.innerHTML = `
+            <div class="d-flex justify-content-between">
+                <span>${message}</span>
+                <small class="time">just now</small>
+            </div>
+            ${viewLink ? `<a href="${viewLink}" class="small text-success">View</a>` : ''}
+        `;
+        list.prepend(item);
+        
+        while (list.children.length > 20) {
+            list.removeChild(list.lastChild);
+        }
+        
+        const badge = document.querySelector('.notification-count');
+        if (badge) {
+            let current = parseInt(badge.textContent) || 0;
+            current += 1;
+            badge.textContent = current;
+            badge.style.display = current > 0 ? 'inline' : 'none';
+            lastNotificationCount = current;
+        }
+    }
+
+    function clearNotificationList() {
+        const list = document.getElementById('notificationList');
+        if (list) {
+            list.innerHTML = '<div class="dropdown-item text-muted text-center">No notifications</div>';
+        }
+    }
+
+    // ============================================
+    // REFRESH NOTIFICATION BADGE
+    // ============================================
+    
+    function refreshNotificationBadge() {
+        console.log('🔄 Refreshing notification badge...');
+        fetch('/api/notification-count/')
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
-                    // Reset everything
-                    lastNotificationCount = 0;
-                    updateNotificationBadge(0);
-                    clearNotificationList();
-                    showToast('✅ All notifications marked as read', 'success');
+                const count = data.count || 0;
+                lastNotificationCount = count;
+                updateNotificationBadge(count);
+                console.log('🔔 Notification badge refreshed to:', count);
+                
+                refreshNotificationList();
+                
+                if (isNurseUser) {
+                    console.log('👩‍⚕️ Nurse: Checking assignments after badge refresh');
+                    checkNurseAssignments();
                 }
             })
-            .catch(error => console.error('Error marking notifications as read:', error))
-            .finally(() => {
-                if (btn) {
-                    btn.disabled = false;
-                    btn.textContent = 'Mark all as read';
-                }
-            });
-        }
+            .catch(error => console.error('Error refreshing badge:', error));
+    }
 
-        // ============================================
-        // ADD NOTIFICATION TO LIST
-        // ============================================
+    // ============================================
+    // ROLE DETECTION
+    // ============================================
+    
+    let isNurseUser = {% if role == 'NURSE' %}true{% else %}false{% endif %};
+    let isPharmacyUser = {% if role == 'PHARMACY' %}true{% else %}false{% endif %};
+    let isMLSUser = {% if role == 'MLS' %}true{% else %}false{% endif %};
+    let isPhysicianUser = {% if role == 'PHYSICIAN' %}true{% else %}false{% endif %};
+    let isOpticianUser = {% if role == 'OPTOMETRIST' %}true{% else %}false{% endif %};
+    let isAdminUser = {% if user.is_superuser or user.is_staff %}true{% else %}false{% endif %};
+    let isMainDashboard = window.location.pathname === '/dashboard/' || window.location.pathname === '/dashboard' || window.location.pathname === '/';
+
+    // ============================================
+    // NURSE ASSIGNMENT CHECK
+    // ============================================
+    
+    let lastAssignmentCheck = null;
+    let hasCheckedAssignments = false;
+    let assignmentCheckCount = 0;
+    let knownAssignmentIds = new Set();
+    let isInitialCheck = true;
+    let initialCheckDone = false;
+    let alertShown = false;
+    let nurseInitialToastShown = false;
+
+    function checkNurseAssignments() {
+        if (!isNurseUser) return;
         
-        function addNotificationToList(message, link, notificationId) {
-            const list = document.getElementById('notificationList');
-            if (!list) return;
-            
-            const emptyMsg = list.querySelector('.text-muted.text-center');
-            if (emptyMsg) emptyMsg.remove();
-            
-            if (notificationId && list.querySelector(`[data-id="${notificationId}"]`)) {
-                return;
-            }
-            
-            const item = document.createElement('div');
-            item.className = 'notification-item unread';
-            item.dataset.id = notificationId || 'notif-' + Date.now();
-            const time = new Date().toLocaleTimeString();
-            
-            let viewLink = link || '';
-            if (viewLink && viewLink.includes('/pharmacy/order/')) {
-                const patientId = viewLink.split('/')[3];
-                viewLink = `/pharmacy/dispense-patient/${patientId}/`;
-            }
-            
-            item.innerHTML = `
-                <div class="d-flex justify-content-between">
-                    <span>${message}</span>
-                    <small class="time">just now</small>
-                </div>
-                ${viewLink ? `<a href="${viewLink}" class="small text-success">View</a>` : ''}
-            `;
-            list.prepend(item);
-            
-            while (list.children.length > 20) {
-                list.removeChild(list.lastChild);
-            }
-            
-            const badge = document.querySelector('.notification-count');
-            if (badge) {
-                let current = parseInt(badge.textContent) || 0;
-                current += 1;
-                badge.textContent = current;
-                badge.style.display = current > 0 ? 'inline' : 'none';
-                lastNotificationCount = current;
-            }
-        }
-
-        function clearNotificationList() {
-            const list = document.getElementById('notificationList');
-            if (list) {
-                list.innerHTML = '<div class="dropdown-item text-muted text-center">No notifications</div>';
-            }
-        }
-
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('notificationToastContainer');
-            if (!container) return;
-            
-            const toast = document.createElement('div');
-            toast.className = `notification-toast ${type}`;
-            toast.innerHTML = `
-                <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                        <i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'} me-2"></i>
-                        <span>${message}</span>
-                    </div>
-                    <button type="button" class="btn-close btn-close-sm" onclick="this.closest('.notification-toast').remove()"></button>
-                </div>
-            `;
-            container.appendChild(toast);
-            
-            setTimeout(() => {
-                if (toast.parentNode) {
-                    toast.style.animation = 'slideOut 0.5s ease';
-                    setTimeout(() => toast.remove(), 500);
-                }
-            }, 5000);
-        }
-
-        // ============================================
-        // REFRESH NOTIFICATION BADGE
-        // ============================================
+        assignmentCheckCount++;
+        console.log(`👩‍⚕️ Assignment check #${assignmentCheckCount} - Initial: ${isInitialCheck}, Done: ${initialCheckDone}`);
         
-        function refreshNotificationBadge() {
-            fetch('/api/notification-count/')
-                .then(response => response.json())
-                .then(data => {
-                    const count = data.count || 0;
-                    lastNotificationCount = count;
-                    updateNotificationBadge(count);
-                    console.log('🔔 Notification badge refreshed to:', count);
-                })
-                .catch(error => console.error('Error refreshing badge:', error));
-        }
-
-        // ============================================
-        // HARD RESET NOTIFICATIONS
-        // ============================================
+        let url = '/api/nurse/assignments/check/';
         
-        function hardResetNotifications() {
-            console.log('💥 Hard resetting notifications...');
-            
-            fetch('/api/notifications/mark-all-read/', {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': getCSRFToken(),
-                    'Content-Type': 'application/json'
-                }
-            })
+        fetch(url)
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
-                    lastNotificationCount = 0;
-                    updateNotificationBadge(0);
-                    clearNotificationList();
-                    showToast('✅ Notifications reset successfully!', 'success');
-                    console.log('✅ Hard reset successful!');
-                }
-            })
-            .catch(error => console.error('Error in hard reset:', error));
-        }
-
-        // ============================================
-        // REAL-TIME NOTIFICATION SYSTEM
-        // ============================================
-        
-        let lastNotificationCount = {{ notification_count|default:0 }};
-        let notificationPollingInterval = null;
-        let isNotificationPolling = false;
-        let hasInitialized = false;
-        let notificationSoundEnabled = true;
-        let notificationCheckCounter = 0;
-        
-        function initializeNotificationSystem() {
-            if (hasInitialized) return;
-            hasInitialized = true;
-            
-            console.log('🔔 Initializing notification system...');
-            console.log('🔔 Initial count from server:', lastNotificationCount);
-            
-            // Get fresh count from server
-            fetch('/api/notification-count/')
-                .then(response => response.json())
-                .then(data => {
-                    const count = data.count || 0;
-                    lastNotificationCount = count;
-                    updateNotificationBadge(count);
-                    console.log('🔔 Badge initialized to:', count);
-                })
-                .catch(error => console.error('Error getting initial notification count:', error));
-            
-            // If pharmacy role, get initial pharmacy count
-            {% if role == 'PHARMACY' %}
-            fetch('/api/pharmacy/pending-count/')
-                .then(response => response.json())
-                .then(data => {
-                    const count = data.count || 0;
-                    updatePharmacyBadge(count);
-                    console.log('💊 Initial pharmacy pending count:', count);
-                })
-                .catch(error => console.error('Error getting pharmacy count:', error));
-            {% endif %}
-            
-            // Start polling after 2 seconds
-            setTimeout(function() {
-                startNotificationPolling();
-            }, 2000);
-            
-            // Force refresh for pharmacy on load
-            {% if role == 'PHARMACY' %}
-            setTimeout(function() {
-                console.log('💊 Pharmacy: Refreshing notifications on load');
-                refreshNotificationBadge();
-            }, 1500);
-            {% endif %}
-        }
-        
-        function startNotificationPolling() {
-            if (notificationPollingInterval) {
-                clearInterval(notificationPollingInterval);
-            }
-            
-            notificationPollingInterval = setInterval(function() {
-                checkForNewNotifications();
-            }, 5000);
-            
-            console.log('📡 Notification polling started (every 5 seconds)');
-        }
-        
-        function checkForNewNotifications() {
-            if (isNotificationPolling) return;
-            isNotificationPolling = true;
-            notificationCheckCounter++;
-            
-            fetch('/api/notification-count/')
-                .then(response => response.json())
-                .then(data => {
-                    const currentCount = data.count || 0;
-                    console.log(`📊 Poll ${notificationCheckCounter}: Current: ${currentCount}, Last: ${lastNotificationCount}`);
+                console.log(`👩‍⚕️ Response count: ${data.count}`);
+                
+                let hasNewAssignments = false;
+                let newAssignments = [];
+                let allAssignmentIds = new Set();
+                
+                if (data.count > 0) {
+                    data.assignments.forEach(assignment => {
+                        allAssignmentIds.add(String(assignment.id));
+                    });
                     
-                    // ALWAYS update the badge
-                    updateNotificationBadge(currentCount);
-                    
-                    if (currentCount > lastNotificationCount) {
-                        // New notifications detected
-                        const newCount = currentCount - lastNotificationCount;
-                        console.log(`🔔 ${newCount} NEW notification(s) detected!`);
-                        
-                        fetch('/api/notifications/latest/')
-                            .then(response => response.json())
-                            .then(notifData => {
-                                if (notifData.notifications && notifData.notifications.length > 0) {
-                                    const unread = notifData.notifications.filter(n => !n.is_read);
-                                    if (unread.length > 0) {
-                                        const list = document.getElementById('notificationList');
-                                        if (list) {
-                                            const emptyMsg = list.querySelector('.text-muted.text-center');
-                                            if (emptyMsg) emptyMsg.remove();
-                                        }
-                                        
-                                        unread.forEach(notif => {
-                                            const list = document.getElementById('notificationList');
-                                            const existing = list ? list.querySelector(`[data-id="${notif.id}"]`) : null;
-                                            if (!existing) {
-                                                // Show toast notification
-                                                showNotificationToast(notif.message, notif.link);
-                                                addNotificationToList(notif.message, notif.link, notif.id);
-                                                if (notificationSoundEnabled) {
-                                                    playNotificationSound();
-                                                }
-                                            }
-                                        });
-                                    }
-                                }
-                                lastNotificationCount = currentCount;
-                                console.log('📊 Last count updated to:', lastNotificationCount);
-                            })
-                            .catch(error => console.error('Error fetching notifications:', error));
-                    } else if (currentCount < lastNotificationCount) {
-                        // Count decreased - refresh
-                        console.log(`📉 Count decreased: ${lastNotificationCount} → ${currentCount}`);
-                        lastNotificationCount = currentCount;
-                        refreshNotificationList();
-                    } else {
-                        console.log('✅ No new notifications');
-                    }
-                    
-                    // Check pharmacy orders if pharmacy role
-                    {% if role == 'PHARMACY' %}
-                    checkPharmacyOrders();
-                    {% endif %}
-                    
-                    isNotificationPolling = false;
-                })
-                .catch(error => {
-                    console.error('Error checking notification count:', error);
-                    isNotificationPolling = false;
-                });
-        }
-        
-        function refreshNotificationList() {
-            fetch('/api/notifications/latest/')
-                .then(response => response.json())
-                .then(notifData => {
-                    const list = document.getElementById('notificationList');
-                    if (!list) return;
-                    
-                    list.innerHTML = '';
-                    
-                    if (notifData.notifications && notifData.notifications.length > 0) {
-                        const unread = notifData.notifications.filter(n => !n.is_read);
-                        if (unread.length === 0) {
-                            list.innerHTML = '<div class="dropdown-item text-muted text-center">No notifications</div>';
-                        } else {
-                            unread.forEach(notif => {
-                                const item = document.createElement('div');
-                                item.className = 'notification-item unread';
-                                item.dataset.id = notif.id;
-                                const time = new Date(notif.created_at).toLocaleTimeString();
-                                
-                                let viewLink = notif.link || '';
-                                if (viewLink && viewLink.includes('/pharmacy/order/')) {
-                                    const patientId = viewLink.split('/')[3];
-                                    viewLink = `/pharmacy/dispense-patient/${patientId}/`;
-                                }
-                                
-                                item.innerHTML = `
-                                    <div class="d-flex justify-content-between">
-                                        <span>${notif.message}</span>
-                                        <small class="time">${time}</small>
-                                    </div>
-                                    ${viewLink ? `<a href="${viewLink}" class="small text-success">View</a>` : ''}
-                                `;
-                                list.appendChild(item);
-                            });
+                    data.assignments.forEach(assignment => {
+                        const idStr = String(assignment.id);
+                        if (!knownAssignmentIds.has(idStr)) {
+                            hasNewAssignments = true;
+                            newAssignments.push(assignment);
+                            knownAssignmentIds.add(idStr);
+                            console.log(`👩‍⚕️ NEW assignment detected: ${assignment.patient_name} (ID: ${assignment.id})`);
                         }
-                    } else {
-                        list.innerHTML = '<div class="dropdown-item text-muted text-center">No notifications</div>';
+                    });
+                }
+                
+                if (isInitialCheck && data.count > 0 && !initialCheckDone) {
+                    console.log(`👩‍⚕️ INITIAL CHECK (ONCE): Showing ${data.count} assignment(s)`);
+                    
+                    initialCheckDone = true;
+                    isInitialCheck = false;
+                    
+                    if (knownAssignmentIds.size === data.count && !nurseInitialToastShown) {
+                        nurseInitialToastShown = true;
+                        const assignmentCount = data.count;
+                        const patientNames = data.assignments.map(a => a.patient_name).join(', ');
+                        const message = `You have ${assignmentCount} patient assignment(s): ${patientNames}`;
+                        const link = '/nursing/dashboard/';
+                        
+                        addNotificationToList(message, link, 'initial-' + Date.now());
+                        console.log('🔔 Notification:', message);
+                        playNotificationSound();
+                        
+                        fetch('/api/notification-count/')
+                            .then(res => res.json())
+                            .then(countData => {
+                                const count = countData.count || 0;
+                                lastNotificationCount = count;
+                                updateNotificationBadge(count);
+                                console.log(`🔔 Badge force updated to ${count}`);
+                            })
+                            .catch(err => console.error('Error updating badge:', err));
+                        
+                        refreshNotificationList();
+                        
+                        if (isMainDashboard) {
+                            showNurseAssignmentAlert(data.assignments);
+                        }
                     }
                     
-                    console.log('✅ Notification list refreshed');
-                })
-                .catch(error => console.error('Error refreshing notification list:', error));
-        }
+                    hasCheckedAssignments = true;
+                    return;
+                }
+                
+                if (hasNewAssignments && !isInitialCheck) {
+                    console.log(`👩‍⚕️ ${newAssignments.length} NEW assignment(s) detected!`);
+                    
+                    newAssignments.forEach(assignment => {
+                        const message = `You have been assigned to patient ${assignment.patient_name} (ID: ${assignment.hospital_number})`;
+                        const link = `/nursing/assessment/${assignment.patient_id}/`;
+                        
+                        addNotificationToList(message, link, 'nurse-' + assignment.id);
+                        console.log('🔔 Notification:', message);
+                        playNotificationSound();
+                    });
+                    
+                    fetch('/api/notification-count/')
+                        .then(res => res.json())
+                        .then(countData => {
+                            const count = countData.count || 0;
+                            lastNotificationCount = count;
+                            updateNotificationBadge(count);
+                            console.log(`🔔 Badge force updated to ${count}`);
+                        })
+                        .catch(err => console.error('Error updating badge:', err));
+                    
+                    refreshNotificationList();
+                    
+                    if (isMainDashboard) {
+                        showNurseAssignmentAlert(newAssignments);
+                    }
+                    
+                    if (window.location.pathname.includes('/nursing/')) {
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 3000);
+                    }
+                } else {
+                    console.log('👩‍⚕️ No NEW assignments');
+                    
+                    if (knownAssignmentIds.size > 0) {
+                        fetch('/api/notification-count/')
+                            .then(res => res.json())
+                            .then(countData => {
+                                const count = countData.count || 0;
+                                if (count > 0) {
+                                    lastNotificationCount = count;
+                                    updateNotificationBadge(count);
+                                    console.log(`🔔 Badge updated to ${count} from known assignments`);
+                                }
+                            })
+                            .catch(err => console.error('Error updating badge:', err));
+                    }
+                }
+                
+                if (!lastAssignmentCheck) {
+                    lastAssignmentCheck = new Date().toISOString();
+                    console.log(`👩‍⚕️ Initial last check set to: ${lastAssignmentCheck}`);
+                }
+                
+                if (!initialCheckDone) {
+                    initialCheckDone = true;
+                    isInitialCheck = false;
+                }
+                
+                hasCheckedAssignments = true;
+            })
+            .catch(error => console.error('Error checking nurse assignments:', error));
+    }
+
+    function showNurseAssignmentAlert(assignments) {
+        if (alertShown) return;
         
-        // ============================================
-        // PHARMACY ORDER CHECK
-        // ============================================
+        const existingAlert = document.getElementById('nurseAssignmentAlert');
+        if (existingAlert) return;
         
-        function checkPharmacyOrders() {
-            fetch('/api/pharmacy/pending-count/')
-                .then(response => response.json())
-                .then(data => {
-                    const count = data.count || 0;
-                    console.log(`💊 Pharmacy pending orders: ${count}`);
-                    updatePharmacyBadge(count);
-                })
-                .catch(error => console.error('Error checking pharmacy count:', error));
-        }
+        alertShown = true;
         
-        function updatePharmacyBadge(count) {
-            const dispensaryBadge = document.getElementById('dispensaryBadge');
-            if (dispensaryBadge) {
-                dispensaryBadge.textContent = count;
-                dispensaryBadge.style.display = count > 0 ? 'inline' : 'none';
+        const alertDiv = document.createElement('div');
+        alertDiv.id = 'nurseAssignmentAlert';
+        alertDiv.className = 'alert alert-success alert-dismissible fade show';
+        alertDiv.style.position = 'fixed';
+        alertDiv.style.top = '70px';
+        alertDiv.style.right = '20px';
+        alertDiv.style.zIndex = '9999';
+        alertDiv.style.maxWidth = '500px';
+        alertDiv.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+        alertDiv.style.borderLeft = '4px solid #28a745';
+        alertDiv.style.animation = 'slideIn 0.5s ease';
+        
+        let patientList = assignments.map(a => 
+            `<li><strong>${a.patient_name}</strong> (${a.hospital_number})</li>`
+        ).join('');
+        
+        alertDiv.innerHTML = `
+            <div class="d-flex align-items-start">
+                <div class="flex-grow-1">
+                    <h6 class="alert-heading mb-1">
+                        <i class="fas fa-user-nurse me-2"></i>
+                        New Patient Assignments!
+                    </h6>
+                    <p class="mb-1 small">You have been assigned ${assignments.length} new patient(s):</p>
+                    <ul class="mb-1 small" style="padding-left: 20px;">
+                        ${patientList}
+                    </ul>
+                    <a href="/nursing/dashboard/" class="btn btn-sm btn-success mt-1">
+                        <i class="fas fa-arrow-right me-1"></i>Go to Nursing Dashboard
+                    </a>
+                    <button class="btn btn-sm btn-outline-secondary ms-1 mt-1" onclick="this.closest('.alert').remove(); alertShown = false;">
+                        Dismiss
+                    </button>
+                </div>
+                <button type="button" class="btn-close" onclick="this.closest('.alert').remove(); alertShown = false;"></button>
+            </div>
+        `;
+        
+        document.body.appendChild(alertDiv);
+        
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.style.animation = 'slideOut 0.5s ease';
+                setTimeout(() => {
+                    alertDiv.remove();
+                    alertShown = false;
+                }, 500);
             }
-            
-            const mobilePharmacyBadge = document.getElementById('mobilePharmacyBadge');
-            if (mobilePharmacyBadge) {
-                mobilePharmacyBadge.textContent = count;
-                mobilePharmacyBadge.style.display = count > 0 ? 'inline' : 'none';
+        }, 30000);
+    }
+
+    // ============================================
+    // PHARMACY NOTIFICATION CHECK
+    // ============================================
+    
+    let lastPharmacyCheck = null;
+    let pharmacyCheckCount = 0;
+    let knownPrescriptionIds = new Set();
+    let pharmacyAlertShown = false;
+    let pharmacyInitialCheckDone = false;
+    let pharmacyInitialToastShown = false;
+
+    function checkPharmacyNotifications() {
+        if (!isPharmacyUser) return;
+        
+        pharmacyCheckCount++;
+        console.log(`💊 Pharmacy check #${pharmacyCheckCount}`);
+        
+        fetch('/api/pharmacy/notification-check/')
+            .then(response => response.json())
+            .then(data => {
+                const patientCount = data.patient_count || 0;
+                console.log(`💊 Pharmacy check result: ${data.recent_count} new orders, ${patientCount} patients waiting`);
+                
+                updatePharmacyBadge(patientCount);
+                
+                let hasNewPrescriptions = false;
+                let newPrescriptions = [];
+                
+                if (data.recent_orders && data.recent_orders.length > 0) {
+                    data.recent_orders.forEach(order => {
+                        const idStr = String(order.id);
+                        if (!knownPrescriptionIds.has(idStr)) {
+                            hasNewPrescriptions = true;
+                            newPrescriptions.push(order);
+                            knownPrescriptionIds.add(idStr);
+                            console.log(`💊 NEW prescription detected: ${order.drug_name} for ${order.patient_name} (ID: ${order.id})`);
+                        }
+                    });
+                }
+                
+                if (!pharmacyInitialCheckDone && patientCount > 0) {
+                    pharmacyInitialCheckDone = true;
+                    console.log(`💊 INITIAL PHARMACY CHECK: ${patientCount} patient(s) with pending prescriptions`);
+                    
+                    if (data.recent_orders) {
+                        data.recent_orders.forEach(order => {
+                            knownPrescriptionIds.add(String(order.id));
+                        });
+                    }
+                    
+                    if (patientCount > 0 && !pharmacyInitialToastShown) {
+                        pharmacyInitialToastShown = true;
+                        const message = `💊 ${patientCount} patient(s) have prescriptions waiting for dispensing`;
+                        console.log('💊 Notification:', message);
+                        playNotificationSound();
+                        pharmacyAlertShown = true;
+                        
+                        setTimeout(() => {
+                            pharmacyAlertShown = false;
+                        }, 10000);
+                    }
+                    return;
+                }
+                
+                if (hasNewPrescriptions && !pharmacyAlertShown) {
+                    console.log(`💊 ${newPrescriptions.length} NEW prescription(s) detected!`);
+                    pharmacyAlertShown = true;
+                    
+                    const message = `💊 ${newPrescriptions.length} new prescription(s) waiting for dispensing`;
+                    console.log('💊 Notification:', message);
+                    playNotificationSound();
+                    
+                    const badge = document.querySelector('.notification-count');
+                    if (badge) {
+                        let current = parseInt(badge.textContent) || 0;
+                        current += newPrescriptions.length;
+                        badge.textContent = current;
+                        badge.style.display = current > 0 ? 'inline' : 'none';
+                        lastNotificationCount = current;
+                    }
+                    
+                    refreshNotificationList();
+                    
+                    if (window.location.pathname === '/dashboard/' || window.location.pathname === '/dashboard') {
+                        showPharmacyAlert(newPrescriptions);
+                    }
+                    
+                    setTimeout(() => {
+                        pharmacyAlertShown = false;
+                    }, 10000);
+                } else if (!hasNewPrescriptions) {
+                    console.log('💊 No NEW prescriptions');
+                } else {
+                    console.log('💊 Alert already shown, skipping duplicate');
+                }
+                
+                lastPharmacyCheck = new Date().toISOString();
+            })
+            .catch(error => console.error('Error checking pharmacy notifications:', error));
+    }
+
+    function showPharmacyAlert(prescriptions) {
+        const existingAlert = document.getElementById('pharmacyAssignmentAlert');
+        if (existingAlert) return;
+        
+        const alertDiv = document.createElement('div');
+        alertDiv.id = 'pharmacyAssignmentAlert';
+        alertDiv.className = 'alert alert-info alert-dismissible fade show';
+        alertDiv.style.position = 'fixed';
+        alertDiv.style.top = '70px';
+        alertDiv.style.right = '20px';
+        alertDiv.style.zIndex = '9999';
+        alertDiv.style.maxWidth = '500px';
+        alertDiv.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+        alertDiv.style.borderLeft = '4px solid #17a2b8';
+        alertDiv.style.animation = 'slideIn 0.5s ease';
+        
+        let patientList = prescriptions.map(p => 
+            `<li><strong>${p.patient_name}</strong> - ${p.drug_name} (x${p.quantity})</li>`
+        ).join('');
+        
+        alertDiv.innerHTML = `
+            <div class="d-flex align-items-start">
+                <div class="flex-grow-1">
+                    <h6 class="alert-heading mb-1">
+                        <i class="fas fa-prescription-bottle me-2"></i>
+                        New Prescriptions!
+                    </h6>
+                    <p class="mb-1 small">${prescriptions.length} new prescription(s) waiting for dispensing:</p>
+                    <ul class="mb-1 small" style="padding-left: 20px;">
+                        ${patientList}
+                    </ul>
+                    <a href="/pharmacy/dashboard/" class="btn btn-sm btn-info mt-1">
+                        <i class="fas fa-arrow-right me-1"></i>Go to Pharmacy Dashboard
+                    </a>
+                    <button class="btn btn-sm btn-outline-secondary ms-1 mt-1" onclick="this.closest('.alert').remove(); pharmacyAlertShown = false;">
+                        Dismiss
+                    </button>
+                </div>
+                <button type="button" class="btn-close" onclick="this.closest('.alert').remove(); pharmacyAlertShown = false;"></button>
+            </div>
+        `;
+        
+        document.body.appendChild(alertDiv);
+        
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.style.animation = 'slideOut 0.5s ease';
+                setTimeout(() => {
+                    alertDiv.remove();
+                    pharmacyAlertShown = false;
+                }, 500);
             }
+        }, 30000);
+    }
+
+    function updatePharmacyBadge(count) {
+        const dispensaryBadge = document.getElementById('dispensaryBadge');
+        if (dispensaryBadge) {
+            dispensaryBadge.textContent = count;
+            dispensaryBadge.style.display = count > 0 ? 'inline' : 'none';
         }
         
-        // ============================================
-        // NOTIFICATION UI FUNCTIONS
-        // ============================================
+        const mobilePharmacyBadge = document.getElementById('mobilePharmacyBadge');
+        if (mobilePharmacyBadge) {
+            mobilePharmacyBadge.textContent = count;
+            mobilePharmacyBadge.style.display = count > 0 ? 'inline' : 'none';
+        }
+    }
+
+    // ============================================
+    // MLS NOTIFICATION CHECK
+    // ============================================
+    
+    let lastMLSCheck = null;
+    let mlsCheckCount = 0;
+    let knownTestIds = new Set();
+    let mlsAlertShown = false;
+    let mlsInitialCheckDone = false;
+    let mlsInitialToastShown = false;
+
+    function checkMLSNotifications() {
+        if (!isMLSUser) return;
         
-        function updateNotificationBadge(count) {
-            const badge = document.querySelector('.notification-count');
+        mlsCheckCount++;
+        console.log(`🧪 MLS check #${mlsCheckCount}`);
+        
+        fetch('/api/mls/notification-check/')
+            .then(response => response.json())
+            .then(data => {
+                const patientCount = data.patient_count || 0;
+                console.log(`🧪 MLS check result: ${data.recent_count} new tests, ${patientCount} patients waiting`);
+                
+                updateMLSBadge(patientCount);
+                
+                // Update navbar notification
+                const badge = document.querySelector('.notification-count');
+                if (badge && data.has_new && data.recent_count > 0) {
+                    let current = parseInt(badge.textContent) || 0;
+                    current += data.recent_count;
+                    badge.textContent = current;
+                    badge.style.display = current > 0 ? 'inline' : 'none';
+                    lastNotificationCount = current;
+                }
+                
+                let hasNewTests = false;
+                let newTests = [];
+                
+                if (data.recent_tests && data.recent_tests.length > 0) {
+                    data.recent_tests.forEach(test => {
+                        const idStr = String(test.id);
+                        if (!knownTestIds.has(idStr)) {
+                            hasNewTests = true;
+                            newTests.push(test);
+                            knownTestIds.add(idStr);
+                            console.log(`🧪 NEW test detected: ${test.patient_name} - ${test.tests_requested} (ID: ${test.id})`);
+                        }
+                    });
+                }
+                
+                if (!mlsInitialCheckDone && patientCount > 0) {
+                    mlsInitialCheckDone = true;
+                    console.log(`🧪 INITIAL MLS CHECK: ${patientCount} patient(s) with pending tests`);
+                    
+                    if (data.recent_tests) {
+                        data.recent_tests.forEach(test => {
+                            knownTestIds.add(String(test.id));
+                        });
+                    }
+                    
+                    if (patientCount > 0 && !mlsInitialToastShown) {
+                        mlsInitialToastShown = true;
+                        const message = `🧪 ${patientCount} patient(s) have laboratory tests waiting`;
+                        console.log('🧪 Notification:', message);
+                        playNotificationSound();
+                        mlsAlertShown = true;
+                        
+                        if (window.location.pathname === '/dashboard/' || window.location.pathname === '/dashboard') {
+                            if (data.recent_tests && data.recent_tests.length > 0) {
+                                showMLSAlert(data.recent_tests);
+                            }
+                        }
+                        
+                        setTimeout(() => {
+                            mlsAlertShown = false;
+                        }, 10000);
+                    }
+                    return;
+                }
+                
+                if (hasNewTests && !mlsAlertShown) {
+                    console.log(`🧪 ${newTests.length} NEW test(s) detected!`);
+                    mlsAlertShown = true;
+                    
+                    const message = `🧪 ${newTests.length} new lab test(s) waiting for processing`;
+                    console.log('🧪 Notification:', message);
+                    playNotificationSound();
+                    
+                    const badge = document.querySelector('.notification-count');
+                    if (badge) {
+                        let current = parseInt(badge.textContent) || 0;
+                        current += newTests.length;
+                        badge.textContent = current;
+                        badge.style.display = current > 0 ? 'inline' : 'none';
+                        lastNotificationCount = current;
+                    }
+                    
+                    refreshNotificationList();
+                    
+                    if (window.location.pathname === '/dashboard/' || window.location.pathname === '/dashboard') {
+                        showMLSAlert(newTests);
+                    }
+                    
+                    setTimeout(() => {
+                        mlsAlertShown = false;
+                    }, 10000);
+                } else if (!hasNewTests) {
+                    console.log('🧪 No NEW tests');
+                } else {
+                    console.log('🧪 Alert already shown, skipping duplicate');
+                }
+                
+                lastMLSCheck = new Date().toISOString();
+            })
+            .catch(error => console.error('Error checking MLS notifications:', error));
+    }
+
+    function showMLSAlert(tests) {
+        const existingAlert = document.getElementById('mlsAssignmentAlert');
+        if (existingAlert) return;
+        
+        const alertDiv = document.createElement('div');
+        alertDiv.id = 'mlsAssignmentAlert';
+        alertDiv.className = 'alert alert-info alert-dismissible fade show';
+        alertDiv.style.position = 'fixed';
+        alertDiv.style.top = '70px';
+        alertDiv.style.right = '20px';
+        alertDiv.style.zIndex = '9999';
+        alertDiv.style.maxWidth = '500px';
+        alertDiv.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+        alertDiv.style.borderLeft = '4px solid #17a2b8';
+        alertDiv.style.animation = 'slideIn 0.5s ease';
+        
+        let patientList = tests.map(t => 
+            `<li><strong>${t.patient_name}</strong> - ${t.tests_requested}</li>`
+        ).join('');
+        
+        alertDiv.innerHTML = `
+            <div class="d-flex align-items-start">
+                <div class="flex-grow-1">
+                    <h6 class="alert-heading mb-1">
+                        <i class="fas fa-vial me-2"></i>
+                        New Lab Tests!
+                    </h6>
+                    <p class="mb-1 small">${tests.length} new lab test(s) waiting for processing:</p>
+                    <ul class="mb-1 small" style="padding-left: 20px;">
+                        ${patientList}
+                    </ul>
+                    <a href="/lab/dashboard/" class="btn btn-sm btn-info mt-1">
+                        <i class="fas fa-arrow-right me-1"></i>Go to Lab Dashboard
+                    </a>
+                    <button class="btn btn-sm btn-outline-secondary ms-1 mt-1" onclick="this.closest('.alert').remove(); mlsAlertShown = false;">
+                        Dismiss
+                    </button>
+                </div>
+                <button type="button" class="btn-close" onclick="this.closest('.alert').remove(); mlsAlertShown = false;"></button>
+            </div>
+        `;
+        
+        document.body.appendChild(alertDiv);
+        
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.style.animation = 'slideOut 0.5s ease';
+                setTimeout(() => {
+                    alertDiv.remove();
+                    mlsAlertShown = false;
+                }, 500);
+            }
+        }, 30000);
+    }
+
+    function updateMLSBadge(count) {
+        console.log(`🧪 Updating MLS badge to: ${count}`);
+        
+        const mlsNavItem = document.querySelector('.sidebar .nav-link[href*="laboratory_dashboard"]');
+        if (mlsNavItem) {
+            let badge = mlsNavItem.querySelector('.badge-notification');
             if (badge) {
                 badge.textContent = count;
                 badge.style.display = count > 0 ? 'inline' : 'none';
-                console.log('🔔 Badge updated to:', count);
+            } else if (count > 0) {
+                const newBadge = document.createElement('span');
+                newBadge.className = 'badge-notification mls-badge';
+                newBadge.textContent = count;
+                mlsNavItem.appendChild(newBadge);
             }
         }
         
-        function playNotificationSound() {
-            try {
-                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                const oscillator = audioCtx.createOscillator();
-                const gainNode = audioCtx.createGain();
-                
-                oscillator.connect(gainNode);
-                gainNode.connect(audioCtx.destination);
-                
-                oscillator.frequency.value = 800;
-                oscillator.type = 'sine';
-                
-                gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-                
-                oscillator.start(audioCtx.currentTime);
-                oscillator.stop(audioCtx.currentTime + 0.3);
-            } catch (e) {
-                // Silently fail if audio not supported
+        const mobileMlsNavItem = document.querySelector('.sidebar-mobile .nav-link[href*="laboratory_dashboard"]');
+        if (mobileMlsNavItem) {
+            let badge = mobileMlsNavItem.querySelector('.badge');
+            if (badge) {
+                badge.textContent = count;
+                badge.style.display = count > 0 ? 'inline' : 'none';
             }
         }
         
-        function showNotificationToast(message, link, type = 'info') {
-            const container = document.getElementById('notificationToastContainer');
-            if (!container) return;
-            
-            const toast = document.createElement('div');
-            toast.className = `notification-toast ${type}`;
-            toast.innerHTML = `
-                <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                        <i class="fas fa-bell text-info me-2"></i>
-                        <span>${message}</span>
-                        ${link ? `<br><a href="${link}" class="toast-link mt-1 d-inline-block" onclick="this.closest('.notification-toast').remove()">View Details →</a>` : ''}
-                    </div>
-                    <button type="button" class="btn-close btn-close-sm" onclick="this.closest('.notification-toast').remove()"></button>
-                </div>
-            `;
-            container.appendChild(toast);
-            
-            setTimeout(() => {
-                if (toast.parentNode) {
-                    toast.style.animation = 'slideOut 0.5s ease';
-                    setTimeout(() => toast.remove(), 500);
+        const labCountElement = document.querySelector('.lab-patient-count');
+        if (labCountElement) {
+            labCountElement.textContent = count;
+        }
+    }
+
+    // ============================================
+    // PHYSICIAN RESULTS CHECK - NO SOUND
+    // ============================================
+    
+    let lastDoctorResultsCheck = null;
+    let doctorResultsCheckCount = 0;
+    let knownLabResultIds = new Set();
+    let knownOpticianResultIds = new Set();
+    let doctorInitialCheckDone = false;
+    let doctorInitialToastShown = false;
+
+    function checkDoctorResults() {
+        if (!isPhysicianUser) return;
+        
+        doctorResultsCheckCount++;
+        console.log(`👨‍⚕️ Results check #${doctorResultsCheckCount}`);
+        
+        fetch('/api/doctor/dashboard-data/')
+            .then(response => response.json())
+            .then(data => {
+                console.log('👨‍⚕️ Results check:', data);
+                
+                // Update lab results badge
+                const labBadge = document.querySelector('.lab-results-badge');
+                if (labBadge) {
+                    labBadge.textContent = data.lab_results_count || 0;
+                    labBadge.style.display = data.lab_results_count > 0 ? 'inline' : 'none';
                 }
-            }, 8000);
-        }
-
-        // ============================================
-        // EXPOSE FUNCTIONS GLOBALLY
-        // ============================================
-        
-        window.hardResetNotifications = hardResetNotifications;
-        window.markAllNotificationsRead = markAllNotificationsRead;
-        window.refreshNotificationBadge = refreshNotificationBadge;
-        window.filterDoctorPatients = filterDoctorPatients;
-        window.toggleDoctorPatientSidebar = toggleDoctorPatientSidebar;
-        window.toggleNotificationSound = function() {
-            notificationSoundEnabled = !notificationSoundEnabled;
-            console.log('🔊 Notification sound:', notificationSoundEnabled ? 'ON' : 'OFF');
-            return notificationSoundEnabled;
-        };
-
-        // ============================================
-        // INITIALIZE
-        // ============================================
-        
-        document.addEventListener('DOMContentLoaded', function() {
-            {% if user.is_authenticated %}
-                console.log('🔔 User authenticated, initializing notification system');
-                initializeNotificationSystem();
                 
-                // Debug commands available in console
-                console.log('='.repeat(60));
-                console.log('🔍 AVAILABLE COMMANDS:');
-                console.log('  hardResetNotifications() - Force reset all notifications');
-                console.log('  refreshNotificationBadge() - Refresh the notification badge');
-                console.log('  markAllNotificationsRead() - Mark all as read');
-                console.log('='.repeat(60));
-            {% endif %}
-        });
+                // Update optician results badge
+                const opticianBadge = document.querySelector('.optician-results-badge');
+                if (opticianBadge) {
+                    opticianBadge.textContent = data.optician_results_count || 0;
+                    opticianBadge.style.display = data.optician_results_count > 0 ? 'inline' : 'none';
+                }
+                
+                // Check for NEW lab results
+                let hasNewLabResults = false;
+                let newLabResults = [];
+                
+                if (data.lab_results && data.lab_results.length > 0) {
+                    data.lab_results.forEach(result => {
+                        const idStr = String(result.id);
+                        if (!knownLabResultIds.has(idStr)) {
+                            hasNewLabResults = true;
+                            newLabResults.push(result);
+                            knownLabResultIds.add(idStr);
+                            console.log(`🧪 NEW lab result: ${result.patient_name} - ${result.tests}`);
+                        }
+                    });
+                }
+                
+                // Check for NEW optician results
+                let hasNewOpticianResults = false;
+                let newOpticianResults = [];
+                
+                if (data.optician_results && data.optician_results.length > 0) {
+                    data.optician_results.forEach(result => {
+                        const idStr = String(result.id);
+                        if (!knownOpticianResultIds.has(idStr)) {
+                            hasNewOpticianResults = true;
+                            newOpticianResults.push(result);
+                            knownOpticianResultIds.add(idStr);
+                            console.log(`👁️ NEW optician result: ${result.patient_name}`);
+                        }
+                    });
+                }
+                
+                if (!doctorInitialCheckDone) {
+                    doctorInitialCheckDone = true;
+                    console.log('👨‍⚕️ INITIAL DOCTOR CHECK: Setting up known results');
+                    
+                    if (data.lab_results) {
+                        data.lab_results.forEach(result => {
+                            knownLabResultIds.add(String(result.id));
+                        });
+                    }
+                    if (data.optician_results) {
+                        data.optician_results.forEach(result => {
+                            knownOpticianResultIds.add(String(result.id));
+                        });
+                    }
+                    
+                    const totalResults = (data.lab_results_count || 0) + (data.optician_results_count || 0);
+                    if (totalResults > 0 && !doctorInitialToastShown) {
+                        doctorInitialToastShown = true;
+                        let messageParts = [];
+                        if (data.lab_results_count > 0) {
+                            messageParts.push(`${data.lab_results_count} lab result(s)`);
+                        }
+                        if (data.optician_results_count > 0) {
+                            messageParts.push(`${data.optician_results_count} optician result(s)`);
+                        }
+                        const message = `👨‍⚕️ ${messageParts.join(' and ')} available for review`;
+                        console.log('👨‍⚕️ Notification:', message);
+                        // NO SOUND - REMOVED playNotificationSound();
+                    }
+                    return;
+                }
+                
+                if (hasNewLabResults || hasNewOpticianResults) {
+                    let messageParts = [];
+                    if (hasNewLabResults) {
+                        messageParts.push(`${newLabResults.length} new lab result(s)`);
+                    }
+                    if (hasNewOpticianResults) {
+                        messageParts.push(`${newOpticianResults.length} new optician result(s)`);
+                    }
+                    
+                    console.log(`👨‍⚕️ ${messageParts.join(' and ')} detected!`);
+                    
+                    const message = `👨‍⚕️ ${messageParts.join(' and ')} available for review`;
+                    console.log('👨‍⚕️ Notification:', message);
+                    // NO SOUND - REMOVED playNotificationSound();
+                    
+                    const badge = document.querySelector('.notification-count');
+                    if (badge) {
+                        let current = parseInt(badge.textContent) || 0;
+                        current += (newLabResults.length + newOpticianResults.length);
+                        badge.textContent = current;
+                        badge.style.display = current > 0 ? 'inline' : 'none';
+                        lastNotificationCount = current;
+                    }
+                    
+                    refreshNotificationList();
+                } else {
+                    console.log('👨‍⚕️ No NEW results');
+                }
+                
+                lastDoctorResultsCheck = new Date().toISOString();
+            })
+            .catch(error => console.error('Error checking doctor results:', error));
+    }
+
+    // ============================================
+    // OPTICIAN NOTIFICATION CHECK
+    // ============================================
+    
+    let lastOpticianCheck = null;
+    let opticianCheckCount = 0;
+    let knownAssessmentIds = new Set();
+    let opticianAlertShown = false;
+    let opticianInitialCheckDone = false;
+    let opticianInitialToastShown = false;
+
+    function checkOpticianNotifications() {
+        if (!isOpticianUser) return;
+        
+        opticianCheckCount++;
+        console.log(`👁️ Optician check #${opticianCheckCount}`);
+        
+        fetch('/api/optician/notification-check/')
+            .then(response => response.json())
+            .then(data => {
+                const patientCount = data.patient_count || 0;
+                console.log(`👁️ Optician check result: ${data.recent_count} new assessments, ${patientCount} patients waiting`);
+                
+                updateOpticianBadge(patientCount);
+                
+                // Update navbar notification
+                const badge = document.querySelector('.notification-count');
+                if (badge && data.has_new && data.recent_count > 0) {
+                    let current = parseInt(badge.textContent) || 0;
+                    current += data.recent_count;
+                    badge.textContent = current;
+                    badge.style.display = current > 0 ? 'inline' : 'none';
+                    lastNotificationCount = current;
+                }
+                
+                let hasNewAssessments = false;
+                let newAssessments = [];
+                
+                if (data.recent_assessments && data.recent_assessments.length > 0) {
+                    data.recent_assessments.forEach(assessment => {
+                        const idStr = String(assessment.id);
+                        if (!knownAssessmentIds.has(idStr)) {
+                            hasNewAssessments = true;
+                            newAssessments.push(assessment);
+                            knownAssessmentIds.add(idStr);
+                            console.log(`👁️ NEW assessment detected: ${assessment.patient_name} (ID: ${assessment.id})`);
+                        }
+                    });
+                }
+                
+                if (!opticianInitialCheckDone && patientCount > 0) {
+                    opticianInitialCheckDone = true;
+                    console.log(`👁️ INITIAL OPTICIAN CHECK: ${patientCount} patient(s) with pending assessments`);
+                    
+                    if (data.recent_assessments) {
+                        data.recent_assessments.forEach(assessment => {
+                            knownAssessmentIds.add(String(assessment.id));
+                        });
+                    }
+                    
+                    if (patientCount > 0 && !opticianInitialToastShown) {
+                        opticianInitialToastShown = true;
+                        const message = `👁️ ${patientCount} patient(s) have optical assessments waiting`;
+                        console.log('👁️ Notification:', message);
+                        playNotificationSound();
+                        opticianAlertShown = true;
+                        
+                        if (window.location.pathname === '/dashboard/' || window.location.pathname === '/dashboard') {
+                            if (data.recent_assessments && data.recent_assessments.length > 0) {
+                                showOpticianAlert(data.recent_assessments);
+                            }
+                        }
+                        
+                        setTimeout(() => {
+                            opticianAlertShown = false;
+                        }, 10000);
+                    }
+                    return;
+                }
+                
+                if (hasNewAssessments && !opticianAlertShown) {
+                    console.log(`👁️ ${newAssessments.length} NEW assessment(s) detected!`);
+                    opticianAlertShown = true;
+                    
+                    const message = `👁️ ${newAssessments.length} new optical assessment(s) waiting`;
+                    console.log('👁️ Notification:', message);
+                    playNotificationSound();
+                    
+                    const badge = document.querySelector('.notification-count');
+                    if (badge) {
+                        let current = parseInt(badge.textContent) || 0;
+                        current += newAssessments.length;
+                        badge.textContent = current;
+                        badge.style.display = current > 0 ? 'inline' : 'none';
+                        lastNotificationCount = current;
+                    }
+                    
+                    refreshNotificationList();
+                    
+                    if (window.location.pathname === '/dashboard/' || window.location.pathname === '/dashboard') {
+                        showOpticianAlert(newAssessments);
+                    }
+                    
+                    setTimeout(() => {
+                        opticianAlertShown = false;
+                    }, 10000);
+                } else if (!hasNewAssessments) {
+                    console.log('👁️ No NEW assessments');
+                } else {
+                    console.log('👁️ Alert already shown, skipping duplicate');
+                }
+                
+                lastOpticianCheck = new Date().toISOString();
+            })
+            .catch(error => console.error('Error checking optician notifications:', error));
+    }
+
+    function showOpticianAlert(assessments) {
+        const existingAlert = document.getElementById('opticianAssignmentAlert');
+        if (existingAlert) return;
+        
+        const alertDiv = document.createElement('div');
+        alertDiv.id = 'opticianAssignmentAlert';
+        alertDiv.className = 'alert alert-info alert-dismissible fade show';
+        alertDiv.style.position = 'fixed';
+        alertDiv.style.top = '70px';
+        alertDiv.style.right = '20px';
+        alertDiv.style.zIndex = '9999';
+        alertDiv.style.maxWidth = '500px';
+        alertDiv.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+        alertDiv.style.borderLeft = '4px solid #17a2b8';
+        alertDiv.style.animation = 'slideIn 0.5s ease';
+        
+        let patientList = assessments.map(a => 
+            `<li><strong>${a.patient_name}</strong> ${a.is_walk_in ? '(Walk-in)' : '(Referral)'}</li>`
+        ).join('');
+        
+        alertDiv.innerHTML = `
+            <div class="d-flex align-items-start">
+                <div class="flex-grow-1">
+                    <h6 class="alert-heading mb-1">
+                        <i class="fas fa-eye me-2"></i>
+                        New Optical Assessments!
+                    </h6>
+                    <p class="mb-1 small">${assessments.length} new optical assessment(s) waiting:</p>
+                    <ul class="mb-1 small" style="padding-left: 20px;">
+                        ${patientList}
+                    </ul>
+                    <a href="/optician/dashboard/" class="btn btn-sm btn-info mt-1">
+                        <i class="fas fa-arrow-right me-1"></i>Go to Optician Dashboard
+                    </a>
+                    <button class="btn btn-sm btn-outline-secondary ms-1 mt-1" onclick="this.closest('.alert').remove(); opticianAlertShown = false;">
+                        Dismiss
+                    </button>
+                </div>
+                <button type="button" class="btn-close" onclick="this.closest('.alert').remove(); opticianAlertShown = false;"></button>
+            </div>
+        `;
+        
+        document.body.appendChild(alertDiv);
+        
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.style.animation = 'slideOut 0.5s ease';
+                setTimeout(() => {
+                    alertDiv.remove();
+                    opticianAlertShown = false;
+                }, 500);
+            }
+        }, 30000);
+    }
+
+    function updateOpticianBadge(count) {
+        console.log(`👁️ Updating optician badge to: ${count}`);
+        
+        // Update desktop sidebar badge
+        const opticianNavItem = document.querySelector('.sidebar .nav-link[href*="optician_dashboard"]');
+        if (opticianNavItem) {
+            let badge = opticianNavItem.querySelector('.badge-notification');
+            if (badge) {
+                badge.textContent = count;
+                badge.style.display = count > 0 ? 'inline' : 'none';
+            } else if (count > 0) {
+                const newBadge = document.createElement('span');
+                newBadge.className = 'badge-notification optician-badge';
+                newBadge.textContent = count;
+                opticianNavItem.appendChild(newBadge);
+            }
+        }
+        
+        // Update mobile sidebar badge
+        const mobileOpticianNavItem = document.querySelector('.sidebar-mobile .nav-link[href*="optician_dashboard"]');
+        if (mobileOpticianNavItem) {
+            let badge = mobileOpticianNavItem.querySelector('.badge');
+            if (badge) {
+                badge.textContent = count;
+                badge.style.display = count > 0 ? 'inline' : 'none';
+            }
+        }
+        
+        // Update dashboard patient count
+        const opticianCountElement = document.querySelector('.optician-patient-count');
+        if (opticianCountElement) {
+            opticianCountElement.textContent = count;
+        }
+    }
+
+    // ============================================
+    // RESET FUNCTIONS
+    // ============================================
+    
+    function resetPharmacyNotifications() {
+        knownPrescriptionIds = new Set();
+        pharmacyAlertShown = false;
+        pharmacyInitialCheckDone = false;
+        pharmacyInitialToastShown = false;
+        console.log('💊 Pharmacy notification tracking reset');
+    }
+
+    function resetMLSNotifications() {
+        knownTestIds = new Set();
+        mlsAlertShown = false;
+        mlsInitialCheckDone = false;
+        mlsInitialToastShown = false;
+        console.log('🧪 MLS notification tracking reset');
+    }
+
+    function resetDoctorNotifications() {
+        knownLabResultIds = new Set();
+        knownOpticianResultIds = new Set();
+        doctorInitialCheckDone = false;
+        doctorInitialToastShown = false;
+        console.log('👨‍⚕️ Doctor notification tracking reset');
+    }
+
+    function resetOpticianNotifications() {
+        knownAssessmentIds = new Set();
+        opticianAlertShown = false;
+        opticianInitialCheckDone = false;
+        opticianInitialToastShown = false;
+        console.log('👁️ Optician notification tracking reset');
+    }
+
+    // ============================================
+    // HARD RESET NOTIFICATIONS
+    // ============================================
+    
+    function hardResetNotifications() {
+        console.log('💥 Hard resetting notifications...');
+        knownAssignmentIds = new Set();
+        isInitialCheck = true;
+        initialCheckDone = false;
+        alertShown = false;
+        nurseInitialToastShown = false;
+        lastAssignmentCheck = null;
+        
+        resetPharmacyNotifications();
+        resetMLSNotifications();
+        resetDoctorNotifications();
+        resetOpticianNotifications();
+        
+        fetch('/api/notifications/mark-all-read/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                lastNotificationCount = 0;
+                updateNotificationBadge(0);
+                clearNotificationList();
+                console.log('✅ Hard reset successful!');
+                setTimeout(checkNurseAssignments, 500);
+                if (isPharmacyUser) setTimeout(checkPharmacyNotifications, 800);
+                if (isMLSUser) setTimeout(checkMLSNotifications, 900);
+                if (isPhysicianUser) setTimeout(checkDoctorResults, 1000);
+                if (isOpticianUser) setTimeout(checkOpticianNotifications, 1100);
+            }
+        })
+        .catch(error => console.error('Error in hard reset:', error));
+    }
+
+    // ============================================
+    // REAL-TIME NOTIFICATION SYSTEM
+    // ============================================
+    
+    let lastNotificationCount = {{ notification_count|default:0 }};
+    let notificationPollingInterval = null;
+    let isNotificationPolling = false;
+    let hasInitialized = false;
+    let notificationSoundEnabled = true;
+    let notificationCheckCounter = 0;
+    
+    function initializeNotificationSystem() {
+        if (hasInitialized) return;
+        hasInitialized = true;
+        
+        console.log('🔔 Initializing notification system...');
+        console.log('🔔 Initial count from server:', lastNotificationCount);
+        console.log('👩‍⚕️ Is nurse user:', isNurseUser);
+        console.log('💊 Is pharmacy user:', isPharmacyUser);
+        console.log('🧪 Is MLS user:', isMLSUser);
+        console.log('👨‍⚕️ Is physician user:', isPhysicianUser);
+        console.log('👁️ Is optician user:', isOpticianUser);
+        console.log('👑 Is admin user:', isAdminUser);
+        console.log('📍 Is main dashboard:', isMainDashboard);
+        
+        fetch('/api/notification-count/')
+            .then(response => response.json())
+            .then(data => {
+                const count = data.count || 0;
+                lastNotificationCount = count;
+                updateNotificationBadge(count);
+                console.log('🔔 Badge initialized to:', count);
+            })
+            .catch(error => console.error('Error getting initial notification count:', error));
+        
+        if (isNurseUser) {
+            setTimeout(function() {
+                console.log('👩‍⚕️ Initial nurse assignment check...');
+                isInitialCheck = true;
+                initialCheckDone = false;
+                alertShown = false;
+                nurseInitialToastShown = false;
+                lastAssignmentCheck = new Date().toISOString();
+                checkNurseAssignments();
+            }, 1000);
+        }
+        
+        if (isPharmacyUser) {
+            setTimeout(function() {
+                console.log('💊 Initial pharmacy check...');
+                pharmacyInitialCheckDone = false;
+                pharmacyInitialToastShown = false;
+                checkPharmacyNotifications();
+            }, 1500);
+        }
+        
+        if (isMLSUser) {
+            setTimeout(function() {
+                console.log('🧪 Initial MLS check...');
+                mlsInitialCheckDone = false;
+                mlsInitialToastShown = false;
+                checkMLSNotifications();
+            }, 1800);
+        }
+        
+        if (isPhysicianUser) {
+            setTimeout(function() {
+                console.log('👨‍⚕️ Initial physician results check...');
+                doctorInitialCheckDone = false;
+                doctorInitialToastShown = false;
+                checkDoctorResults();
+            }, 1200);
+        }
+        
+        if (isOpticianUser) {
+            setTimeout(function() {
+                console.log('👁️ Initial optician check...');
+                opticianInitialCheckDone = false;
+                opticianInitialToastShown = false;
+                checkOpticianNotifications();
+            }, 2000);
+        }
+        
+        setTimeout(function() {
+            startNotificationPolling();
+        }, 2000);
+    }
+    
+    function startNotificationPolling() {
+        if (notificationPollingInterval) {
+            clearInterval(notificationPollingInterval);
+        }
+        
+        notificationPollingInterval = setInterval(function() {
+            checkForNewNotifications();
+        }, 3000);
+        
+        console.log('📡 Notification polling started (every 3 seconds)');
+    }
+    
+    function checkForNewNotifications() {
+        if (isNotificationPolling) return;
+        isNotificationPolling = true;
+        notificationCheckCounter++;
+        
+        fetch('/api/notification-count/')
+            .then(response => response.json())
+            .then(data => {
+                const currentCount = data.count || 0;
+                console.log(`📊 Poll ${notificationCheckCounter}: Current: ${currentCount}, Last: ${lastNotificationCount}`);
+                
+                updateNotificationBadge(currentCount);
+                
+                if (currentCount > lastNotificationCount) {
+                    const newCount = currentCount - lastNotificationCount;
+                    console.log(`🔔 ${newCount} NEW notification(s) detected!`);
+                    
+                    fetch('/api/notifications/latest/')
+                        .then(response => response.json())
+                        .then(notifData => {
+                            if (notifData.notifications && notifData.notifications.length > 0) {
+                                const unread = notifData.notifications.filter(n => !n.is_read);
+                                if (unread.length > 0) {
+                                    const list = document.getElementById('notificationList');
+                                    if (list) {
+                                        const emptyMsg = list.querySelector('.text-muted.text-center');
+                                        if (emptyMsg) emptyMsg.remove();
+                                    }
+                                    
+                                    const latestUnread = unread.slice(0, newCount);
+                                    latestUnread.forEach(notif => {
+                                        const list = document.getElementById('notificationList');
+                                        const existing = list ? list.querySelector(`[data-id="${notif.id}"]`) : null;
+                                        if (!existing) {
+                                            addNotificationToList(notif.message, notif.link, notif.id);
+                                            if (notificationSoundEnabled) {
+                                                playNotificationSound();
+                                            }
+                                        }
+                                    });
+                                }
+                            }
+                            lastNotificationCount = currentCount;
+                            console.log('📊 Last count updated to:', lastNotificationCount);
+                        })
+                        .catch(error => console.error('Error fetching notifications:', error));
+                        
+                } else if (currentCount < lastNotificationCount) {
+                    console.log(`📉 Count decreased: ${lastNotificationCount} → ${currentCount}`);
+                    lastNotificationCount = currentCount;
+                    refreshNotificationList();
+                } else {
+                    console.log('✅ No new notifications');
+                }
+                
+                // Check nurse assignments
+                if (isNurseUser) {
+                    const checkFrequency = isMainDashboard ? 1 : 2;
+                    if (notificationCheckCounter % checkFrequency === 0) {
+                        checkNurseAssignments();
+                    }
+                }
+                
+                // Check pharmacy notifications
+                if (isPharmacyUser) {
+                    if (notificationCheckCounter % 2 === 0) {
+                        checkPharmacyNotifications();
+                    }
+                }
+                
+                // Check MLS notifications
+                if (isMLSUser) {
+                    if (notificationCheckCounter % 2 === 0) {
+                        checkMLSNotifications();
+                    }
+                }
+                
+                // Check physician results
+                if (isPhysicianUser) {
+                    if (notificationCheckCounter % 3 === 0) {
+                        checkDoctorResults();
+                    }
+                }
+                
+                // Check optician notifications
+                if (isOpticianUser) {
+                    if (notificationCheckCounter % 2 === 0) {
+                        checkOpticianNotifications();
+                    }
+                }
+                
+                isNotificationPolling = false;
+            })
+            .catch(error => {
+                console.error('Error checking notification count:', error);
+                isNotificationPolling = false;
+            });
+    }
+    
+    // ============================================
+    // REFRESH NOTIFICATION LIST
+    // ============================================
+    
+    function refreshNotificationList() {
+        console.log('🔄 Refreshing notification list...');
+        fetch('/api/notifications/latest/')
+            .then(response => response.json())
+            .then(notifData => {
+                const list = document.getElementById('notificationList');
+                if (!list) return;
+                
+                list.innerHTML = '';
+                
+                if (notifData.notifications && notifData.notifications.length > 0) {
+                    const unread = notifData.notifications.filter(n => !n.is_read);
+                    if (unread.length === 0) {
+                        list.innerHTML = '<div class="dropdown-item text-muted text-center">No notifications</div>';
+                    } else {
+                        unread.forEach(notif => {
+                            const item = document.createElement('div');
+                            item.className = 'notification-item unread';
+                            item.dataset.id = notif.id;
+                            const time = new Date(notif.created_at).toLocaleTimeString();
+                            
+                            let viewLink = notif.link || '';
+                            if (viewLink && viewLink.includes('/pharmacy/order/')) {
+                                const patientId = viewLink.split('/')[3];
+                                viewLink = `/pharmacy/dispense-patient/${patientId}/`;
+                            }
+                            
+                            item.innerHTML = `
+                                <div class="d-flex justify-content-between">
+                                    <span>${notif.message}</span>
+                                    <small class="time">${time}</small>
+                                </div>
+                                ${viewLink ? `<a href="${viewLink}" class="small text-success">View</a>` : ''}
+                            `;
+                            list.appendChild(item);
+                        });
+                    }
+                } else {
+                    list.innerHTML = '<div class="dropdown-item text-muted text-center">No notifications</div>';
+                }
+                
+                console.log('✅ Notification list refreshed');
+            })
+            .catch(error => console.error('Error refreshing notification list:', error));
+    }
+    
+    // ============================================
+    // NOTIFICATION UI FUNCTIONS
+    // ============================================
+    
+    function updateNotificationBadge(count) {
+        const badge = document.querySelector('.notification-count');
+        if (badge) {
+            badge.textContent = count;
+            badge.style.display = count > 0 ? 'inline' : 'none';
+            console.log('🔔 Badge updated to:', count);
+        }
+    }
+    
+    function playNotificationSound() {
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            oscillator.frequency.value = 800;
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            
+            oscillator.start(audioCtx.currentTime);
+            oscillator.stop(audioCtx.currentTime + 0.3);
+        } catch (e) {
+            // Silently fail if audio not supported
+        }
+    }
+
+    // ============================================
+    // FORCE SIDEBAR BADGE UPDATE
+    // ============================================
+
+    function updatePhysicianBadges() {
+        // Check if we're on a physician page
+        {% if role == 'PHYSICIAN' %}
+            // Get the current page URL
+            const currentPath = window.location.pathname;
+            
+            // If we're on the lab results page, clear the badge
+            if (currentPath.includes('/physician/lab-results/')) {
+                const labBadge = document.querySelector('.lab-results-badge');
+                if (labBadge) {
+                    labBadge.textContent = '0';
+                    labBadge.style.display = 'none';
+                    console.log('🔬 Lab results badge cleared');
+                }
+            }
+            
+            // If we're on the optician results page, clear the badge
+            if (currentPath.includes('/physician/optician-results/')) {
+                const opticianBadge = document.querySelector('.optician-results-badge');
+                if (opticianBadge) {
+                    opticianBadge.textContent = '0';
+                    opticianBadge.style.display = 'none';
+                    console.log('👁️ Optician results badge cleared');
+                }
+            }
+        {% endif %}
+    }
+
+    // ============================================
+    // EXPOSE FUNCTIONS GLOBALLY
+    // ============================================
+    
+    window.hardResetNotifications = hardResetNotifications;
+    window.markAllNotificationsRead = markAllNotificationsRead;
+    window.refreshNotificationBadge = refreshNotificationBadge;
+    window.refreshNotificationList = refreshNotificationList;
+    window.filterDoctorPatients = filterDoctorPatients;
+    window.toggleDoctorPatientSidebar = toggleDoctorPatientSidebar;
+    window.checkNurseAssignments = checkNurseAssignments;
+    window.checkPharmacyNotifications = checkPharmacyNotifications;
+    window.checkMLSNotifications = checkMLSNotifications;
+    window.checkDoctorResults = checkDoctorResults;
+    window.checkOpticianNotifications = checkOpticianNotifications;
+    window.resetPharmacyNotifications = resetPharmacyNotifications;
+    window.resetMLSNotifications = resetMLSNotifications;
+    window.resetDoctorNotifications = resetDoctorNotifications;
+    window.resetOpticianNotifications = resetOpticianNotifications;
+    window.updatePhysicianBadges = updatePhysicianBadges;
+    window.toggleNotificationSound = function() {
+        notificationSoundEnabled = !notificationSoundEnabled;
+        console.log('🔊 Notification sound:', notificationSoundEnabled ? 'ON' : 'OFF');
+        return notificationSoundEnabled;
+    };
+
+    // ============================================
+    // INITIALIZE
+    // ============================================
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        {% if user.is_authenticated %}
+            console.log('🔔 User authenticated, initializing notification system');
+            console.log('👤 User role: {% if user.is_superuser or user.is_staff %}Admin{% else %}{{ role }}{% endif %}');
+            console.log('👩‍⚕️ Is nurse user (JS):', isNurseUser);
+            console.log('💊 Is pharmacy user (JS):', isPharmacyUser);
+            console.log('🧪 Is MLS user (JS):', isMLSUser);
+            console.log('👨‍⚕️ Is physician user (JS):', isPhysicianUser);
+            console.log('👁️ Is optician user (JS):', isOpticianUser);
+            console.log('👑 Is admin user (JS):', isAdminUser);
+            console.log('📍 Is main dashboard:', isMainDashboard);
+            
+            resetPharmacyNotifications();
+            resetMLSNotifications();
+            resetDoctorNotifications();
+            resetOpticianNotifications();
+            
+            initializeNotificationSystem();
+            
+            console.log('🔌 WebSocket disabled - using polling only');
+            
+            if (isNurseUser) {
+                console.log('👩‍⚕️ Nurse role detected - checking assignments immediately');
+                isInitialCheck = true;
+                initialCheckDone = false;
+                alertShown = false;
+                nurseInitialToastShown = false;
+                setTimeout(function() {
+                    lastAssignmentCheck = new Date().toISOString();
+                    checkNurseAssignments();
+                }, 500);
+                
+                if (isMainDashboard) {
+                    setInterval(function() {
+                        console.log('👩‍⚕️ Periodic nurse assignment check (main dashboard fallback)');
+                        checkNurseAssignments();
+                    }, 5000);
+                }
+            }
+            
+            if (isPharmacyUser) {
+                console.log('💊 Pharmacy role detected - checking prescriptions immediately');
+                pharmacyInitialCheckDone = false;
+                pharmacyInitialToastShown = false;
+                setTimeout(function() {
+                    checkPharmacyNotifications();
+                }, 800);
+            }
+            
+            if (isMLSUser) {
+                console.log('🧪 MLS role detected - checking tests immediately');
+                mlsInitialCheckDone = false;
+                mlsInitialToastShown = false;
+                setTimeout(function() {
+                    updateMLSBadge({{ pending_count|default:0 }});
+                    checkMLSNotifications();
+                }, 900);
+            }
+            
+            if (isPhysicianUser) {
+                console.log('👨‍⚕️ Physician role detected - checking results immediately');
+                doctorInitialCheckDone = false;
+                doctorInitialToastShown = false;
+                setTimeout(function() {
+                    checkDoctorResults();
+                }, 700);
+                setInterval(function() {
+                    checkDoctorResults();
+                }, 10000);
+                
+                // Force badge update for physician
+                setTimeout(updatePhysicianBadges, 500);
+            }
+            
+            if (isOpticianUser) {
+                console.log('👁️ Optician role detected - checking assessments immediately');
+                opticianInitialCheckDone = false;
+                opticianInitialToastShown = false;
+                setTimeout(function() {
+                    updateOpticianBadge({{ pending_count|default:0 }});
+                    checkOpticianNotifications();
+                }, 1100);
+            }
+            
+            if (isAdminUser) {
+                console.log('👑 Admin role detected');
+            }
+            
+            console.log('='.repeat(60));
+            console.log('🔍 AVAILABLE COMMANDS:');
+            console.log('  hardResetNotifications() - Force reset all notifications');
+            console.log('  refreshNotificationBadge() - Refresh the notification badge');
+            console.log('  refreshNotificationList() - Refresh the notification list');
+            console.log('  markAllNotificationsRead() - Mark all as read');
+            console.log('  checkNurseAssignments() - Manually check for nurse assignments');
+            console.log('  checkPharmacyNotifications() - Manually check for pharmacy prescriptions');
+            console.log('  checkMLSNotifications() - Manually check for MLS lab tests');
+            console.log('  checkDoctorResults() - Manually check for physician results');
+            console.log('  checkOpticianNotifications() - Manually check for optician assessments');
+            console.log('  updatePhysicianBadges() - Force update physician sidebar badges');
+            console.log('='.repeat(60));
+        {% endif %}
+    });
+
+    // Run when page is shown from cache
+    window.addEventListener('pageshow', function() {
+        setTimeout(updatePhysicianBadges, 300);
+    });
     </script>
     {% block extra_js %}{% endblock %}
 </body>

@@ -1,183 +1,154 @@
 <!-- templates/b/pharmacy/drug_list.html -->
 
-
 {% extends 'base.html' %}
 {% load crispy_forms_tags %}
 
-{% block title %}Drug Inventory - Pharmacy{% endblock %}
-
-{% block extra_css %}
-<style>
-    .stock-low { background: #fef2f2 !important; }
-    .stock-low td:first-child { border-left: 4px solid #dc3545; }
-    .stock-critical { background: #fef3c7 !important; }
-    .stock-critical td:first-child { border-left: 4px solid #f59e0b; }
-    .stock-good { background: #f0fdf4 !important; }
-    .stock-good td:first-child { border-left: 4px solid #22c55e; }
-    .stat-card {
-        transition: all 0.3s ease;
-    }
-    .stat-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    }
-</style>
-{% endblock %}
+{% block title %}Drug Inventory{% endblock %}
 
 {% block content %}
-<div class="row g-3 g-md-4 mb-4">
-    <div class="col-md-3">
-        <div class="card stat-card">
-            <div class="card-body">
-                <h6 class="text-muted"><i class="fas fa-capsules me-2"></i>Total Drugs</h6>
-                <h3 class="mb-0">{{ total_drugs }}</h3>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card stat-card border-3 border-danger">
-            <div class="card-body">
-                <h6 class="text-danger"><i class="fas fa-exclamation-triangle me-2"></i>Low Stock</h6>
-                <h3 class="mb-0 text-danger">{{ low_stock_count }}</h3>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card stat-card border-3 border-warning">
-            <div class="card-body">
-                <h6 class="text-warning"><i class="fas fa-clock me-2"></i>Pending Orders</h6>
-                <h3 class="mb-0 text-warning">{{ pending_orders|default:0 }}</h3>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card stat-card">
-            <div class="card-body d-flex justify-content-between align-items-center">
-                <div>
-                    <h6 class="text-muted"><i class="fas fa-plus-circle me-2"></i>Actions</h6>
-                    <a href="{% url 'b:pharmacy_drug_add' %}" class="btn btn-success btn-sm">
-                        <i class="fas fa-plus me-1"></i> Add Drug
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
 <div class="card card-custom">
-    <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
-        <h5 class="mb-0"><i class="fas fa-pills text-success me-2"></i>Drug Inventory</h5>
-        <div class="d-flex gap-2">
-            <input type="text" id="searchDrug" class="form-control form-control-sm" placeholder="Search drugs..." style="width: 200px;">
-            <select id="filterCategory" class="form-select form-select-sm" style="width: 150px;">
-                <option value="">All Categories</option>
-                <option value="ANTIBIOTICS">Antibiotics</option>
-                <option value="ANALGESICS">Analgesics</option>
-                <option value="ANTIHYPERTENSIVE">Antihypertensive</option>
-                <option value="ANTIDIABETIC">Antidiabetic</option>
-                <option value="ANTIMALARIAL">Antimalarial</option>
-                <option value="CARDIOVASCULAR">Cardiovascular</option>
-                <option value="RESPIRATORY">Respiratory</option>
-                <option value="VITAMINS">Vitamins</option>
-                <option value="OTHER">Other</option>
-            </select>
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="fas fa-capsules text-success me-2"></i>
+            Drug Inventory
+        </h5>
+        <div>
+            <a href="{% url 'b:pharmacy_drug_add' %}" class="btn btn-sm btn-success">
+                <i class="fas fa-plus me-1"></i> Add Drug
+            </a>
+            <a href="{% url 'b:pharmacy_drug_bulk_add' %}" class="btn btn-sm btn-outline-primary">
+                <i class="fas fa-list me-1"></i> Bulk Add
+            </a>
         </div>
     </div>
     <div class="card-body p-0 p-md-3">
+        <!-- Stats -->
+        <div class="row g-2 g-md-3 mb-3">
+            <div class="col-md-3 col-6">
+                <div class="card bg-primary text-white">
+                    <div class="card-body p-2 p-md-3">
+                        <h6 class="mb-0">Total Drugs</h6>
+                        <h3 class="mb-0">{{ total_drugs }}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="card bg-warning text-dark">
+                    <div class="card-body p-2 p-md-3">
+                        <h6 class="mb-0">Low Stock</h6>
+                        <h3 class="mb-0">{{ low_stock_count }}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="card bg-success text-white">
+                    <div class="card-body p-2 p-md-3">
+                        <h6 class="mb-0">In Stock</h6>
+                        <h3 class="mb-0">{{ in_stock_count }}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="card bg-secondary text-white">
+                    <div class="card-body p-2 p-md-3">
+                        <h6 class="mb-0">Inactive</h6>
+                        <h3 class="mb-0">{{ inactive_count }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Search -->
+        <div class="mb-3">
+            <input type="text" id="searchDrug" class="form-control" placeholder="Search drugs..." onkeyup="filterDrugs()">
+        </div>
+        
+        <!-- Table -->
         <div class="table-responsive">
             <table class="table table-hover mb-0" id="drugTable">
                 <thead>
                     <tr>
+                        <th>#</th>
                         <th>Drug Name</th>
                         <th>Category</th>
-                        <th>Strength</th>
                         <th>Quantity</th>
+                        <th>Reorder Level</th>
                         <th>Status</th>
-                        <th>Unit Price</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for drug in drugs %}
-                        <tr class="{% if drug.quantity <= drug.reorder_level and drug.quantity > 0 %}stock-low{% elif drug.quantity == 0 %}stock-critical{% else %}stock-good{% endif %}">
-                            <td>
-                                <strong>{{ drug.name }}</strong>
-                                <br><small class="text-muted">{{ drug.generic_name }}</small>
-                            </td>
-                            <td>{{ drug.get_category_display }}</td>
-                            <td>{{ drug.strength }}<br><small class="text-muted">{{ drug.dosage_form }}</small></td>
-                            <td>
-                                <span class="fw-bold">{{ drug.quantity }}</span>
-                                {% if drug.quantity <= drug.reorder_level %}
-                                    <span class="badge {% if drug.quantity == 0 %}bg-danger{% else %}bg-warning{% endif %} ms-1">
-                                        {% if drug.quantity == 0 %}Out of Stock{% else %}Low Stock{% endif %}
-                                    </span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if drug.quantity == 0 %}
-                                    <span class="badge bg-danger">Out of Stock</span>
-                                {% elif drug.quantity <= drug.reorder_level %}
-                                    <span class="badge bg-warning text-dark">Low Stock</span>
-                                {% else %}
-                                    <span class="badge bg-success">In Stock</span>
-                                {% endif %}
-                            </td>
-                            <td>₦{{ drug.unit_price }}</td>
-                            <td>
-                                <div class="btn-group btn-group-sm">
-                                    <a href="{% url 'b:pharmacy_drug_edit' drug.id %}" class="btn btn-outline-primary">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <a href="{% url 'b:pharmacy_drug_delete' drug.id %}" class="btn btn-outline-danger">
-                                        <i class="fas fa-trash"></i>
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>
+                            <strong>{{ drug.name }}</strong>
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary">{{ drug.get_category_display }}</span>
+                        </td>
+                        <td>
+                            <!-- FIX: Remove the multiplication operator -->
+                            <span class="badge {% if drug.quantity <= drug.reorder_level %}bg-danger{% elif drug.quantity <= drug.reorder_level|add:10 %}bg-warning{% else %}bg-success{% endif %}">
+                                {{ drug.quantity }}
+                            </span>
+                        </td>
+                        <td>{{ drug.reorder_level }}</td>
+                        <td>
+                            {% if drug.is_active %}
+                                <span class="badge bg-success">Active</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'b:pharmacy_drug_edit' drug.id %}" class="btn btn-sm btn-primary">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <button class="btn btn-sm btn-danger" onclick="confirmDelete({{ drug.id }}, '{{ drug.name }}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
                     {% empty %}
-                        <tr>
-                            <td colspan="7" class="text-center py-4">
-                                <i class="fas fa-pills fa-2x text-muted mb-2 d-block"></i>
-                                No drugs in inventory. <a href="{% url 'b:pharmacy_drug_add' %}">Add your first drug</a>
-                            </td>
-                        </tr>
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">
+                            <i class="fas fa-pills fa-2x mb-2 d-block"></i>
+                            No drugs in inventory. <a href="{% url 'b:pharmacy_drug_add' %}">Add your first drug</a>
+                        </td>
+                    </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
 </div>
-{% endblock %}
 
-{% block extra_js %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const searchInput = document.getElementById('searchDrug');
-        const categoryFilter = document.getElementById('filterCategory');
-        const tableRows = document.querySelectorAll('#drugTable tbody tr');
-        
-        function filterTable() {
-            const query = searchInput.value.toLowerCase();
-            const category = categoryFilter.value;
-            
-            tableRows.forEach(row => {
-                let show = true;
-                const text = row.textContent.toLowerCase();
-                const rowCategory = row.cells[1]?.textContent || '';
-                
-                if (query && !text.includes(query)) {
-                    show = false;
-                }
-                if (category && rowCategory !== category) {
-                    show = false;
-                }
-                row.style.display = show ? '' : 'none';
-            });
+function filterDrugs() {
+    const input = document.getElementById('searchDrug');
+    const filter = input.value.toLowerCase();
+    const table = document.getElementById('drugTable');
+    const rows = table.getElementsByTagName('tr');
+    
+    for (let i = 1; i < rows.length; i++) {
+        const cells = rows[i].getElementsByTagName('td');
+        if (cells.length > 0) {
+            const name = cells[1].textContent.toLowerCase();
+            const category = cells[2].textContent.toLowerCase();
+            if (name.includes(filter) || category.includes(filter)) {
+                rows[i].style.display = '';
+            } else {
+                rows[i].style.display = 'none';
+            }
         }
-        
-        searchInput.addEventListener('keyup', filterTable);
-        categoryFilter.addEventListener('change', filterTable);
-    });
+    }
+}
+
+function confirmDelete(id, name) {
+    if (confirm(`Are you sure you want to delete "${name}"?`)) {
+        window.location.href = `/pharmacy/drug/${id}/delete/`;
+    }
+}
 </script>
 {% endblock %}

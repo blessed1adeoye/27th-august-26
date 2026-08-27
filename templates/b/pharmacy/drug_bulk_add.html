@@ -1,0 +1,114 @@
+<!-- templates/b/pharmacy/drug_bulk_add.html -->
+
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Bulk Add Drugs{% endblock %}
+
+{% block content %}
+<div class="card card-custom">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-list text-success me-2"></i>
+            Bulk Add Drugs
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>Format:</strong> Enter one drug per line.
+            <br>
+            <small>Examples:</small>
+            <ul class="mt-2">
+                <li><code>Amlodipine 10mg = 532</code></li>
+                <li><code>Paracetamol 500mg = 1000</code></li>
+                <li><code>ACT 80/480mg = 360</code></li>
+                <li><code>Vitamin C 100mg = 1000</code></li>
+                <li><code>Ibuprofen 200mg = 1000</code></li>
+            </ul>
+            <p class="mb-0 text-muted small">
+                <i class="fas fa-lightbulb text-warning me-1"></i>
+                You can paste your entire drug list from Excel or text.
+                <br>
+                <i class="fas fa-check-circle text-success me-1"></i>
+                Duplicate drug names will be skipped automatically.
+            </p>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-8">
+                <div class="form-group">
+                    <label for="drug_list"><strong>Drug List</strong></label>
+                    <textarea name="drug_list" id="drug_list" class="form-control" rows="20" 
+                        placeholder="Amlodipine 10mg = 532
+Amlodipine 5mg = 84
+Avomine 25mg = 100
+ACT 80/480mg = 360
+Paracetamol 500mg = 1000
+Vitamin C 100mg = 1000
+Ibuprofen 200mg = 1000"
+                        style="font-family: 'Courier New', monospace; font-size: 13px;"></textarea>
+                    <small class="text-muted" id="drugCount">0 drug(s) ready to import</small>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h6><i class="fas fa-cog me-2"></i>Import Settings</h6>
+                        
+                        <div class="form-group mt-3">
+                            <label for="category">Category</label>
+                            <select name="category" id="category" class="form-select">
+                                {% for value, label in categories %}
+                                    <option value="{{ value }}" {% if value == 'OTHER' %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="form-group mt-3">
+                            <label for="quantity">Default Quantity</label>
+                            <input type="number" name="quantity" id="quantity" class="form-control" value="0" placeholder="0">
+                            <small class="text-muted">If quantity not specified in the line</small>
+                        </div>
+                        
+                        <div class="form-group mt-3">
+                            <label for="reorder_level">Default Reorder Level</label>
+                            <input type="number" name="reorder_level" id="reorder_level" class="form-control" value="10">
+                        </div>
+                        
+                        <div class="mt-3">
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="fas fa-upload me-2"></i> Import All Drugs
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-3 d-flex justify-content-between">
+            <a href="{% url 'b:pharmacy_drug_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i> Back to Inventory
+            </a>
+            <a href="{% url 'b:pharmacy_drug_add' %}" class="btn btn-outline-primary">
+                <i class="fas fa-plus me-2"></i> Add Single Drug
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const textarea = document.getElementById('drug_list');
+    const countDisplay = document.getElementById('drugCount');
+    
+    textarea.addEventListener('input', function() {
+        const lines = this.value.split('\n').filter(l => l.trim());
+        countDisplay.textContent = `${lines.length} drug(s) ready to import. One drug per line.`;
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,415 @@
+<!-- templates/b/admin/dashboard.html -->
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.css" rel="stylesheet">
+<style>
+    .stat-card {
+        border-radius: 10px;
+        padding: 20px;
+        color: white;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    }
+    .stat-card .stat-icon {
+        font-size: 2.5rem;
+        opacity: 0.5;
+    }
+    .stat-card .stat-number {
+        font-size: 2rem;
+        font-weight: 700;
+    }
+    .stat-card .stat-label {
+        font-size: 0.85rem;
+        opacity: 0.8;
+    }
+    .stat-card.bg-primary { background: linear-gradient(135deg, #1a73e8, #0d47a1); }
+    .stat-card.bg-success { background: linear-gradient(135deg, #2e7d32, #1b5e20); }
+    .stat-card.bg-warning { background: linear-gradient(135deg, #f57c00, #e65100); }
+    .stat-card.bg-danger { background: linear-gradient(135deg, #c62828, #b71c1c); }
+    .stat-card.bg-info { background: linear-gradient(135deg, #00838f, #00695c); }
+    .stat-card.bg-purple { background: linear-gradient(135deg, #6a1b9a, #4a148c); }
+    
+    .chart-container {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        margin-bottom: 20px;
+    }
+    .chart-container h6 {
+        color: #333;
+        font-weight: 600;
+    }
+    .export-btn {
+        background: linear-gradient(135deg, #2e7d32, #1b5e20);
+        color: white;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 20px;
+        transition: all 0.3s;
+        font-weight: 500;
+    }
+    .export-btn:hover {
+        transform: scale(1.05);
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4><i class="fas fa-chart-pie text-success me-2"></i>Super Admin Dashboard</h4>
+            <div>
+                <button class="export-btn me-2" onclick="exportData()">
+                    <i class="fas fa-file-excel me-2"></i> Export to Excel
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" onclick="refreshData()">
+                    <i class="fas fa-sync-alt me-1"></i> Refresh
+                </button>
+            </div>
+        </div>
+        
+        <!-- Stats Row -->
+        <div class="row g-3 mb-4" id="statsRow">
+            <div class="col-md-3 col-6">
+                <div class="stat-card bg-primary">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="stat-label">Total Patients</div>
+                            <div class="stat-number" id="totalPatients">-</div>
+                        </div>
+                        <div class="stat-icon"><i class="fas fa-users"></i></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-card bg-success">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="stat-label">Consultations</div>
+                            <div class="stat-number" id="totalConsultations">-</div>
+                        </div>
+                        <div class="stat-icon"><i class="fas fa-stethoscope"></i></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-card bg-warning">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="stat-label">Lab Tests</div>
+                            <div class="stat-number" id="totalLabTests">-</div>
+                        </div>
+                        <div class="stat-icon"><i class="fas fa-vial"></i></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-card bg-purple">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="stat-label">Pharmacy Orders</div>
+                            <div class="stat-number" id="totalPharmacyOrders">-</div>
+                        </div>
+                        <div class="stat-icon"><i class="fas fa-pills"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Charts Row 1 -->
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <h6><i class="fas fa-chart-bar text-primary me-2"></i>Patients by Gender</h6>
+                    <canvas id="genderChart" height="200"></canvas>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <h6><i class="fas fa-chart-pie text-success me-2"></i>Patient Age Distribution</h6>
+                    <canvas id="ageChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Charts Row 2 -->
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <h6><i class="fas fa-chart-line text-info me-2"></i>Monthly Trends</h6>
+                    <canvas id="trendChart" height="200"></canvas>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <h6><i class="fas fa-chart-doughnut text-warning me-2"></i>Drug Categories</h6>
+                    <canvas id="drugCategoryChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Charts Row 3 -->
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <h6><i class="fas fa-prescription-bottle text-danger me-2"></i>Referrals</h6>
+                    <canvas id="referralChart" height="200"></canvas>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <h6><i class="fas fa-flask text-purple me-2"></i>Lab Results</h6>
+                    <canvas id="labResultChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:9999; display:flex; align-items:center; justify-content:center;">
+    <div class="text-center">
+        <div class="spinner-border text-success" role="status" style="width:50px; height:50px;"></div>
+        <p class="mt-2">Loading data...</p>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+let charts = {};
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadDashboardData();
+});
+
+function loadDashboardData() {
+    document.getElementById('loadingOverlay').style.display = 'flex';
+    
+    fetch('/api/admin/dashboard-data/')
+        .then(response => response.json())
+        .then(data => {
+            console.log('📊 Dashboard data loaded:', data);
+            updateStats(data);
+            createCharts(data);
+            document.getElementById('loadingOverlay').style.display = 'none';
+        })
+        .catch(error => {
+            console.error('Error loading dashboard data:', error);
+            document.getElementById('loadingOverlay').style.display = 'none';
+        });
+}
+
+function updateStats(data) {
+    document.getElementById('totalPatients').textContent = data.patients.total || 0;
+    document.getElementById('totalConsultations').textContent = data.consultations.total || 0;
+    document.getElementById('totalLabTests').textContent = data.lab_tests.total || 0;
+    document.getElementById('totalPharmacyOrders').textContent = data.pharmacy.orders || 0;
+}
+
+function createCharts(data) {
+    // Destroy existing charts
+    Object.values(charts).forEach(chart => chart.destroy());
+    charts = {};
+    
+    // 1. Gender Chart
+    const genderLabels = data.patients.by_gender.map(g => g.gender || 'Unknown');
+    const genderData = data.patients.by_gender.map(g => g.count);
+    const genderColors = ['#1a73e8', '#e83a6b', '#6c757d'];
+    
+    charts.gender = new Chart(document.getElementById('genderChart'), {
+        type: 'bar',
+        data: {
+            labels: genderLabels,
+            datasets: [{
+                label: 'Patients',
+                data: genderData,
+                backgroundColor: genderColors.slice(0, genderLabels.length),
+                borderRadius: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+    
+    // 2. Age Chart
+    const ageLabels = Object.keys(data.patients.age_groups);
+    const ageData = Object.values(data.patients.age_groups);
+    
+    charts.age = new Chart(document.getElementById('ageChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ageLabels,
+            datasets: [{
+                data: ageData,
+                backgroundColor: ['#1a73e8', '#2e7d32', '#f57c00', '#c62828', '#6a1b9a'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+    
+    // 3. Trend Chart
+    const months = data.monthly_trends.map(m => m.month);
+    const patientsData = data.monthly_trends.map(m => m.patients);
+    const consultationsData = data.monthly_trends.map(m => m.consultations);
+    const labTestsData = data.monthly_trends.map(m => m.lab_tests);
+    
+    charts.trend = new Chart(document.getElementById('trendChart'), {
+        type: 'line',
+        data: {
+            labels: months,
+            datasets: [
+                {
+                    label: 'Patients',
+                    data: patientsData,
+                    borderColor: '#1a73e8',
+                    backgroundColor: 'rgba(26, 115, 232, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                },
+                {
+                    label: 'Consultations',
+                    data: consultationsData,
+                    borderColor: '#2e7d32',
+                    backgroundColor: 'rgba(46, 125, 50, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                },
+                {
+                    label: 'Lab Tests',
+                    data: labTestsData,
+                    borderColor: '#f57c00',
+                    backgroundColor: 'rgba(245, 124, 0, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+    
+    // 4. Drug Categories Chart
+    const drugLabels = data.drug_categories.map(d => d.category || 'Other');
+    const drugData = data.drug_categories.map(d => d.count);
+    const colors = ['#1a73e8', '#2e7d32', '#f57c00', '#c62828', '#6a1b9a', '#00838f', '#e83a6b'];
+    
+    charts.drugCategory = new Chart(document.getElementById('drugCategoryChart'), {
+        type: 'pie',
+        data: {
+            labels: drugLabels,
+            datasets: [{
+                data: drugData,
+                backgroundColor: colors.slice(0, drugLabels.length),
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+    
+    // 5. Referrals Chart
+    const referralLabels = ['Pharmacy', 'Laboratory', 'Optician', 'Specialist'];
+    const referralData = [
+        data.consultations.referrals.pharmacy || 0,
+        data.consultations.referrals.laboratory || 0,
+        data.consultations.referrals.optician || 0,
+        data.consultations.referrals.specialist || 0
+    ];
+    const referralColors = ['#2e7d32', '#1a73e8', '#6a1b9a', '#f57c00'];
+    
+    charts.referral = new Chart(document.getElementById('referralChart'), {
+        type: 'bar',
+        data: {
+            labels: referralLabels,
+            datasets: [{
+                label: 'Referrals',
+                data: referralData,
+                backgroundColor: referralColors,
+                borderRadius: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+    
+    // 6. Lab Results Chart
+    const labLabels = ['Positive', 'Negative', 'Pending'];
+    const labData = [
+        data.lab_tests.results.positive || 0,
+        data.lab_tests.results.negative || 0,
+        data.lab_tests.results.pending || 0
+    ];
+    const labColors = ['#c62828', '#2e7d32', '#f57c00'];
+    
+    charts.labResult = new Chart(document.getElementById('labResultChart'), {
+        type: 'doughnut',
+        data: {
+            labels: labLabels,
+            datasets: [{
+                data: labData,
+                backgroundColor: labColors,
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+}
+
+function refreshData() {
+    document.getElementById('loadingOverlay').style.display = 'flex';
+    loadDashboardData();
+}
+
+function exportData() {
+    window.location.href = '/api/admin/export-data/';
+}
+</script>
+{% endblock %}

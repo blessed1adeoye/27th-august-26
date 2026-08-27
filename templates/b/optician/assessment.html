@@ -7,6 +7,34 @@
 
 {% block title %}Optical Assessment{% endblock %}
 
+{% block extra_css %}
+<style>
+    .walk-in-fields {
+        display: none;
+        background: #f8fafc;
+        padding: 16px 20px;
+        border-radius: 10px;
+        border: 2px dashed #d1fae5;
+        margin-bottom: 20px;
+        animation: fadeIn 0.3s ease;
+    }
+    .walk-in-fields.show {
+        display: block;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .patient-info-card {
+        background: linear-gradient(135deg, #f8fafc, #e8f0f5);
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 20px;
+        border-left: 4px solid #065f46;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="card card-custom">
     <div class="card-header">
@@ -22,37 +50,61 @@
     </div>
     <div class="card-body">
         {% if patient %}
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle me-2"></i>
-                Performing optical assessment for <strong>{{ patient.full_name }}</strong>
-                ({{ patient.hospital_number }})
+            <div class="patient-info-card">
+                <div class="d-flex flex-wrap justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-1">{{ patient.full_name }}</h5>
+                        <div>
+                            <span class="badge bg-secondary me-1">{{ patient.hospital_number }}</span>
+                            <span class="badge bg-secondary me-1">
+                                {% if patient.age_data %}
+                                    {% if patient.age_data.years > 0 %}{{ patient.age_data.years }}y {% endif %}
+                                    {% if patient.age_data.months > 0 %}{{ patient.age_data.months }}m{% endif %}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </span>
+                            <span class="badge bg-secondary">{{ patient.gender }}</span>
+                        </div>
+                    </div>
+                    <span class="badge bg-info">Referral</span>
+                </div>
             </div>
         {% else %}
             <div class="alert alert-warning">
                 <i class="fas fa-user-plus me-2"></i>
-                Registering a new walk-in patient. Please fill in all details.
+                Registering a new walk-in patient. Please fill in all required fields.
             </div>
         {% endif %}
         
-        <form method="post">
+        <form method="post" novalidate>
             {% csrf_token %}
             
-            {% if not patient %}
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle me-2"></i>
-                            Please fill in patient details below. This will create a new patient record.
-                        </div>
-                        {{ form.is_walk_in|as_crispy_field }}
-                        <!-- Walk-in patient fields would go here -->
-                    </div>
+            <!-- Walk-in Patient Fields -->
+            <div id="walkInFields" class="walk-in-fields {% if not patient %}show{% endif %}">
+                <h6 class="text-success border-bottom pb-2 mb-3">
+                    <i class="fas fa-user-plus me-2"></i>Walk-in Patient Information
+                    <span class="badge bg-warning ms-2 text-dark">Required</span>
+                </h6>
+                <div class="row g-3">
+                    <div class="col-md-6">{{ form.first_name|as_crispy_field }}</div>
+                    <div class="col-md-6">{{ form.last_name|as_crispy_field }}</div>
+                    <div class="col-md-4">{{ form.date_of_birth|as_crispy_field }}</div>
+                    <div class="col-md-4">{{ form.gender|as_crispy_field }}</div>
+                    <div class="col-md-4">{{ form.phone|as_crispy_field }}</div>
                 </div>
-            {% else %}
-                {{ form.is_walk_in|as_crispy_field }}
-            {% endif %}
+            </div>
             
-            <div class="row">
+            <!-- Is Walk-in Checkbox -->
+            <div class="form-check mb-3">
+                {{ form.is_walk_in }}
+                <label class="form-check-label" for="id_is_walk_in">
+                    <strong>Walk-in Patient</strong>
+                    <span class="text-muted small">(Check if patient walked in without referral)</span>
+                </label>
+            </div>
+            
+            <div class="row g-3">
                 <div class="col-md-6">
                     <h6 class="text-success border-bottom pb-2"><i class="fas fa-eye me-2"></i>Visual Acuity</h6>
                     {{ form.visual_acuity_left|as_crispy_field }}
@@ -70,7 +122,7 @@
             {{ form.glasses_prescription|as_crispy_field }}
             
             <div class="mt-4 d-flex justify-content-between">
-                <a href="{% url 'optician_dashboard' %}" class="btn btn-secondary">
+                <a href="{% url 'b:optician_dashboard' %}" class="btn btn-secondary">
                     <i class="fas fa-arrow-left me-2"></i> Back
                 </a>
                 <button type="submit" class="btn btn-success">
@@ -80,4 +132,44 @@
         </form>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const walkInCheckbox = document.getElementById('id_is_walk_in');
+        const walkInFields = document.getElementById('walkInFields');
+        
+        function toggleWalkInFields() {
+            if (walkInCheckbox.checked) {
+                walkInFields.classList.add('show');
+                // Make walk-in fields required
+                document.querySelectorAll('#walkInFields input, #walkInFields select').forEach(field => {
+                    if (field.id !== 'id_is_walk_in') {
+                        field.setAttribute('required', 'required');
+                    }
+                });
+            } else {
+                walkInFields.classList.remove('show');
+                // Remove required attribute
+                document.querySelectorAll('#walkInFields input, #walkInFields select').forEach(field => {
+                    field.removeAttribute('required');
+                });
+            }
+        }
+        
+        walkInCheckbox.addEventListener('change', toggleWalkInFields);
+        
+        // Initialize on page load
+        toggleWalkInFields();
+        
+        // If patient exists, hide walk-in checkbox (it's a referral)
+        {% if patient %}
+            walkInCheckbox.checked = false;
+            walkInCheckbox.disabled = true;
+            toggleWalkInFields();
+            document.querySelector('label[for="id_is_walk_in"]').innerHTML = '<strong>Referral Patient</strong> <span class="text-muted small">(Walk-in disabled - patient already exists)</span>';
+        {% endif %}
+    });
+</script>
 {% endblock %}

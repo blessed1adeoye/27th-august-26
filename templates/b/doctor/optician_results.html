@@ -1,0 +1,119 @@
+<!-- templates/b/doctor/optician_results.html -->
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Optician Results{% endblock %}
+
+{% block extra_css %}
+<style>
+    .result-card {
+        border-left: 4px solid #6f42c1;
+        transition: all 0.3s ease;
+    }
+    .result-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .result-card .result-item {
+        padding: 8px 0;
+        border-bottom: 1px solid #f3f4f6;
+    }
+    .result-card .result-item:last-child {
+        border-bottom: none;
+    }
+    .glasses-badge {
+        background: #e0e7ff;
+        color: #3730a3;
+        padding: 2px 10px;
+        border-radius: 12px;
+        font-size: 12px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-eye text-primary me-2"></i>
+                    Optician Results
+                </h5>
+                <span class="badge bg-primary">{{ results|length }}</span>
+            </div>
+            <div class="card-body p-0 p-md-3">
+                {% if results %}
+                    <div class="row g-3">
+                        {% for item in results %}
+                            <div class="col-md-6 col-lg-4">
+                                <div class="card result-card h-100">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <h6 class="mb-1">
+                                                    <a href="{% url 'b:physician_optician_result_detail' item.assessment.id %}" class="text-dark text-decoration-none">
+                                                        {{ item.patient.full_name }}
+                                                    </a>
+                                                </h6>
+                                                <small class="text-muted">{{ item.patient.hospital_number }}</small>
+                                            </div>
+                                            <span class="badge bg-success">Completed</span>
+                                        </div>
+                                        
+                                        <div class="mt-3">
+                                            <div class="result-item">
+                                                <div class="d-flex justify-content-between">
+                                                    <span class="text-muted small">Visual Acuity</span>
+                                                    <span class="fw-bold">{{ item.visual_acuity }}</span>
+                                                </div>
+                                            </div>
+                                            <div class="result-item">
+                                                <div class="d-flex justify-content-between">
+                                                    <span class="text-muted small">Glasses</span>
+                                                    <span class="fw-bold">{{ item.glasses }}</span>
+                                                </div>
+                                            </div>
+                                            {% if item.assessment.refractive_error %}
+                                            <div class="result-item">
+                                                <div class="d-flex justify-content-between">
+                                                    <span class="text-muted small">Refractive Error</span>
+                                                    <span class="fw-bold">{{ item.assessment.refractive_error|truncatechars:30 }}</span>
+                                                </div>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <div class="mt-3">
+                                            <small class="text-muted">
+                                                <i class="far fa-clock me-1"></i>
+                                                {{ item.completed_at|date:"M d, Y H:i" }}
+                                            </small>
+                                        </div>
+                                        
+                                        <div class="mt-2">
+                                            <a href="{% url 'b:physician_optician_result_detail' item.assessment.id %}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye me-1"></i> View Details
+                                            </a>
+                                            <a href="{% url 'b:doctor_consultation' item.patient.id %}" class="btn btn-sm btn-outline-success">
+                                                <i class="fas fa-prescription me-1"></i> Review
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-eye fa-4x text-muted opacity-25 mb-3"></i>
+                        <h6 class="text-muted">No optician results available</h6>
+                        <p class="text-muted small">Optician results will appear here when assessments are completed</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

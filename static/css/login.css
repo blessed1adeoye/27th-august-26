@@ -1,0 +1,46 @@
+/* static/css/login.css */
+
+.login-background {
+  background-image: url('../assets/pattern.png');
+  background-size: cover;
+  background-position: center;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.login-container {
+  width: 400px;
+  background: rgba(20, 20, 20, 0.9);
+  padding: 40px;
+  border-radius: 20px;
+  box-shadow: 0 0 20px #444;
+  color: gold;
+  text-align: center;
+}
+
+.login-container input {
+  width: 80%;
+  padding: 10px;
+  margin: 10px auto;
+  display: block;
+  border: none;
+  border-radius: 8px;
+}
+
+.login-container button {
+  width: 50%;
+  padding: 10px;
+  margin-top: 15px;
+  background-color: gold;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.login-container button:hover {
+  background-color: orange;
+}

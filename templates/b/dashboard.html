@@ -1,6 +1,7 @@
 <!-- templates/b/dashboard.html -->
 {% extends 'base.html' %}
 {% load static %}
+
 {% block extra_css %}
 <style>
     .stat-card-responsive {
@@ -13,6 +14,74 @@
     .table-responsive-custom {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
+    }
+    
+    /* ===== Nurse Assignment Alert Banner ===== */
+    .nurse-alert-banner {
+        background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+        border-left: 5px solid #065f46;
+        border-radius: 8px;
+        padding: 12px 18px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(6, 95, 70, 0.1);
+        animation: slideIn 0.5s ease;
+    }
+    .nurse-alert-banner .alert-icon {
+        font-size: 2rem;
+        color: #065f46;
+    }
+    .nurse-alert-banner .alert-title {
+        font-weight: 600;
+        color: #065f46;
+        font-size: 1.1rem;
+    }
+    .nurse-alert-banner .alert-text {
+        color: #065f46;
+        margin-bottom: 0;
+    }
+    .nurse-alert-banner .btn-go-nursing {
+        background: #065f46;
+        color: white;
+        border: none;
+        padding: 4px 16px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        transition: all 0.3s;
+    }
+    .nurse-alert-banner .btn-go-nursing:hover {
+        background: #0d7a5a;
+        color: white;
+        transform: translateX(3px);
+    }
+
+    /* ===== Dashboard Refresh Indicator ===== */
+    .dashboard-refresh-indicator {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 9999;
+        background: white;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        border: 1px solid #e5e7eb;
+        opacity: 0.7;
+        transition: all 0.3s;
+    }
+    .dashboard-refresh-indicator:hover {
+        opacity: 1;
+        transform: scale(1.05);
+    }
+    .dashboard-refresh-indicator .spinning {
+        animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
     }
     
     @media (max-width: 767.98px) {
@@ -34,6 +103,24 @@
         .table-responsive-custom .btn-sm {
             font-size: 0.65rem;
             padding: 0.15rem 0.4rem;
+        }
+        .nurse-alert-banner {
+            padding: 10px 14px;
+        }
+        .nurse-alert-banner .alert-icon {
+            font-size: 1.5rem;
+        }
+        .nurse-alert-banner .alert-title {
+            font-size: 0.95rem;
+        }
+        .dashboard-refresh-indicator {
+            width: 32px;
+            height: 32px;
+            bottom: 12px;
+            right: 12px;
+        }
+        .dashboard-refresh-indicator i {
+            font-size: 0.8rem;
         }
     }
     
@@ -77,7 +164,7 @@
                     <div class="card stat-card-responsive text-white bg-success h-100">
                         <div class="card-body">
                             <h6 class="mb-1"><i class="fas fa-users me-1"></i>Total</h6>
-                            <h2 class="mb-0">{{ total_patients|default:0 }}</h2>
+                            <h2 class="mb-0 stat-total-patients">{{ total_patients|default:0 }}</h2>
                             <small class="opacity-75">Patients</small>
                         </div>
                     </div>
@@ -86,7 +173,7 @@
                     <div class="card stat-card-responsive text-white bg-primary h-100">
                         <div class="card-body">
                             <h6 class="mb-1"><i class="fas fa-calendar-day me-1"></i>Today</h6>
-                            <h2 class="mb-0">{{ today_patients|default:0 }}</h2>
+                            <h2 class="mb-0 stat-today-patients">{{ today_patients|default:0 }}</h2>
                             <small class="opacity-75">New patients</small>
                         </div>
                     </div>
@@ -95,7 +182,7 @@
                     <div class="card stat-card-responsive text-white bg-warning h-100">
                         <div class="card-body">
                             <h6 class="mb-1"><i class="fas fa-user-md me-1"></i>Nursing</h6>
-                            <h2 class="mb-0">{{ pending_nursing|default:0 }}</h2>
+                            <h2 class="mb-0 stat-pending-nursing">{{ pending_nursing|default:0 }}</h2>
                             <small class="opacity-75">Pending</small>
                         </div>
                     </div>
@@ -104,7 +191,7 @@
                     <div class="card stat-card-responsive text-white bg-info h-100">
                         <div class="card-body">
                             <h6 class="mb-1"><i class="fas fa-stethoscope me-1"></i>Doctor</h6>
-                            <h2 class="mb-0">{{ pending_doctor|default:0 }}</h2>
+                            <h2 class="mb-0 stat-pending-doctor">{{ pending_doctor|default:0 }}</h2>
                             <small class="opacity-75">Pending</small>
                         </div>
                     </div>
@@ -120,7 +207,7 @@
                     <div class="card text-center h-100">
                         <div class="card-body p-2 p-md-3">
                             <h6 class="mb-1">Pharmacy</h6>
-                            <h3 class="mb-0">{{ pending_pharmacy|default:0 }}</h3>
+                            <h3 class="mb-0 stat-pending-pharmacy">{{ pending_pharmacy|default:0 }}</h3>
                         </div>
                     </div>
                 </div>
@@ -128,7 +215,7 @@
                     <div class="card text-center h-100">
                         <div class="card-body p-2 p-md-3">
                             <h6 class="mb-1">Laboratory</h6>
-                            <h3 class="mb-0">{{ pending_lab|default:0 }}</h3>
+                            <h3 class="mb-0 stat-pending-lab">{{ pending_lab|default:0 }}</h3>
                         </div>
                     </div>
                 </div>
@@ -136,7 +223,7 @@
                     <div class="card text-center h-100">
                         <div class="card-body p-2 p-md-3">
                             <h6 class="mb-1">Optician</h6>
-                            <h3 class="mb-0">{{ pending_optician|default:0 }}</h3>
+                            <h3 class="mb-0 stat-pending-optician">{{ pending_optician|default:0 }}</h3>
                         </div>
                     </div>
                 </div>
@@ -144,17 +231,53 @@
         </div>
         
     {% elif role == 'NURSE' %}
+        <!-- ===== Nurse Assignment Alert Banner ===== -->
+        <div class="col-12" id="nurseAlertContainer">
+            {% if has_new_assignments and new_assignments > 0 %}
+            <div class="nurse-alert-banner d-flex align-items-center justify-content-between flex-wrap gap-2" id="nurseAssignmentBanner">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="alert-icon">
+                        <i class="fas fa-user-nurse"></i>
+                    </div>
+                    <div>
+                        <div class="alert-title">
+                            <i class="fas fa-bell me-2"></i>New Patient Assignment{% if new_assignments > 1 %}s{% endif %}!
+                        </div>
+                        <p class="alert-text">
+                            You have <strong class="alert-count">{{ new_assignments }}</strong> new patient{% if new_assignments > 1 %}s{% endif %} assigned to you.
+                            <span class="alert-details"></span>
+                        </p>
+                    </div>
+                </div>
+                <div>
+                    <a href="{% url 'b:nursing_dashboard' %}" class="btn btn-go-nursing">
+                        <i class="fas fa-arrow-right me-1"></i>
+                        {% if new_assignments == 1 %}Go to Assessment{% else %}Go to Nursing Dashboard{% endif %}
+                    </a>
+                    <button class="btn btn-sm btn-outline-secondary ms-1" onclick="dismissNurseAlert()" style="border-radius: 50%; padding: 2px 8px;">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
         <!-- Nurse Dashboard -->
         <div class="col-12">
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-white d-flex flex-wrap justify-content-between align-items-center gap-2">
                     <h5 class="mb-0"><i class="fas fa-user-nurse me-2 text-success"></i>Nursing Assessments</h5>
-                    <span class="badge bg-primary">{{ pending_count|default:0 }} pending</span>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-primary nurse-pending-badge">{{ pending_count|default:0 }} pending</span>
+                        <button class="btn btn-sm btn-outline-success" onclick="refreshNurseDashboard()">
+                            <i class="fas fa-sync-alt me-1"></i>Refresh
+                        </button>
+                    </div>
                 </div>
-                <div class="card-body p-0 p-md-3">
+                <div class="card-body p-0 p-md-3" id="nursePatientsContainer">
                     {% if patients %}
                         <div class="table-responsive-custom">
-                            <table class="table table-hover mb-0">
+                            <table class="table table-hover mb-0" id="nursePatientsTable">
                                 <thead>
                                     <tr>
                                         <th>Hospital No.</th>
@@ -166,7 +289,7 @@
                                 </thead>
                                 <tbody>
                                     {% for patient in patients %}
-                                        <tr>
+                                        <tr data-patient-id="{{ patient.id }}">
                                             <td><small>{{ patient.hospital_number }}</small></td>
                                             <td>{{ patient.full_name|truncatechars:15 }}</td>
                                             <td class="d-none d-sm-table-cell">{{ patient.gender }}</td>
@@ -182,7 +305,7 @@
                             </table>
                         </div>
                     {% else %}
-                        <p class="text-muted text-center my-4 py-3">
+                        <p class="text-muted text-center my-4 py-3" id="noNursePatients">
                             <i class="fas fa-check-circle text-success me-2"></i>
                             No patients pending nursing assessment.
                         </p>
@@ -197,12 +320,17 @@
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-white d-flex flex-wrap justify-content-between align-items-center gap-2">
                     <h5 class="mb-0"><i class="fas fa-stethoscope me-2 text-success"></i>Consultations</h5>
-                    <span class="badge bg-primary">{{ pending_count|default:0 }} pending</span>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-primary doctor-pending-badge">{{ pending_count|default:0 }} pending</span>
+                        <button class="btn btn-sm btn-outline-success" onclick="refreshDoctorDashboard()">
+                            <i class="fas fa-sync-alt me-1"></i>Refresh
+                        </button>
+                    </div>
                 </div>
-                <div class="card-body p-0 p-md-3">
+                <div class="card-body p-0 p-md-3" id="doctorPatientsContainer">
                     {% if patients %}
                         <div class="table-responsive-custom">
-                            <table class="table table-hover mb-0">
+                            <table class="table table-hover mb-0" id="doctorPatientsTable">
                                 <thead>
                                     <tr>
                                         <th>Hospital No.</th>
@@ -214,7 +342,7 @@
                                 </thead>
                                 <tbody>
                                     {% for patient in patients %}
-                                        <tr>
+                                        <tr data-patient-id="{{ patient.id }}">
                                             <td><small>{{ patient.hospital_number }}</small></td>
                                             <td>{{ patient.full_name|truncatechars:15 }}</td>
                                             <td class="d-none d-sm-table-cell">{{ patient.gender }}</td>
@@ -230,7 +358,7 @@
                             </table>
                         </div>
                     {% else %}
-                        <p class="text-muted text-center my-4 py-3">
+                        <p class="text-muted text-center my-4 py-3" id="noDoctorPatients">
                             <i class="fas fa-check-circle text-success me-2"></i>
                             No patients pending consultation.
                         </p>
@@ -240,14 +368,14 @@
         </div>
         
     {% elif role == 'PHARMACY' %}
-    <!-- Pharmacy Dashboard - Shows Patients with Pending Orders -->
+        <!-- Pharmacy Dashboard - Shows Patients with Pending Orders -->
         <div class="col-12">
             <div class="row g-3 g-md-4 mb-4">
                 <div class="col-md-3">
                     <div class="card text-white bg-success">
                         <div class="card-body">
                             <h6><i class="fas fa-prescription-bottle me-2"></i>Total Orders</h6>
-                            <h2>{{ pending_count }}</h2>
+                            <h2 class="pharmacy-total-orders">{{ pending_count }}</h2>
                         </div>
                     </div>
                 </div>
@@ -255,7 +383,7 @@
                     <div class="card text-white bg-primary">
                         <div class="card-body">
                             <h6><i class="fas fa-users me-2"></i>Patients Waiting</h6>
-                            <h2>{{ pending_patients_count }}</h2>
+                            <h2 class="pharmacy-patients-waiting">{{ pending_patients_count }}</h2>
                         </div>
                     </div>
                 </div>
@@ -263,7 +391,7 @@
                     <div class="card text-white bg-info">
                         <div class="card-body">
                             <h6><i class="fas fa-check-circle me-2"></i>Dispensed Today</h6>
-                            <h2>{{ dispensed_today }}</h2>
+                            <h2 class="pharmacy-dispensed-today">{{ dispensed_today }}</h2>
                         </div>
                     </div>
                 </div>
@@ -271,7 +399,7 @@
                     <div class="card text-white bg-warning">
                         <div class="card-body">
                             <h6><i class="fas fa-exclamation-triangle me-2"></i>Low Stock</h6>
-                            <h2>{{ low_stock_count }}</h2>
+                            <h2 class="pharmacy-low-stock">{{ low_stock_count }}</h2>
                         </div>
                     </div>
                 </div>
@@ -282,10 +410,10 @@
                 <div class="card-header bg-white">
                     <h5 class="mb-0"><i class="fas fa-list text-success me-2"></i>Patients with Pending Orders</h5>
                 </div>
-                <div class="card-body p-0 p-md-3">
+                <div class="card-body p-0 p-md-3" id="pharmacyPatientsContainer">
                     {% if pending_patients %}
                         <div class="table-responsive">
-                            <table class="table table-hover mb-0">
+                            <table class="table table-hover mb-0" id="pharmacyPatientsTable">
                                 <thead>
                                     <tr>
                                         <th>Patient</th>
@@ -298,7 +426,7 @@
                                 </thead>
                                 <tbody>
                                     {% for patient in pending_patients %}
-                                        <tr>
+                                        <tr data-patient-id="{{ patient.id }}">
                                             <td>
                                                 <strong>{{ patient.full_name }}</strong>
                                                 <br><small class="text-muted">{{ patient.phone }}</small>
@@ -315,7 +443,7 @@
                                                     —
                                                 {% endif %}
                                             </td>
-                                            <td>
+                                            <td class="patient-medications">
                                                 {% for order in patient.pharmacy_orders.all %}
                                                     {% if not order.dispensed %}
                                                         <span class="badge bg-light text-dark border me-1 mb-1" style="font-size: 12px; padding: 4px 10px;">
@@ -347,7 +475,7 @@
                             </table>
                         </div>
                     {% else %}
-                        <p class="text-muted text-center my-4 py-3">
+                        <p class="text-muted text-center my-4 py-3" id="noPharmacyPatients">
                             <i class="fas fa-check-circle text-success me-2"></i>
                             No pending orders. All medications have been dispensed.
                         </p>
@@ -362,26 +490,29 @@
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-white d-flex flex-wrap justify-content-between align-items-center gap-2">
                     <h5 class="mb-0"><i class="fas fa-microscope me-2 text-success"></i>Laboratory Tests</h5>
-                    <span class="badge bg-primary">{{ pending_count|default:0 }} pending</span>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-primary lab-pending-badge">{{ pending_count|default:0 }} pending</span>
+                        <button class="btn btn-sm btn-outline-success" onclick="refreshLabDashboard()">
+                            <i class="fas fa-sync-alt me-1"></i>Refresh
+                        </button>
+                    </div>
                 </div>
-                <div class="card-body p-0 p-md-3">
+                <div class="card-body p-0 p-md-3" id="labTestsContainer">
                     {% if tests %}
                         <div class="table-responsive-custom">
-                            <table class="table table-hover mb-0">
+                            <table class="table table-hover mb-0" id="labTestsTable">
                                 <thead>
                                     <tr>
                                         <th>Patient</th>
                                         <th class="d-none d-sm-table-cell">Malaria</th>
                                         <th class="d-none d-md-table-cell">RBS</th>
                                         <th class="d-none d-lg-table-cell">HBsAg</th>
-                                        <th class="d-none d-lg-table-cell">HCV</th>
-                                        <th class="d-none d-xl-table-cell">HIV</th>
                                         <th>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {% for test in tests %}
-                                        <tr>
+                                        <tr data-test-id="{{ test.id }}">
                                             <td>{{ test.patient.full_name|truncatechars:12 }}</td>
                                             <td class="d-none d-sm-table-cell">
                                                 <span class="badge {% if test.malaria_parasite == 'POSITIVE' %}bg-danger{% elif test.malaria_parasite == 'NEGATIVE' %}bg-success{% else %}bg-warning{% endif %}">
@@ -392,16 +523,6 @@
                                             <td class="d-none d-lg-table-cell">
                                                 <span class="badge {% if test.hbsag == 'POSITIVE' %}bg-danger{% elif test.hbsag == 'NEGATIVE' %}bg-success{% else %}bg-warning{% endif %}">
                                                     {{ test.hbsag|default:"—" }}
-                                                </span>
-                                            </td>
-                                            <td class="d-none d-lg-table-cell">
-                                                <span class="badge {% if test.hcv == 'POSITIVE' %}bg-danger{% elif test.hcv == 'NEGATIVE' %}bg-success{% else %}bg-warning{% endif %}">
-                                                    {{ test.hcv|default:"—" }}
-                                                </span>
-                                            </td>
-                                            <td class="d-none d-xl-table-cell">
-                                                <span class="badge {% if test.hiv == 'POSITIVE' %}bg-danger{% elif test.hiv == 'NEGATIVE' %}bg-success{% else %}bg-warning{% endif %}">
-                                                    {{ test.hiv|default:"—" }}
                                                 </span>
                                             </td>
                                             <td>
@@ -415,7 +536,7 @@
                             </table>
                         </div>
                     {% else %}
-                        <p class="text-muted text-center my-4 py-3">
+                        <p class="text-muted text-center my-4 py-3" id="noLabTests">
                             <i class="fas fa-check-circle text-success me-2"></i>
                             No pending laboratory tests.
                         </p>
@@ -431,16 +552,19 @@
                 <div class="card-header bg-white d-flex flex-wrap justify-content-between align-items-center gap-2">
                     <h5 class="mb-0"><i class="fas fa-eye me-2 text-success"></i>Optical Assessments</h5>
                     <div class="d-flex flex-wrap gap-2">
-                        <span class="badge bg-primary">{{ pending_count|default:0 }} pending</span>
+                        <span class="badge bg-primary optician-pending-badge">{{ pending_count|default:0 }} pending</span>
                         <a href="{% url 'b:optician_assessment_walkin' %}" class="btn btn-sm btn-outline-success">
                             <i class="fas fa-user-plus me-1"></i>Walk-in
                         </a>
+                        <button class="btn btn-sm btn-outline-success" onclick="refreshOpticianDashboard()">
+                            <i class="fas fa-sync-alt me-1"></i>Refresh
+                        </button>
                     </div>
                 </div>
-                <div class="card-body p-0 p-md-3">
+                <div class="card-body p-0 p-md-3" id="opticianAssessmentsContainer">
                     {% if assessments %}
                         <div class="table-responsive-custom">
-                            <table class="table table-hover mb-0">
+                            <table class="table table-hover mb-0" id="opticianAssessmentsTable">
                                 <thead>
                                     <tr>
                                         <th>Patient</th>
@@ -451,7 +575,7 @@
                                 </thead>
                                 <tbody>
                                     {% for assessment in assessments %}
-                                        <tr>
+                                        <tr data-assessment-id="{{ assessment.id }}">
                                             <td>{{ assessment.patient.full_name|truncatechars:12 }}</td>
                                             <td class="d-none d-sm-table-cell">
                                                 {% if assessment.is_walk_in %}
@@ -472,7 +596,7 @@
                             </table>
                         </div>
                     {% else %}
-                        <p class="text-muted text-center my-4 py-3">
+                        <p class="text-muted text-center my-4 py-3" id="noOpticianAssessments">
                             <i class="fas fa-check-circle text-success me-2"></i>
                             No pending optical assessments.
                         </p>
@@ -482,4 +606,556 @@
         </div>
     {% endif %}
 </div>
+
+<!-- ===== Dashboard Refresh Indicator ===== -->
+<div class="dashboard-refresh-indicator" id="dashboardRefreshIndicator" title="Auto-refresh active">
+    <i class="fas fa-sync-alt fa-sm spinning" id="refreshIcon"></i>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // ============================================
+    // DASHBOARD AJAX REFRESH SYSTEM
+    // ============================================
+    
+    var role = '{{ role }}';
+    var refreshInterval = null;
+    var isRefreshing = false;
+    
+    // ============================================
+    // NURSE FUNCTIONS
+    // ============================================
+    {% if role == 'NURSE' %}
+    
+    function dismissNurseAlert() {
+        var banner = document.getElementById('nurseAssignmentBanner');
+        if (banner) {
+            banner.style.animation = 'slideOut 0.5s ease';
+            setTimeout(function() {
+                banner.style.display = 'none';
+            }, 500);
+        }
+    }
+    
+    function refreshNurseDashboard() {
+        var btn = document.querySelector('.btn-outline-success');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Loading...';
+        }
+        refreshDashboardData();
+        setTimeout(function() {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-sync-alt me-1"></i>Refresh';
+            }
+        }, 3000);
+    }
+    
+    function updateNurseDashboard(data) {
+        // Update pending badge
+        var badge = document.querySelector('.nurse-pending-badge');
+        if (badge) {
+            badge.textContent = data.pending_count + ' pending';
+        }
+        
+        // Update alert banner
+        var alertContainer = document.getElementById('nurseAlertContainer');
+        if (alertContainer) {
+            var alertBanner = alertContainer.querySelector('.nurse-alert-banner');
+            if (data.has_new_assignments && data.new_assignments > 0) {
+                if (!alertBanner) {
+                    // Create new alert banner
+                    var newAlert = document.createElement('div');
+                    newAlert.className = 'nurse-alert-banner d-flex align-items-center justify-content-between flex-wrap gap-2';
+                    newAlert.id = 'nurseAssignmentBanner';
+                    newAlert.innerHTML = `
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="alert-icon">
+                                <i class="fas fa-user-nurse"></i>
+                            </div>
+                            <div>
+                                <div class="alert-title">
+                                    <i class="fas fa-bell me-2"></i>New Patient Assignment${data.new_assignments > 1 ? 's' : ''}!
+                                </div>
+                                <p class="alert-text">
+                                    You have <strong class="alert-count">${data.new_assignments}</strong> new patient${data.new_assignments > 1 ? 's' : ''} assigned to you.
+                                </p>
+                            </div>
+                        </div>
+                        <div>
+                            <a href="/nursing/dashboard/" class="btn btn-go-nursing">
+                                <i class="fas fa-arrow-right me-1"></i>
+                                ${data.new_assignments == 1 ? 'Go to Assessment' : 'Go to Nursing Dashboard'}
+                            </a>
+                            <button class="btn btn-sm btn-outline-secondary ms-1" onclick="dismissNurseAlert()" style="border-radius: 50%; padding: 2px 8px;">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    `;
+                    alertContainer.prepend(newAlert);
+                } else {
+                    // Update existing alert
+                    var countSpan = alertBanner.querySelector('.alert-count');
+                    if (countSpan) countSpan.textContent = data.new_assignments;
+                    alertBanner.style.display = 'flex';
+                }
+            } else {
+                if (alertBanner) {
+                    alertBanner.style.display = 'none';
+                }
+            }
+        }
+        
+        // Update patients table
+        var container = document.getElementById('nursePatientsContainer');
+        if (container) {
+            if (data.patients && data.patients.length > 0) {
+                var tableHtml = `
+                    <div class="table-responsive-custom">
+                        <table class="table table-hover mb-0" id="nursePatientsTable">
+                            <thead>
+                                <tr>
+                                    <th>Hospital No.</th>
+                                    <th>Name</th>
+                                    <th class="d-none d-sm-table-cell">Gender</th>
+                                    <th class="d-none d-md-table-cell">Age</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.patients.map(function(p) {
+                                    return `
+                                        <tr data-patient-id="${p.id}">
+                                            <td><small>${p.hospital_number}</small></td>
+                                            <td>${p.full_name.substring(0, 15)}${p.full_name.length > 15 ? '...' : ''}</td>
+                                            <td class="d-none d-sm-table-cell">${p.gender}</td>
+                                            <td class="d-none d-md-table-cell">${p.age_data ? p.age_data.years + 'y' : '—'}</td>
+                                            <td>
+                                                <a href="/nursing/assessment/${p.id}/" class="btn btn-sm btn-success">
+                                                    <i class="fas fa-clipboard-list me-1"></i>Assess
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                container.innerHTML = tableHtml;
+            } else {
+                container.innerHTML = `
+                    <p class="text-muted text-center my-4 py-3" id="noNursePatients">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        No patients pending nursing assessment.
+                    </p>
+                `;
+            }
+        }
+    }
+    
+    {% endif %}
+    
+    // ============================================
+    // DOCTOR FUNCTIONS
+    // ============================================
+    {% if role == 'PHYSICIAN' %}
+    
+    function refreshDoctorDashboard() {
+        var btn = document.querySelector('.btn-outline-success');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Loading...';
+        }
+        refreshDashboardData();
+        setTimeout(function() {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-sync-alt me-1"></i>Refresh';
+            }
+        }, 3000);
+    }
+    
+    function updateDoctorDashboard(data) {
+        // Update pending badge
+        var badge = document.querySelector('.doctor-pending-badge');
+        if (badge) {
+            badge.textContent = data.pending_count + ' pending';
+        }
+        
+        // Update patients table
+        var container = document.getElementById('doctorPatientsContainer');
+        if (container) {
+            if (data.patients && data.patients.length > 0) {
+                var tableHtml = `
+                    <div class="table-responsive-custom">
+                        <table class="table table-hover mb-0" id="doctorPatientsTable">
+                            <thead>
+                                <tr>
+                                    <th>Hospital No.</th>
+                                    <th>Name</th>
+                                    <th class="d-none d-sm-table-cell">Gender</th>
+                                    <th class="d-none d-md-table-cell">Age</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.patients.map(function(p) {
+                                    return `
+                                        <tr data-patient-id="${p.id}">
+                                            <td><small>${p.hospital_number}</small></td>
+                                            <td>${p.full_name.substring(0, 15)}${p.full_name.length > 15 ? '...' : ''}</td>
+                                            <td class="d-none d-sm-table-cell">${p.gender}</td>
+                                            <td class="d-none d-md-table-cell">${p.age_data ? p.age_data.years + 'y' : '—'}</td>
+                                            <td>
+                                                <a href="/doctor/consultation/${p.id}/" class="btn btn-sm btn-success">
+                                                    <i class="fas fa-prescription me-1"></i>Consult
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                container.innerHTML = tableHtml;
+            } else {
+                container.innerHTML = `
+                    <p class="text-muted text-center my-4 py-3" id="noDoctorPatients">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        No patients pending consultation.
+                    </p>
+                `;
+            }
+        }
+    }
+    
+    {% endif %}
+    
+    // ============================================
+    // PHARMACY FUNCTIONS
+    // ============================================
+    {% if role == 'PHARMACY' %}
+    
+    function updatePharmacyDashboard(data) {
+        // Update stats
+        var totalOrders = document.querySelector('.pharmacy-total-orders');
+        if (totalOrders) totalOrders.textContent = data.pending_count || 0;
+        
+        var patientsWaiting = document.querySelector('.pharmacy-patients-waiting');
+        if (patientsWaiting) patientsWaiting.textContent = data.pending_patients_count || 0;
+        
+        var dispensedToday = document.querySelector('.pharmacy-dispensed-today');
+        if (dispensedToday) dispensedToday.textContent = data.dispensed_today || 0;
+        
+        var lowStock = document.querySelector('.pharmacy-low-stock');
+        if (lowStock) lowStock.textContent = data.low_stock_count || 0;
+        
+        // Update patients table
+        var container = document.getElementById('pharmacyPatientsContainer');
+        if (container) {
+            if (data.pending_patients && data.pending_patients.length > 0) {
+                var tableHtml = `
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0" id="pharmacyPatientsTable">
+                            <thead>
+                                <tr>
+                                    <th>Patient</th>
+                                    <th>Hospital No.</th>
+                                    <th>Age</th>
+                                    <th>Medications</th>
+                                    <th>Total Items</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.pending_patients.map(function(p) {
+                                    var medsHtml = p.medications.map(function(m) {
+                                        return `<span class="badge bg-light text-dark border me-1 mb-1" style="font-size: 12px; padding: 4px 10px;">
+                                            ${m.drug_name} <span class="text-muted">×${m.quantity}</span>
+                                        </span>`;
+                                    }).join('');
+                                    
+                                    var totalItems = p.medications.reduce(function(sum, m) {
+                                        return sum + m.quantity;
+                                    }, 0);
+                                    
+                                    return `
+                                        <tr data-patient-id="${p.id}">
+                                            <td>
+                                                <strong>${p.full_name}</strong>
+                                                <br><small class="text-muted">${p.phone || ''}</small>
+                                            </td>
+                                            <td>${p.hospital_number}</td>
+                                            <td>${p.age_display || '—'}</td>
+                                            <td class="patient-medications">${medsHtml}</td>
+                                            <td><span class="badge bg-secondary">${totalItems}</span></td>
+                                            <td>
+                                                <a href="/pharmacy/dispense-patient/${p.id}/" class="btn btn-sm btn-success">
+                                                    <i class="fas fa-prescription-bottle me-1"></i> Dispense All
+                                                </a>
+                                                <a href="/patient/${p.id}/" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                container.innerHTML = tableHtml;
+            } else {
+                container.innerHTML = `
+                    <p class="text-muted text-center my-4 py-3" id="noPharmacyPatients">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        No pending orders. All medications have been dispensed.
+                    </p>
+                `;
+            }
+        }
+    }
+    
+    {% endif %}
+    
+    // ============================================
+    // LABORATORY FUNCTIONS
+    // ============================================
+    {% if role == 'MLS' %}
+    
+    function refreshLabDashboard() {
+        var btn = document.querySelector('.btn-outline-success');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Loading...';
+        }
+        refreshDashboardData();
+        setTimeout(function() {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-sync-alt me-1"></i>Refresh';
+            }
+        }, 3000);
+    }
+    
+    function updateLabDashboard(data) {
+        var badge = document.querySelector('.lab-pending-badge');
+        if (badge) {
+            badge.textContent = data.pending_count + ' pending';
+        }
+        
+        var container = document.getElementById('labTestsContainer');
+        if (container) {
+            if (data.tests && data.tests.length > 0) {
+                var tableHtml = `
+                    <div class="table-responsive-custom">
+                        <table class="table table-hover mb-0" id="labTestsTable">
+                            <thead>
+                                <tr>
+                                    <th>Patient</th>
+                                    <th class="d-none d-sm-table-cell">Malaria</th>
+                                    <th class="d-none d-md-table-cell">RBS</th>
+                                    <th class="d-none d-lg-table-cell">HBsAg</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.tests.map(function(t) {
+                                    var malariaClass = t.malaria_parasite === 'POSITIVE' ? 'bg-danger' : (t.malaria_parasite === 'NEGATIVE' ? 'bg-success' : 'bg-warning');
+                                    var hbsagClass = t.hbsag === 'POSITIVE' ? 'bg-danger' : (t.hbsag === 'NEGATIVE' ? 'bg-success' : 'bg-warning');
+                                    return `
+                                        <tr data-test-id="${t.id}">
+                                            <td>${t.patient_name.substring(0, 12)}${t.patient_name.length > 12 ? '...' : ''}</td>
+                                            <td class="d-none d-sm-table-cell">
+                                                <span class="badge ${malariaClass}">${t.malaria_parasite || '—'}</span>
+                                            </td>
+                                            <td class="d-none d-md-table-cell">${t.random_blood_sugar || '—'}</td>
+                                            <td class="d-none d-lg-table-cell">
+                                                <span class="badge ${hbsagClass}">${t.hbsag || '—'}</span>
+                                            </td>
+                                            <td>
+                                                <a href="/lab/test/${t.id}/" class="btn btn-sm btn-success">
+                                                    <i class="fas fa-vial me-1"></i>Test
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                container.innerHTML = tableHtml;
+            } else {
+                container.innerHTML = `
+                    <p class="text-muted text-center my-4 py-3" id="noLabTests">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        No pending laboratory tests.
+                    </p>
+                `;
+            }
+        }
+    }
+    
+    {% endif %}
+    
+    // ============================================
+    // OPTICIAN FUNCTIONS
+    // ============================================
+    {% if role == 'OPTOMETRIST' %}
+    
+    function refreshOpticianDashboard() {
+        var btn = document.querySelector('.btn-outline-success');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Loading...';
+        }
+        refreshDashboardData();
+        setTimeout(function() {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-sync-alt me-1"></i>Refresh';
+            }
+        }, 3000);
+    }
+    
+    function updateOpticianDashboard(data) {
+        var badge = document.querySelector('.optician-pending-badge');
+        if (badge) {
+            badge.textContent = data.pending_count + ' pending';
+        }
+        
+        var container = document.getElementById('opticianAssessmentsContainer');
+        if (container) {
+            if (data.assessments && data.assessments.length > 0) {
+                var tableHtml = `
+                    <div class="table-responsive-custom">
+                        <table class="table table-hover mb-0" id="opticianAssessmentsTable">
+                            <thead>
+                                <tr>
+                                    <th>Patient</th>
+                                    <th class="d-none d-sm-table-cell">Type</th>
+                                    <th class="d-none d-md-table-cell">Glasses</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.assessments.map(function(a) {
+                                    var typeBadge = a.is_walk_in ? 'bg-info' : 'bg-primary';
+                                    var typeText = a.is_walk_in ? 'Walk-in' : 'Referral';
+                                    return `
+                                        <tr data-assessment-id="${a.id}">
+                                            <td>${a.patient_name.substring(0, 12)}${a.patient_name.length > 12 ? '...' : ''}</td>
+                                            <td class="d-none d-sm-table-cell">
+                                                <span class="badge ${typeBadge}">${typeText}</span>
+                                            </td>
+                                            <td class="d-none d-md-table-cell">${a.glasses_allocated || 0}</td>
+                                            <td>
+                                                <a href="/optician/assessment/${a.patient_id}/" class="btn btn-sm btn-success">
+                                                    <i class="fas fa-eye me-1"></i>Assess
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                container.innerHTML = tableHtml;
+            } else {
+                container.innerHTML = `
+                    <p class="text-muted text-center my-4 py-3" id="noOpticianAssessments">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        No pending optical assessments.
+                    </p>
+                `;
+            }
+        }
+    }
+    
+    {% endif %}
+    
+    // ============================================
+    // COMMON REFRESH FUNCTIONS
+    // ============================================
+    
+    function refreshDashboardData() {
+        if (isRefreshing) return;
+        isRefreshing = true;
+        
+        var icon = document.getElementById('refreshIcon');
+        if (icon) icon.classList.add('spinning');
+        
+        var url = '/api/dashboard-data/';
+        
+        fetch(url)
+            .then(function(response) {
+                return response.json();
+            })
+            .then(function(data) {
+                console.log('📊 Dashboard data refreshed:', data);
+                
+                // Update based on role
+                {% if role == 'NURSE' %}
+                updateNurseDashboard(data);
+                {% elif role == 'PHYSICIAN' %}
+                updateDoctorDashboard(data);
+                {% elif role == 'PHARMACY' %}
+                updatePharmacyDashboard(data);
+                {% elif role == 'MLS' %}
+                updateLabDashboard(data);
+                {% elif role == 'OPTOMETRIST' %}
+                updateOpticianDashboard(data);
+                {% endif %}
+                
+                // Update notification badge if it changed
+                if (data.notification_count !== undefined) {
+                    var badge = document.querySelector('.notification-count');
+                    if (badge) {
+                        var current = parseInt(badge.textContent) || 0;
+                        if (current !== data.notification_count) {
+                            badge.textContent = data.notification_count;
+                            badge.style.display = data.notification_count > 0 ? 'inline' : 'none';
+                            // Also update the global variable in base.html
+                            if (window.lastNotificationCount !== undefined) {
+                                window.lastNotificationCount = data.notification_count;
+                            }
+                        }
+                    }
+                }
+                
+                isRefreshing = false;
+                if (icon) icon.classList.remove('spinning');
+            })
+            .catch(function(error) {
+                console.error('Error refreshing dashboard:', error);
+                isRefreshing = false;
+                if (icon) icon.classList.remove('spinning');
+            });
+    }
+    
+    // ============================================
+    // INITIALIZE DASHBOARD REFRESH
+    // ============================================
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('📊 Dashboard refresh initialized for role:', role);
+        
+        // Start auto-refresh every 5 seconds
+        refreshInterval = setInterval(function() {
+            refreshDashboardData();
+        }, 5000);
+        
+        // Initial refresh after 2 seconds
+        setTimeout(function() {
+            refreshDashboardData();
+        }, 2000);
+    });
+</script>
 {% endblock %}
