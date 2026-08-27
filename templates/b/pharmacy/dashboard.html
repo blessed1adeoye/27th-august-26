@@ -180,6 +180,27 @@
         margin-bottom: 10px;
     }
 
+    .dispensed-sidebar {
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .dispensed-sidebar .sidebar-header {
+        background: #f0fdf4;
+        color: #065f46;
+        border-bottom: 1px solid #dcfce7;
+    }
+
+    .dispensed-sidebar .badge-count {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .dispensed-patient-list {
+        max-height: 260px;
+        overflow-y: auto;
+        padding: 6px 0;
+    }
+
     /* Main Content */
     .pharmacy-main {
         flex: 1;
@@ -441,6 +462,35 @@
                 </div>
             {% endif %}
         </div>
+
+        <div class="dispensed-sidebar">
+            <div class="sidebar-header">
+                <h6><i class="fas fa-user-check me-2"></i>Patients Dispensed</h6>
+                <span class="badge-count">{{ dispensed_patients|length }}</span>
+            </div>
+            <div class="dispensed-patient-list">
+                {% if dispensed_patients %}
+                    {% for patient in dispensed_patients %}
+                        <a href="#dispensed-patient-{{ patient.id }}" class="patient-item">
+                            <div class="avatar {% if patient.gender == 'MALE' %}male{% elif patient.gender == 'FEMALE' %}female{% endif %}">
+                                {{ patient.first_name|first|upper }}{{ patient.last_name|first|upper }}
+                            </div>
+                            <div class="info">
+                                <div class="name">{{ patient.full_name }}</div>
+                                <div class="details">
+                                    <span>{{ patient.hospital_number }}</span>
+                                </div>
+                            </div>
+                            <i class="fas fa-chevron-right text-muted"></i>
+                        </a>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state py-3">
+                        <small class="text-muted">No dispensed patients yet</small>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
     </div>
 
     <!-- Main Content -->
@@ -536,13 +586,73 @@
                                 </tr>
                             {% endfor %}
                         {% else %}
-                            <tr>
+                            <tr id="dispensed-patient-{{ patient.id }}">
                                 <td colspan="6" class="text-center py-4">
                                     <i class="fas fa-check-circle fa-2x text-success d-block mb-2"></i>
                                     No pending orders. All medications have been dispensed.
                                 </td>
                             </tr>
                         {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Patients with completed dispensing and latest recorded vitals -->
+        <div class="table-card mt-4">
+            <div class="card-header">
+                <h5><i class="fas fa-user-check me-2 text-success"></i>Patients Dispensed</h5>
+                <span class="badge bg-success">{{ dispensed_patients|length }} patients</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Patient</th>
+                            <th>Hospital No.</th>
+                            <th>Dispensed Medication</th>
+                            <th>BP (mmHg)</th>
+                            <th>Pulse</th>
+                            <th>Temperature</th>
+                            <th>Respiratory Rate</th>
+                            <th>SpO2</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for patient in dispensed_patients %}
+                            <tr>
+                                <td>
+                                    <strong>{{ patient.full_name }}</strong>
+                                    <br><small class="text-muted">{{ patient.phone }}</small>
+                                </td>
+                                <td>{{ patient.hospital_number }}</td>
+                                <td>
+                                    {% for order in patient.pharmacy_orders.all %}
+                                        {% if order.dispensed %}
+                                            <span class="order-details-tag">
+                                                <span class="drug-name">{{ order.drug_name }}</span>
+                                                <span class="drug-qty">x{{ order.quantity }}</span>
+                                            </span>
+                                        {% endif %}
+                                    {% endfor %}
+                                </td>
+                                {% for nursing in patient.latest_nursing_assessments %}
+                                    {% if forloop.first %}
+                                        <td>{{ nursing.blood_pressure_systolic|default:"—" }}/{{ nursing.blood_pressure_diastolic|default:"—" }}</td>
+                                        <td>{{ nursing.pulse_rate|default:"—" }} bpm</td>
+                                        <td>{{ nursing.temperature|default:"—" }} &deg;C</td>
+                                        <td>{{ nursing.respiratory_rate|default:"—" }} breaths/min</td>
+                                        <td>{{ nursing.oxygen_saturation|default:"—" }}%</td>
+                                    {% endif %}
+                                {% empty %}
+                                    <td colspan="5" class="text-muted">No vitals recorded</td>
+                                {% endfor %}
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="8" class="text-center py-4 text-muted">No patients have received dispensed medication yet.</td>
+                            </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>

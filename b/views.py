@@ -16,7 +16,7 @@ from .forms import *
 from django.contrib.auth.models import User, Group
 from django.template.loader import render_to_string
 from django.contrib.auth import authenticate, login, logout
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, Max, Prefetch, Q, Sum
 from django.db.models import F
 
 
@@ -1553,6 +1553,19 @@ def pharmacy_dashboard(request):
     pending_patients = pending_patients.annotate(
         pending_order_count=Count('pharmacy_orders', filter=Q(pharmacy_orders__dispensed=False))
     )
+
+    # Patients whose prescriptions have been dispensed, with their latest vitals.
+    dispensed_patients = Patient.objects.filter(
+        pharmacy_orders__dispensed=True
+    ).annotate(
+        last_dispensed_at=Max('pharmacy_orders__dispensed_at')
+    ).prefetch_related(
+        Prefetch(
+            'nursing_assessments',
+            queryset=NursingAssessment.objects.order_by('-completed_at', '-created_at'),
+            to_attr='latest_nursing_assessments'
+        )
+    ).order_by('-last_dispensed_at')
     
     # Get all drugs for inventory
     drugs = Drug.objects.all()
@@ -1586,6 +1599,7 @@ def pharmacy_dashboard(request):
         'refresh_notifications': refresh_notifications,
         'pending_count': pending_orders.count(),  # Total orders
         'pending_patients_count': pending_patients.count(),  # Unique patients
+        'dispensed_patients': dispensed_patients,
         'drugs': drugs,
         'low_stock_count': low_stock.count(),
         'total_drugs': drugs.count(),

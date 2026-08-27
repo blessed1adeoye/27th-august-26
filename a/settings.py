@@ -27,8 +27,9 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
-
 # python manage.py runserver 0.0.0.0:8000
+
+# 
 
 
 # Application definition

@@ -785,8 +785,8 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {% if page == 'pharmacy_drug_add' %}active{% endif %}" href="">
-                        <i class="fas fa-plus-circle me-2"></i> Seen Patient
+                    <a class="nav-link" href="">
+                        <i class="fas fa-plus-circle me-2"></i>Patient Seen
                     </a>
                 </li>
             
@@ -1005,6 +1005,11 @@
                             <li class="nav-item">
                                 <a class="nav-link {% if page == 'pharmacy_drug_add' %}active{% endif %}" href="{% url 'b:pharmacy_drug_add' %}">
                                     <i class="fas fa-plus-circle"></i> Add Drug
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link " href="">
+                                    <i class="fas fa-plus-circle"></i> Patient Seen
                                 </a>
                             </li>
                         </ul>
