@@ -527,6 +527,23 @@ def nursing_dashboard(request):
         nurseassignment__nurse=request.user,
         nurseassignment__is_active=True
     )
+    patient_search = request.GET.get('patient_search', '').strip()
+    patients = assigned_patients
+    if patient_search:
+        patients = Patient.objects.filter(
+            Q(hospital_number__icontains=patient_search) |
+            Q(first_name__icontains=patient_search) |
+            Q(middle_name__icontains=patient_search) |
+            Q(last_name__icontains=patient_search)
+        )
+
+    patients = patients.prefetch_related(
+        Prefetch(
+            'nursing_assessments',
+            queryset=NursingAssessment.objects.order_by('-completed_at', '-created_at'),
+            to_attr='latest_assessments'
+        )
+    ).distinct()
     
     notifications = Notification.objects.filter(
         recipient=request.user,
@@ -537,7 +554,9 @@ def nursing_dashboard(request):
     
     context = {
         'page': 'nursing',
-        'assigned_patients': assigned_patients,
+        'assigned_patients': patients,
+        'patient_search': patient_search,
+        'is_patient_search': bool(patient_search),
         'assigned_count': assigned_patients.count(),
         'pending_count': pending_count,
         'notifications': notifications,
@@ -553,6 +572,38 @@ def nursing_dashboard(request):
     }
     return render(request, 'b/nurse/dashboard.html', context)
 
+@login_required
+@role_required(['NURSE'])
+def nursing_dashboard_data_api(request):
+    """API endpoint for nursing dashboard data refresh"""
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Not authenticated'}, status=401)
+    
+    try:
+        profile = request.user.userprofile
+        if profile.role != 'NURSE':
+            return JsonResponse({'error': 'Not a nurse'}, status=403)
+    except UserProfile.DoesNotExist:
+        return JsonResponse({'error': 'No profile'}, status=403)
+    
+    # Get assigned patients
+    assigned_patients = Patient.objects.filter(
+        nurseassignment__nurse=request.user,
+        nurseassignment__is_active=True
+    )
+    
+    assigned_count = assigned_patients.count()
+    pending_count = assigned_patients.filter(current_stage='REGISTERED').count()
+    completed_today = assigned_patients.filter(
+        current_stage='NURSING',
+        updated_at__date=timezone.now().date()
+    ).count()
+    
+    return JsonResponse({
+        'assigned_count': assigned_count,
+        'pending_count': pending_count,
+        'completed_today': completed_today,
+    })
 
 # ============= PHYSICIAN VIEWS =============
 
@@ -936,7 +987,6 @@ def doctor_dashboard_data_api(request):
 
 # ============= PHYSICIAN LAB RESULTS VIEWS =============
 
-# b/views.py - physician_lab_results view
 
 @login_required
 @role_required(['PHYSICIAN'])
@@ -1022,164 +1072,6 @@ def physician_lab_results(request):
         ).order_by('-created_at')[:10]
     }
     return render(request, 'b/doctor/lab_results.html', context)
-
-# @login_required
-# @role_required(['PHYSICIAN'])
-# def physician_lab_results(request):
-#     """List all lab results for the physician's patients"""
-#     assigned_patients = Patient.objects.filter(
-#         physicianassignment__physician=request.user,
-#         physicianassignment__is_active=True
-#     )
-    
-#     # Get ALL completed lab tests for assigned patients
-#     lab_tests = LaboratoryTest.objects.filter(
-#         patient__in=assigned_patients,
-#         completed=True
-#     ).select_related('patient').order_by('-completed_at')
-    
-#     # ===== FIX: Mark ALL lab tests as viewed by the physician =====
-#     # This includes ALL completed tests, not just the ones displayed
-#     unviewed_tests = lab_tests.filter(viewed_by_physician=False)
-#     if unviewed_tests.exists():
-#         now = timezone.now()
-#         updated_count = unviewed_tests.update(viewed_by_physician=True, viewed_at=now)
-#         print(f"👨‍⚕️ Marked {updated_count} lab results as viewed")
-    
-#     # Now get the updated counts
-#     total_results = lab_tests.count()
-#     unique_patients = lab_tests.values('patient').distinct().count()
-#     unviewed_count = lab_tests.filter(viewed_by_physician=False).count()  # Should be 0
-    
-#     # Build result data
-#     results = []
-#     for test in lab_tests:
-#         tests_summary = []
-#         if test.malaria_parasite != 'PENDING':
-#             tests_summary.append({'name': 'Malaria', 'result': test.malaria_parasite})
-#         if test.random_blood_sugar is not None:
-#             tests_summary.append({'name': 'RBS', 'result': f"{test.random_blood_sugar} mmol/L"})
-#         if test.hbsag != 'PENDING':
-#             tests_summary.append({'name': 'HBsAg', 'result': test.hbsag})
-#         if test.other_tests:
-#             tests_summary.append({'name': 'Other', 'result': test.other_tests})
-        
-#         results.append({
-#             'test': test,
-#             'patient': test.patient,
-#             'tests': tests_summary,
-#             'completed_at': test.completed_at,
-#             'status': 'Completed' if test.completed else 'Pending',
-#             'viewed': test.viewed_by_physician
-#         })
-    
-#     # ===== FIX: These counts are for the sidebar badges =====
-#     # Recalculate unviewed counts for sidebar
-#     lab_results_count = LaboratoryTest.objects.filter(
-#         patient__in=assigned_patients,
-#         completed=True,
-#         viewed_by_physician=False
-#     ).count()
-    
-#     optician_results_count = OpticalAssessment.objects.filter(
-#         patient__in=assigned_patients,
-#         completed=True,
-#         viewed_by_physician=False
-#     ).count()
-    
-#     print(f"📊 Lab results count (unviewed): {lab_results_count}")
-#     print(f"📊 Optician results count (unviewed): {optician_results_count}")
-    
-#     context = {
-#         'results': results,
-#         'total_results': total_results,
-#         'unique_patients': unique_patients,
-#         'unviewed_count': unviewed_count,
-#         'page': 'lab_results',
-#         'lab_results_count': lab_results_count,  # For sidebar badge
-#         'optician_results_count': optician_results_count,  # For sidebar badge
-#         'role': get_user_role(request.user),
-#         'notification_count': Notification.objects.filter(
-#             recipient=request.user,
-#             is_read=False
-#         ).count(),
-#         'notifications': Notification.objects.filter(
-#             recipient=request.user,
-#             is_read=False
-#         ).order_by('-created_at')[:10]
-#     }
-#     return render(request, 'b/doctor/lab_results.html', context)
-
-# @login_required
-# @role_required(['PHYSICIAN'])
-# def physician_lab_results(request):
-#     """List all lab results for the physician's patients"""
-#     # Get patients assigned to this physician
-#     assigned_patients = Patient.objects.filter(
-#         physicianassignment__physician=request.user,
-#         physicianassignment__is_active=True
-#     )
-    
-#     # Get all lab tests for these patients that are completed
-#     lab_tests = LaboratoryTest.objects.filter(
-#         patient__in=assigned_patients,
-#         completed=True
-#     ).select_related('patient').order_by('-completed_at')
-    
-#     # ===== FIX: Mark all lab tests as viewed by the physician =====
-#     # When the physician views the results list, mark them as seen
-#     unviewed_tests = lab_tests.filter(viewed_by_physician=False)
-#     if unviewed_tests.exists():
-#         now = timezone.now()
-#         unviewed_tests.update(viewed_by_physician=True, viewed_at=now)
-#         print(f"👨‍⚕️ Marked {unviewed_tests.count()} lab results as viewed")
-    
-#     # Count individual lab tests
-#     total_results = lab_tests.count()
-    
-#     # Get unique patients count
-#     unique_patients = lab_tests.values('patient').distinct().count()
-    
-#     # Build result data
-#     results = []
-#     for test in lab_tests:
-#         tests_summary = []
-#         if test.malaria_parasite != 'PENDING':
-#             tests_summary.append({'name': 'Malaria', 'result': test.malaria_parasite})
-#         if test.random_blood_sugar is not None:
-#             tests_summary.append({'name': 'RBS', 'result': f"{test.random_blood_sugar} mmol/L"})
-#         if test.hbsag != 'PENDING':
-#             tests_summary.append({'name': 'HBsAg', 'result': test.hbsag})
-#         if test.other_tests:
-#             tests_summary.append({'name': 'Other', 'result': test.other_tests})
-        
-#         results.append({
-#             'test': test,
-#             'patient': test.patient,
-#             'tests': tests_summary,
-#             'completed_at': test.completed_at,
-#             'status': 'Completed' if test.completed else 'Pending',
-#             'viewed': test.viewed_by_physician  # NEW
-#         })
-    
-#     context = {
-#         'results': results,
-#         'total_results': total_results,
-#         'page': 'lab_results',
-#         'unique_patients': unique_patients,
-#         'page': 'lab_results',
-#         'role': get_user_role(request.user),
-#         'notification_count': Notification.objects.filter(
-#             recipient=request.user,
-#             is_read=False
-#         ).count(),
-#         'notifications': Notification.objects.filter(
-#             recipient=request.user,
-#             is_read=False
-#         ).order_by('-created_at')[:10]
-#     }
-#     return render(request, 'b/doctor/lab_results.html', context)
-
 
 @login_required
 @role_required(['PHYSICIAN'])
@@ -1319,137 +1211,6 @@ def physician_optician_results(request):
         ).order_by('-created_at')[:10]
     }
     return render(request, 'b/doctor/optician_results.html', context)
-
-# @login_required
-# @role_required(['PHYSICIAN'])
-# def physician_optician_results(request):
-#     """List all optician results for the physician's patients"""
-#     assigned_patients = Patient.objects.filter(
-#         physicianassignment__physician=request.user,
-#         physicianassignment__is_active=True
-#     )
-    
-#     assessments = OpticalAssessment.objects.filter(
-#         patient__in=assigned_patients,
-#         completed=True
-#     ).select_related('patient').order_by('-completed_at')
-    
-#     # ===== FIX: Mark ALL optician results as viewed =====
-#     unviewed_assessments = assessments.filter(viewed_by_physician=False)
-#     if unviewed_assessments.exists():
-#         now = timezone.now()
-#         updated_count = unviewed_assessments.update(viewed_by_physician=True, viewed_at=now)
-#         print(f"👨‍⚕️ Marked {updated_count} optician results as viewed")
-    
-#     total_results = assessments.count()
-#     unique_patients = assessments.values('patient').distinct().count()
-#     unviewed_count = assessments.filter(viewed_by_physician=False).count()
-    
-#     # Build result data
-#     results = []
-#     for assessment in assessments:
-#         results.append({
-#             'assessment': assessment,
-#             'patient': assessment.patient,
-#             'visual_acuity': f"{assessment.visual_acuity_left}/{assessment.visual_acuity_right}" if assessment.visual_acuity_left else "Not recorded",
-#             'glasses': f"{assessment.glasses_allocated} ({assessment.glasses_type})" if assessment.glasses_allocated > 0 else "None",
-#             'completed_at': assessment.completed_at,
-#             'status': 'Completed' if assessment.completed else 'Pending',
-#             'viewed': assessment.viewed_by_physician
-#         })
-    
-#     # ===== FIX: Recalculate unviewed counts for sidebar =====
-#     lab_results_count = LaboratoryTest.objects.filter(
-#         patient__in=assigned_patients,
-#         completed=True,
-#         viewed_by_physician=False
-#     ).count()
-    
-#     optician_results_count = OpticalAssessment.objects.filter(
-#         patient__in=assigned_patients,
-#         completed=True,
-#         viewed_by_physician=False
-#     ).count()
-    
-#     context = {
-#         'results': results,
-#         'total_results': total_results,
-#         'unique_patients': unique_patients,
-#         'unviewed_count': unviewed_count,
-#         'page': 'optician_results',
-#         'lab_results_count': lab_results_count,  # For sidebar badge
-#         'optician_results_count': optician_results_count,  # For sidebar badge
-#         'role': get_user_role(request.user),
-#         'notification_count': Notification.objects.filter(
-#             recipient=request.user,
-#             is_read=False
-#         ).count(),
-#         'notifications': Notification.objects.filter(
-#             recipient=request.user,
-#             is_read=False
-#         ).order_by('-created_at')[:10]
-#     }
-#     return render(request, 'b/doctor/optician_results.html', context)
-
-# @login_required
-# @role_required(['PHYSICIAN'])
-# def physician_optician_results(request):
-#     """List all optician results for the physician's patients"""
-#     # Get patients assigned to this physician
-#     assigned_patients = Patient.objects.filter(
-#         physicianassignment__physician=request.user,
-#         physicianassignment__is_active=True
-#     )
-    
-#     # Get all optical assessments for these patients that are completed
-#     assessments = OpticalAssessment.objects.filter(
-#         patient__in=assigned_patients,
-#         completed=True
-#     ).select_related('patient').order_by('-completed_at')
-    
-#     # ===== FIX: Mark all optician results as viewed by the physician =====
-#     unviewed_assessments = assessments.filter(viewed_by_physician=False)
-#     if unviewed_assessments.exists():
-#         now = timezone.now()
-#         unviewed_assessments.update(viewed_by_physician=True, viewed_at=now)
-#         print(f"👨‍⚕️ Marked {unviewed_assessments.count()} optician results as viewed")
-    
-#     # Count individual assessments
-#     total_results = assessments.count()
-    
-#     # Get unique patients count
-#     unique_patients = assessments.values('patient').distinct().count()
-    
-#     # Build result data
-#     results = []
-#     for assessment in assessments:
-#         results.append({
-#             'assessment': assessment,
-#             'patient': assessment.patient,
-#             'visual_acuity': f"{assessment.visual_acuity_left}/{assessment.visual_acuity_right}" if assessment.visual_acuity_left else "Not recorded",
-#             'glasses': f"{assessment.glasses_allocated} ({assessment.glasses_type})" if assessment.glasses_allocated > 0 else "None",
-#             'completed_at': assessment.completed_at,
-#             'status': 'Completed' if assessment.completed else 'Pending',
-#             'viewed': assessment.viewed_by_physician  # NEW
-#         })
-    
-#     context = {
-#         'results': results,
-#         'total_results': total_results,
-#         'page': 'optician_results',
-#         'unique_patients': unique_patients,
-#         'page': 'optician_results',
-#         'role': get_user_role(request.user),
-#         'notification_count': Notification.objects.filter(
-#             recipient=request.user,
-#             is_read=False
-#         ).count(),
-#         'notifications': Notification.objects.filter(
-#             recipient=request.user,
-#             is_read=False
-#         ).order_by('-created_at')[:10]
-#     }
-#     return render(request, 'b/doctor/optician_results.html', context)
 
 
 
@@ -2637,114 +2398,7 @@ def optician_assessment(request, patient_id=None):
     }
     return render(request, 'b/optician/assessment.html', context)
 
-# @login_required
-# @role_required(['OPTOMETRIST'])
-# def optician_assessment(request, patient_id=None):
-#     if patient_id:
-#         patient = get_object_or_404(Patient, id=patient_id)
-#     else:
-#         patient = None
-    
-#     if request.method == 'POST':
-#         form = OpticalAssessmentForm(request.POST)
-#         if form.is_valid():
-#             assessment = form.save(commit=False)
-#             assessment.created_by = request.user
-#             assessment.completed = True
-#             assessment.completed_at = timezone.now()
-#             assessment.completed_by = request.user
-#             assessment.viewed_by_optician = True
-#             assessment.viewed_at = timezone.now()
-            
-#             print("=" * 50)
-#             print("🔍 OPTICIAN ASSESSMENT COMPLETED")
-#             print(f"👤 Optician: {request.user.username}")
-#             print(f"📊 Assessment ID: {assessment.id}")
-#             print(f"📊 Patient: {assessment.patient.full_name if assessment.patient else 'Unknown'}")
-#             print(f"📊 Completed: {assessment.completed}")
-#             print(f"📊 Viewed by Optician: {assessment.viewed_by_optician}")
-#             print("=" * 50)
-            
-#             if patient:
-#                 assessment.patient = patient
-#                 assessment.save()
-                
-#                 # Update workflow
-#                 workflow = PatientWorkflow.objects.get(patient=patient)
-#                 workflow.optician_completed = True
-#                 workflow.optician_completed_at = timezone.now()
-#                 workflow.current_stage = 'COMPLETED'
-#                 workflow.completed_at = timezone.now()
-#                 patient.current_stage = 'COMPLETED'
-#                 patient.save()
-#                 workflow.save()
-                
-#                 messages.success(request, f'Optical assessment completed for {patient.full_name}')
-                
-#                 # Notify physician if this was a referral
-#                 physician_assignment = PhysicianAssignment.objects.filter(
-#                     patient=patient,
-#                     is_active=True
-#                 ).first()
-                
-#                 if physician_assignment:
-#                     Notification.objects.create(
-#                         recipient=physician_assignment.physician,
-#                         message=f'👁️ Optical assessment completed for {patient.full_name}',
-#                         link=f'/doctor/consultation/{patient.id}/',
-#                         is_read=False
-#                     )
-                    
-#             else:
-#                 # Walk-in patient
-#                 from datetime import date
-#                 import random
-                
-#                 new_patient = Patient.objects.create(
-#                     hospital_number=f"WALK{date.today().strftime('%Y%m%d')}{random.randint(100, 999)}",
-#                     first_name=request.POST.get('first_name', 'Walk-in'),
-#                     last_name=request.POST.get('last_name', 'Patient'),
-#                     date_of_birth=request.POST.get('date_of_birth') or date.today(),
-#                     gender=request.POST.get('gender', 'OTHER'),
-#                     phone=request.POST.get('phone', '08000000000'),
-#                     address='COREP',
-#                     current_stage='COMPLETED'
-#                 )
-                
-#                 PatientWorkflow.objects.create(
-#                     patient=new_patient,
-#                     current_stage='COMPLETED',
-#                     optician_completed=True,
-#                     optician_completed_at=timezone.now(),
-#                     completed_at=timezone.now()
-#                 )
-                
-#                 assessment.patient = new_patient
-#                 assessment.is_walk_in = True
-#                 assessment.viewed_by_optician = True
-#                 assessment.save()
-                
-#                 messages.success(request, f'Optical assessment completed for walk-in patient {new_patient.full_name}')
-            
-#             return redirect('b:optician_dashboard')
-#     else:
-#         form = OpticalAssessmentForm()
-    
-#     context = {
-#         'patient': patient,
-#         'role': get_user_role(request.user),
-#         'page': 'optician_assessment',
-#         'form': form,
-#         'notification_count': Notification.objects.filter(
-#             recipient=request.user,
-#             is_read=False
-#         ).count(),
-#         'notifications': Notification.objects.filter(
-#             recipient=request.user,
-#             is_read=False
-#         ).order_by('-created_at')[:10]
-#     }
-#     return render(request, 'b/optician/assessment.html', context)
+
 
 @login_required
 def optician_notification_check(request):
@@ -2799,220 +2453,6 @@ def optician_notification_check(request):
         'recent_assessments': recent_assessments_data,
     })
 
-# @login_required
-# def optician_notification_check(request):
-#     """API endpoint for optician to check new assessments"""
-#     if not request.user.is_authenticated:
-#         return JsonResponse({'error': 'Not authenticated'}, status=401)
-    
-#     try:
-#         profile = request.user.userprofile
-#         if profile.role != 'OPTOMETRIST':
-#             return JsonResponse({'error': 'Not optician'}, status=403)
-#     except UserProfile.DoesNotExist:
-#         return JsonResponse({'error': 'No profile'}, status=401)
-    
-#     # Get pending assessments
-#     pending_assessments = OpticalAssessment.objects.filter(completed=False, viewed_by_optician=False)
-    
-#     # Count UNIQUE patients with pending assessments
-#     pending_patients = Patient.objects.filter(
-#         optical_assessments__completed=False,
-#         optical_assessments__viewed_by_optician=False
-#     ).distinct()
-#     patient_count = pending_patients.count()
-    
-#     # Get count of assessments
-#     assessment_count = pending_assessments.count()
-    
-#     # Get recent assessments (last 24 hours)
-#     from datetime import timedelta
-#     yesterday = timezone.now() - timedelta(days=1)
-#     recent_assessments = pending_assessments.filter(created_at__gt=yesterday)
-    
-#     # Include assessment details with IDs
-#     recent_assessments_data = []
-#     for assessment in recent_assessments:
-#         recent_assessments_data.append({
-#             'id': assessment.id,
-#             'patient_name': assessment.patient.full_name,
-#             'patient_id': assessment.patient.id,
-#             'is_walk_in': assessment.is_walk_in,
-#             'created_at': assessment.created_at.isoformat(),
-#         })
-    
-#     return JsonResponse({
-#         'count': assessment_count,
-#         'patient_count': patient_count,
-#         'recent_count': recent_assessments.count(),
-#         'has_new': recent_assessments.count() > 0,
-#         'recent_assessments': recent_assessments_data,
-#     })
-
-# @login_required
-# @role_required(['OPTOMETRIST'])
-# def optician_assessment(request, patient_id=None):
-#     # For walk-in patients
-#     if patient_id:
-#         patient = get_object_or_404(Patient, id=patient_id)
-#     else:
-#         patient = None
-    
-#     if request.method == 'POST':
-#         form = OpticalAssessmentForm(request.POST)
-#         if form.is_valid():
-#             assessment = form.save(commit=False)
-#             assessment.created_by = request.user
-#             assessment.completed = True
-#             assessment.completed_at = timezone.now()
-#             assessment.completed_by = request.user
-            
-#             if patient:
-#                 assessment.patient = patient
-#                 assessment.save()
-                
-#                 # Update workflow
-#                 workflow = PatientWorkflow.objects.get(patient=patient)
-#                 workflow.optician_completed = True
-#                 workflow.optician_completed_at = timezone.now()
-#                 workflow.current_stage = 'COMPLETED'
-#                 workflow.completed_at = timezone.now()
-#                 patient.current_stage = 'COMPLETED'
-#                 patient.save()
-#                 workflow.save()
-                
-#                 # Notification is sent via signal
-#                 messages.success(request, f'Optical assessment completed for {patient.full_name}')
-                
-#                 # Notify physician if this was a referral
-#                 physician_assignment = PhysicianAssignment.objects.filter(
-#                     patient=patient,
-#                     is_active=True
-#                 ).first()
-                
-#                 if physician_assignment:
-#                     Notification.objects.create(
-#                         recipient=physician_assignment.physician,
-#                         message=f'👁️ Optical assessment completed for {patient.full_name}',
-#                         link=f'/doctor/consultation/{patient.id}/',
-#                         is_read=False
-#                     )
-                    
-#             else:
-#                 # Walk-in patient - create new patient
-#                 # You'll need to collect basic patient info from the form
-#                 # For now, we'll create a basic patient record
-#                 from datetime import date
-                
-#                 # Create a new patient for walk-in
-#                 # You can add fields to the form to collect this info
-#                 new_patient = Patient.objects.create(
-#                     hospital_number=f"WALK{date.today().strftime('%Y%m%d')}{random.randint(100, 999)}",
-#                     first_name=request.POST.get('first_name', 'Walk-in'),
-#                     last_name=request.POST.get('last_name', 'Patient'),
-#                     date_of_birth=request.POST.get('date_of_birth') or date.today(),
-#                     gender=request.POST.get('gender', 'OTHER'),
-#                     phone=request.POST.get('phone', '08000000000'),
-#                     address='COREP',
-#                     current_stage='COMPLETED'
-#                 )
-                
-#                 # Create workflow
-#                 PatientWorkflow.objects.create(
-#                     patient=new_patient,
-#                     current_stage='COMPLETED',
-#                     optician_completed=True,
-#                     optician_completed_at=timezone.now(),
-#                     completed_at=timezone.now()
-#                 )
-                
-#                 assessment.patient = new_patient
-#                 assessment.is_walk_in = True
-#                 assessment.save()
-                
-#                 messages.success(request, f'Optical assessment completed for walk-in patient {new_patient.full_name}')
-            
-#             return redirect('b:optician_dashboard')
-#     else:
-#         form = OpticalAssessmentForm()
-    
-#     context = {
-#         'patient': patient,
-#         'role': get_user_role(request.user),
-#         'page': 'optician_assessment',
-#         'form': form,
-#         'notification_count': Notification.objects.filter(
-#             recipient=request.user,
-#             is_read=False
-#         ).count(),
-#         'notifications': Notification.objects.filter(
-#             recipient=request.user,
-#             is_read=False
-#         ).order_by('-created_at')[:10]
-#     }
-#     return render(request, 'b/optician/assessment.html', context)
-
-
-
-# @login_required
-# @role_required(['OPTOMETRIST'])
-# def optician_assessment(request, patient_id=None):
-#     # For walk-in patients
-#     if patient_id:
-#         patient = get_object_or_404(Patient, id=patient_id)
-#     else:
-#         patient = None
-    
-#     if request.method == 'POST':
-#         form = OpticalAssessmentForm(request.POST)
-#         if form.is_valid():
-#             assessment = form.save(commit=False)
-#             assessment.created_by = request.user
-#             assessment.completed = True
-#             assessment.completed_at = timezone.now()
-#             assessment.completed_by = request.user
-            
-#             if patient:
-#                 assessment.patient = patient
-#                 assessment.save()
-                
-#                 # Update workflow
-#                 workflow = PatientWorkflow.objects.get(patient=patient)
-#                 workflow.optician_completed = True
-#                 workflow.optician_completed_at = timezone.now()
-#                 workflow.current_stage = 'COMPLETED'
-#                 workflow.completed_at = timezone.now()
-#                 patient.current_stage = 'COMPLETED'
-#                 patient.save()
-#                 workflow.save()
-                
-#                 # Notification is sent via signal
-#                 messages.success(request, f'Optical assessment completed for {patient.full_name}')
-#             else:
-#                 # Walk-in patient
-#                 assessment.save()
-#                 messages.success(request, 'Optical assessment completed for walk-in patient')
-            
-#             return redirect('b:optician_dashboard')
-#     else:
-#         form = OpticalAssessmentForm()
-    
-#     context = {
-#         'patient': patient,
-#         'role': get_user_role(request.user),
-#         'page': 'optician_assessment',
-#         'form': form,
-#         'page': 'optician',
-#         'notification_count': Notification.objects.filter(
-#             recipient=request.user,
-#             is_read=False
-#         ).count(),
-#         'notifications': Notification.objects.filter(
-#             recipient=request.user,
-#             is_read=False
-#         ).order_by('-created_at')[:10]
-#     }
-#     return render(request, 'b/optician/assessment.html', context)
 
 # ============= USER MANAGEMENT VIEWS =============
 
@@ -3365,58 +2805,7 @@ def debug_mark_notifications_read(request):
     })
 
 
-# @login_required
-# def nurse_assignment_check(request):
-#     """API endpoint for nurses to check if they have new assignments"""
-#     if not request.user.is_authenticated:
-#         return JsonResponse({'error': 'Not authenticated'}, status=401)
-    
-#     # Check if user is a nurse
-#     try:
-#         profile = request.user.userprofile
-#         if profile.role != 'NURSE':
-#             return JsonResponse({'error': 'Not a nurse'}, status=403)
-#     except UserProfile.DoesNotExist:
-#         return JsonResponse({'error': 'No profile'}, status=403)
-    
-#     # Get the last check timestamp from request (optional)
-#     last_check = request.GET.get('last_check', None)
-    
-#     # Get pending assignments for this nurse
-#     pending_assignments = NurseAssignment.objects.filter(
-#         nurse=request.user,
-#         is_active=True
-#     ).select_related('patient').order_by('-assigned_at')
-    
-#     # If last_check is provided, only get assignments after that time
-#     if last_check:
-#         from datetime import datetime
-#         try:
-#             last_check_dt = datetime.fromisoformat(last_check)
-#             pending_assignments = pending_assignments.filter(assigned_at__gt=last_check_dt)
-#         except:
-#             pass
-    
-#     # Get count
-#     count = pending_assignments.count()
-    
-#     # Get details for the assignments
-#     assignments_data = []
-#     for assignment in pending_assignments:
-#         assignments_data.append({
-#             'id': assignment.id,
-#             'patient_id': assignment.patient.id,
-#             'patient_name': assignment.patient.full_name,
-#             'hospital_number': assignment.patient.hospital_number,
-#             'assigned_at': assignment.assigned_at.isoformat(),
-#         })
-    
-#     return JsonResponse({
-#         'count': count,
-#         'assignments': assignments_data,
-#     })
 
-# b/views.py - Replace the nurse_assignment_check function with this
 
 @login_required
 def nurse_assignment_check(request):

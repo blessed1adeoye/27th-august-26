@@ -1,142 +1,516 @@
 <!-- templates/b/nurse/dashboard.html -->
 
-
-
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Nursing Dashboard{% endblock %}
 
 {% block extra_css %}
 <style>
-    .notification-card {
-        border-left: 4px solid #065f46;
-        background: #f0fdf4;
+    .search-box {
+        position: relative;
+        max-width: 350px;
     }
-    .notification-card .time {
-        font-size: 0.7rem;
+    .search-box input {
+        padding-left: 38px;
+        border-radius: 20px;
+        border: 2px solid #e5e7eb;
+        transition: all 0.3s;
+    }
+    .search-box input:focus {
+        border-color: #065f46;
+        box-shadow: 0 0 0 3px rgba(6, 95, 70, 0.1);
+    }
+    .search-box .search-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
         color: #9ca3af;
     }
-    @media (max-width: 767.98px) {
-        .table-responsive-custom table {
-            font-size: 0.75rem;
-        }
-        .table-responsive-custom .btn-sm {
-            font-size: 0.65rem;
-            padding: 0.15rem 0.4rem;
-        }
+    .search-box .clear-btn {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: #9ca3af;
+        cursor: pointer;
+        display: none;
+    }
+    .search-box .clear-btn.show {
+        display: block;
+    }
+    
+    .patient-row {
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .patient-row:hover {
+        background: #f0fdf4;
+    }
+    .patient-row.expanded {
+        background: #f0fdf4;
+    }
+    
+    .vitals-details {
+        display: none;
+        background: #f8fafc;
+        padding: 16px 20px;
+        border-radius: 8px;
+        margin-top: 8px;
+        border: 1px solid #e5e7eb;
+        animation: slideDown 0.3s ease;
+    }
+    .vitals-details.show {
+        display: block;
+    }
+    
+    @keyframes slideDown {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .vitals-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 10px;
+    }
+    .vitals-item {
+        background: white;
+        padding: 10px 14px;
+        border-radius: 6px;
+        border: 1px solid #e5e7eb;
+        text-align: center;
+    }
+    .vitals-item .label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        color: #6b7280;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+    .vitals-item .value {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-top: 2px;
+    }
+    .vitals-item .value .unit {
+        font-size: 0.7rem;
+        font-weight: 400;
+        color: #6b7280;
+    }
+    .no-vitals {
+        color: #9ca3af;
+        font-style: italic;
+    }
+    .view-details-btn {
+        font-size: 0.75rem;
+        padding: 2px 10px;
+        border-radius: 12px;
+        background: #f3f4f6;
+        border: 1px solid #e5e7eb;
+        color: #374151;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .view-details-btn:hover {
+        background: #065f46;
+        color: white;
+        border-color: #065f46;
+    }
+    
+    .patient-count-badge {
+        background: #d1fae5;
+        color: #065f46;
+        padding: 2px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+    }
+    
+    /* Empty state */
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+    }
+    .empty-state i {
+        font-size: 3rem;
+        opacity: 0.3;
+        margin-bottom: 12px;
+    }
+    
+    .no-results {
+        display: none;
+    }
+    .no-results.show {
+        display: block;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="row g-3 g-md-4 mb-4">
-    <div class="col-md-4">
-        <div class="stat-card">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="label"><i class="fas fa-user-nurse me-2"></i>My Assigned Patients</div>
-                    <div class="number">{{ assigned_count|default:0 }}</div>
-                </div>
-                <i class="fas fa-clipboard-list fa-3x text-muted opacity-25"></i>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="stat-card">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="label"><i class="fas fa-clock me-2"></i>Pending Assessments</div>
-                    <div class="number">{{ pending_count|default:0 }}</div>
-                </div>
-                <i class="fas fa-hourglass-half fa-3x text-muted opacity-25"></i>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="stat-card">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="label"><i class="fas fa-check-circle me-2"></i>Completed Today</div>
-                    <div class="number">{{ completed_today|default:0 }}</div>
-                </div>
-                <i class="fas fa-check-double fa-3x text-muted opacity-25"></i>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Notifications Section -->
-{% if notifications %}
-    <div class="card card-custom mb-4">
-        <div class="card-header">
-            <h5 class="mb-0"><i class="fas fa-bell text-warning me-2"></i>Notifications</h5>
-        </div>
-        <div class="card-body">
-            {% for notification in notifications %}
-                <div class="notification-card p-3 mb-2 rounded-3">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <strong>{{ notification.message }}</strong>
-                            <div class="time">{{ notification.created_at|timesince }} ago</div>
-                        </div>
-                        {% if not notification.is_read %}
-                            <span class="badge bg-danger">New</span>
-                        {% endif %}
+<div class="row g-3 g-md-4">
+    <div class="col-12">
+        <!-- Stats -->
+        <div class="row g-2 g-md-3 mb-4">
+            <div class="col-md-3 col-6">
+                <div class="card text-white bg-primary">
+                    <div class="card-body">
+                        <h6><i class="fas fa-users me-2"></i>Assigned</h6>
+                        <h2>{{ assigned_count|default:0 }}</h2>
+                        <small>Total assigned patients</small>
                     </div>
                 </div>
-            {% endfor %}
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="card text-white bg-warning">
+                    <div class="card-body">
+                        <h6><i class="fas fa-clock me-2"></i>Pending</h6>
+                        <h2>{{ pending_count|default:0 }}</h2>
+                        <small>Awaiting assessment</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="card text-white bg-success">
+                    <div class="card-body">
+                        <h6><i class="fas fa-check-circle me-2"></i>Completed</h6>
+                        <h2>{{ completed_today|default:0 }}</h2>
+                        <small>Assessed today</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="card text-white bg-info">
+                    <div class="card-body">
+                        <h6><i class="fas fa-clipboard-list me-2"></i>All</h6>
+                        <h2>{{ assigned_count|default:0 }}</h2>
+                        <small>Total patients</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== PATIENT LIST WITH SEARCH ===== -->
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <h5 class="mb-0">
+                    <i class="fas fa-user-nurse me-2 text-success"></i>
+                    My Patients
+                    <span class="patient-count-badge ms-2">{{ assigned_patients|length }}</span>
+                </h5>
+                <div class="search-box">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="patientSearch" class="form-control form-control-sm" 
+                           placeholder="Search by name or hospital number..." 
+                           oninput="filterPatients()">
+                    <button class="clear-btn" id="clearSearch" onclick="clearSearch()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body p-0 p-md-3" id="patientsContainer">
+                {% if assigned_patients %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0" id="patientsTable">
+                            <thead>
+                                <tr>
+                                    <th>Hospital No.</th>
+                                    <th>Patient</th>
+                                    <th class="d-none d-sm-table-cell">Gender</th>
+                                    <th class="d-none d-md-table-cell">Age</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for patient in assigned_patients %}
+                                    <tr class="patient-row" data-patient-id="{{ patient.id }}" 
+                                        data-name="{{ patient.full_name|lower }}" 
+                                        data-hospital="{{ patient.hospital_number|lower }}">
+                                        <td>
+                                            <small>{{ patient.hospital_number }}</small>
+                                        </td>
+                                        <td>
+                                            <strong>{{ patient.full_name }}</strong>
+                                            <br><small class="text-muted">{{ patient.phone }}</small>
+                                            <!-- Toggle vitals button -->
+                                            <button class="view-details-btn ms-2" onclick="toggleVitals({{ patient.id }})">
+                                                <i class="fas fa-heartbeat me-1"></i> Vitals
+                                            </button>
+                                        </td>
+                                        <td class="d-none d-sm-table-cell">{{ patient.gender }}</td>
+                                        <td class="d-none d-md-table-cell">
+                                            {% if patient.age_data %}
+                                                {{ patient.age_data.years }}y
+                                                {% if patient.age_data.months > 0 %}{{ patient.age_data.months }}m{% endif %}
+                                            {% else %}
+                                                —
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if patient.current_stage == 'REGISTERED' %}
+                                                <span class="badge bg-warning text-dark">Pending</span>
+                                            {% elif patient.current_stage == 'NURSING' %}
+                                                <span class="badge bg-success">Assessed</span>
+                                            {% elif patient.current_stage == 'DOCTOR' %}
+                                                <span class="badge bg-info">With Doctor</span>
+                                            {% elif patient.current_stage == 'COMPLETED' %}
+                                                <span class="badge bg-secondary">Completed</span>
+                                            {% else %}
+                                                <span class="badge bg-primary">{{ patient.current_stage }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if patient.current_stage == 'REGISTERED' %}
+                                                <a href="{% url 'b:nursing_assessment' patient.id %}" class="btn btn-sm btn-success">
+                                                    <i class="fas fa-clipboard-list me-1"></i>Assess
+                                                </a>
+                                            {% else %}
+                                                <button class="btn btn-sm btn-outline-secondary" onclick="toggleVitals({{ patient.id }})">
+                                                    <i class="fas fa-heartbeat me-1"></i>View Vitals
+                                                </button>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    <!-- Vitals Details Row -->
+                                    <tr id="vitals-{{ patient.id }}" style="display: none;">
+                                        <td colspan="6">
+                                            <div class="vitals-details show">
+                                                {% with assessment=patient.nursing_assessments.last %}
+                                                    {% if assessment and assessment.completed %}
+                                                        <h6 class="text-success mb-3">
+                                                            <i class="fas fa-heartbeat me-2"></i>
+                                                            Last Vitals Assessment
+                                                            <small class="text-muted ms-2">
+                                                                {{ assessment.completed_at|date:"M d, Y H:i" }}
+                                                            </small>
+                                                        </h6>
+                                                        <div class="vitals-grid">
+                                                            <div class="vitals-item">
+                                                                <div class="label">Blood Pressure</div>
+                                                                <div class="value">
+                                                                    {{ assessment.blood_pressure_systolic }}/{{ assessment.blood_pressure_diastolic }}
+                                                                    <span class="unit">mmHg</span>
+                                                                </div>
+                                                            </div>
+                                                            <div class="vitals-item">
+                                                                <div class="label">Pulse Rate</div>
+                                                                <div class="value">
+                                                                    {{ assessment.pulse_rate }}
+                                                                    <span class="unit">bpm</span>
+                                                                </div>
+                                                            </div>
+                                                            <div class="vitals-item">
+                                                                <div class="label">Temperature</div>
+                                                                <div class="value">
+                                                                    {{ assessment.temperature|default:"—" }}
+                                                                    <span class="unit">°C</span>
+                                                                </div>
+                                                            </div>
+                                                            <div class="vitals-item">
+                                                                <div class="label">Respiratory Rate</div>
+                                                                <div class="value">
+                                                                    {{ assessment.respiratory_rate|default:"—" }}
+                                                                    <span class="unit">/min</span>
+                                                                </div>
+                                                            </div>
+                                                            <div class="vitals-item">
+                                                                <div class="label">Oxygen Saturation</div>
+                                                                <div class="value">
+                                                                    {{ assessment.oxygen_saturation|default:"—" }}
+                                                                    <span class="unit">%</span>
+                                                                </div>
+                                                            </div>
+                                                            <div class="vitals-item">
+                                                                <div class="label">Isolation</div>
+                                                                <div class="value">
+                                                                    {% if assessment.isolation_required %}
+                                                                        <span class="badge bg-danger">Required</span>
+                                                                    {% else %}
+                                                                        <span class="badge bg-success">Not Required</span>
+                                                                    {% endif %}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        {% if assessment.biohazard_risk %}
+                                                            <div class="mt-2">
+                                                                <span class="badge bg-warning text-dark">Biohazard Risk</span>
+                                                                <span class="ms-2">{{ assessment.biohazard_risk }}</span>
+                                                            </div>
+                                                        {% endif %}
+                                                        {% if assessment.notes %}
+                                                            <div class="mt-2 small text-muted">
+                                                                <i class="fas fa-sticky-note me-1"></i>
+                                                                {{ assessment.notes }}
+                                                            </div>
+                                                        {% endif %}
+                                                        <div class="mt-3">
+                                                            <a href="{% url 'b:nursing_assessment' patient.id %}" class="btn btn-sm btn-outline-success">
+                                                                <i class="fas fa-edit me-1"></i> Update Assessment
+                                                            </a>
+                                                        </div>
+                                                    {% else %}
+                                                        <p class="no-vitals text-center my-3">
+                                                            <i class="fas fa-info-circle me-2"></i>
+                                                            No vitals recorded for this patient yet.
+                                                        </p>
+                                                        <a href="{% url 'b:nursing_assessment' patient.id %}" class="btn btn-sm btn-success">
+                                                            <i class="fas fa-clipboard-list me-1"></i> Start Assessment
+                                                        </a>
+                                                    {% endif %}
+                                                {% endwith %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- No results message -->
+                    <div class="no-results empty-state" id="noResults">
+                        <i class="fas fa-search"></i>
+                        <h6 class="text-muted">No patients found</h6>
+                        <p class="text-muted small">Try adjusting your search criteria</p>
+                    </div>
+                    
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-user-nurse"></i>
+                        <h6 class="text-muted">No patients assigned</h6>
+                        <p class="text-muted small">Patients will appear here when assigned to you</p>
+                    </div>
+                {% endif %}
+            </div>
         </div>
     </div>
-{% endif %}
-
-<!-- Assigned Patients -->
-<div class="card card-custom">
-    <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
-        <h5 class="mb-0"><i class="fas fa-list text-success me-2"></i>My Assigned Patients</h5>
-        <span class="badge bg-primary">{{ assigned_count|default:0 }} patients</span>
-    </div>
-    <div class="card-body p-0 p-md-3">
-        {% if assigned_patients %}
-            <div class="table-responsive-custom">
-                <table class="table table-hover mb-0">
-                    <thead>
-                        <tr>
-                            <th>Hospital No.</th>
-                            <th>Patient</th>
-                            <th class="d-none d-sm-table-cell">Gender</th>
-                            <th class="d-none d-md-table-cell">Age</th>
-                            <th>Status</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for patient in assigned_patients %}
-                            <tr>
-                                <td><small>{{ patient.hospital_number }}</small></td>
-                                <td>{{ patient.full_name|truncatechars:15 }}</td>
-                                <td class="d-none d-sm-table-cell">{{ patient.gender }}</td>
-                                <td class="d-none d-md-table-cell">{{ patient.age_data.years }}y</td>
-                                <td>
-                                    <span class="badge {% if patient.current_stage == 'REGISTERED' %}bg-warning{% else %}bg-success{% endif %}">
-                                        {{ patient.get_current_stage_display }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <a href="{% url 'b:nursing_assessment' patient.id %}" class="btn btn-sm btn-success">
-                                        <i class="fas fa-clipboard-list me-1"></i>Assess
-                                    </a>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        {% else %}
-            <p class="text-muted text-center my-4 py-3">
-                <i class="fas fa-info-circle me-2"></i>
-                No patients assigned to you yet.
-            </p>
-        {% endif %}
-    </div>
 </div>
+
+<script>
+    // ============================================
+    // SEARCH FUNCTIONALITY
+    // ============================================
+    
+    function filterPatients() {
+        const input = document.getElementById('patientSearch');
+        const query = input.value.toLowerCase().trim();
+        const clearBtn = document.getElementById('clearSearch');
+        const rows = document.querySelectorAll('#patientsTable tbody .patient-row');
+        const noResults = document.getElementById('noResults');
+        let visibleCount = 0;
+        
+        // Show/hide clear button
+        if (query.length > 0) {
+            clearBtn.classList.add('show');
+        } else {
+            clearBtn.classList.remove('show');
+        }
+        
+        rows.forEach(row => {
+            const name = row.dataset.name || '';
+            const hospital = row.dataset.hospital || '';
+            const matches = name.includes(query) || hospital.includes(query);
+            
+            if (matches) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+                // Also hide the vitals row if it exists
+                const patientId = row.dataset.patientId;
+                const vitalsRow = document.getElementById('vitals-' + patientId);
+                if (vitalsRow) {
+                    vitalsRow.style.display = 'none';
+                }
+            }
+        });
+        
+        // Show/hide no results message
+        if (visibleCount === 0 && rows.length > 0) {
+            noResults.classList.add('show');
+        } else {
+            noResults.classList.remove('show');
+        }
+        
+        console.log(`🔍 Search: "${query}" - Found ${visibleCount} patient(s)`);
+    }
+    
+    function clearSearch() {
+        document.getElementById('patientSearch').value = '';
+        document.getElementById('clearSearch').classList.remove('show');
+        filterPatients();
+        document.getElementById('patientSearch').focus();
+    }
+    
+    // ============================================
+    // TOGGLE VITALS DETAILS
+    // ============================================
+    
+    function toggleVitals(patientId) {
+        const vitalsRow = document.getElementById('vitals-' + patientId);
+        if (!vitalsRow) return;
+        
+        if (vitalsRow.style.display === 'none') {
+            vitalsRow.style.display = 'table-row';
+            // Scroll to the vitals
+            setTimeout(() => {
+                vitalsRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100);
+        } else {
+            vitalsRow.style.display = 'none';
+        }
+    }
+    
+    // ============================================
+    // KEYBOARD SHORTCUTS
+    // ============================================
+    
+    document.addEventListener('keydown', function(e) {
+        // Ctrl+F or / to focus search
+        if ((e.ctrlKey && e.key === 'f') || (e.key === '/' && !e.ctrlKey)) {
+            e.preventDefault();
+            const searchInput = document.getElementById('patientSearch');
+            if (searchInput) {
+                searchInput.focus();
+                searchInput.select();
+            }
+        }
+        // Escape to clear search
+        if (e.key === 'Escape') {
+            clearSearch();
+            document.activeElement?.blur();
+        }
+    });
+    
+    // ============================================
+    // AUTO-REFRESH DASHBOARD
+    // ============================================
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('👩‍⚕️ Nursing dashboard loaded');
+        
+        // Auto-refresh every 15 seconds
+        setInterval(function() {
+            console.log('👩‍⚕️ Refreshing nursing dashboard...');
+            fetch('/api/nursing/dashboard-data/')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('👩‍⚕️ Dashboard refreshed:', data);
+                    // Update stats
+                    const stats = {
+                        'assigned': data.assigned_count || 0,
+                        'pending': data.pending_count || 0,
+                        'completed_today': data.completed_today || 0
+                    };
+                    document.querySelector('.bg-primary h2').textContent = stats.assigned;
+                    document.querySelector('.bg-warning h2').textContent = stats.pending;
+                    document.querySelector('.bg-success h2').textContent = stats.completed_today;
+                })
+                .catch(error => console.error('Error refreshing nursing dashboard:', error));
+        }, 15000);
+    });
+</script>
 {% endblock %}

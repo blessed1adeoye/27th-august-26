@@ -83,6 +83,7 @@ urlpatterns = [
     path('api/pharmacy/notification-check/', views.pharmacy_notification_check, name='pharmacy_notification_check'),
     path('api/physician/mark-lab-results-read/', views.mark_lab_results_read, name='mark_lab_results_read'),
     path('api/optician/notification-check/', views.optician_notification_check, name='optician_notification_check'),
+    path('api/nursing/dashboard-data/', views.nursing_dashboard_data_api, name='nursing_dashboard_data_api'),
 
     # # Admin Dashboard
     # path('admin/dashboard/', views_admin.admin_dashboard, name='admin_dashboard'),
